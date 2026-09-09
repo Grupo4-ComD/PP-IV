@@ -1,0 +1,11 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Nota: Las entidades relacionales de la base de datos (Unidad, Ticket, TurnoLimpieza, Expensa)
+// se poblarán tras la aprobación formal del prototipo en Figma (Hito 2).
