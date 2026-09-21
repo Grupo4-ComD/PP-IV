@@ -2,6 +2,15 @@
 
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  UploadCloud,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  CreditCard,
+  X,
+  Loader2,
+} from "lucide-react";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -132,15 +141,16 @@ export default function UploadComprobanteModal({
         {/* Botón Cerrar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-sm p-1 rounded-lg"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition"
+          aria-label="Cerrar modal"
         >
-          ✕
+          <X className="w-5 h-5" />
         </button>
 
         {/* Encabezado */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-bold border border-indigo-100 dark:border-indigo-800/40">
-            💳
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold border border-indigo-100 dark:border-indigo-800/40">
+            <CreditCard className="w-5 h-5 stroke-[2]" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -154,7 +164,7 @@ export default function UploadComprobanteModal({
 
         {errorMsg && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-            <span>⚠️</span>
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -191,8 +201,9 @@ export default function UploadComprobanteModal({
                     alt="Preview"
                     className="max-h-32 object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
                   />
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ✓ {file?.name} ({file ? (file.size / 1024).toFixed(0) : 0} KB)
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {file?.name} ({file ? (file.size / 1024).toFixed(0) : 0} KB)
                   </span>
                   <span className="text-[11px] text-indigo-600 dark:text-indigo-400 underline">
                     Cambiar archivo
@@ -200,7 +211,9 @@ export default function UploadComprobanteModal({
                 </div>
               ) : file ? (
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl">📄</span>
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <FileText className="w-6 h-6 stroke-[2]" />
+                  </div>
                   <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     {file.name}
                   </span>
@@ -210,7 +223,9 @@ export default function UploadComprobanteModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl">📥</span>
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center">
+                    <UploadCloud className="w-6 h-6 stroke-[2]" />
+                  </div>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Arrastre su comprobante aquí o haga clic para buscar
                   </p>
@@ -252,13 +267,13 @@ export default function UploadComprobanteModal({
             >
               {loading ? (
                 <>
-                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Subiendo...</span>
                 </>
               ) : (
                 <>
                   <span>Enviar a Verificación</span>
-                  <span>✓</span>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 </>
               )}
             </button>

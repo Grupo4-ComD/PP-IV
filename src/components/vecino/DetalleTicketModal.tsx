@@ -1,6 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import {
+  X,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  MapPin,
+  Building2,
+  Wrench,
+  User,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import { TicketItem } from "./NuevoTicketModal";
 
 interface DetalleTicketModalProps {
@@ -31,9 +43,10 @@ export default function DetalleTicketModal({
         {/* Botón Cerrar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-sm p-1 rounded-lg"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition"
+          aria-label="Cerrar modal"
         >
-          ✕
+          <X className="w-5 h-5" />
         </button>
 
         {/* Encabezado del Ticket */}
@@ -46,16 +59,19 @@ export default function DetalleTicketModal({
             <span className="text-xs text-slate-400">• UF 0{ticket.numero_uf}</span>
 
             {ticket.estado === "resuelto" ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200">
-                ✓ Resuelto
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Resuelto
               </span>
             ) : ticket.estado === "en_revision" ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200">
-                ● En Revisión / Asignado
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200">
+                <Clock className="w-3.5 h-3.5" />
+                En Revisión / Asignado
               </span>
             ) : (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-200">
-                ● Abierto
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-200">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Abierto
               </span>
             )}
           </div>
@@ -63,8 +79,9 @@ export default function DetalleTicketModal({
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             {ticket.titulo}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            📍 Sector: {ticket.ubicacion || "Áreas Comunes"} • Categoría:{" "}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+            <span>Sector: {ticket.ubicacion || "Áreas Comunes"} • Categoría: </span>
             <span className="capitalize font-semibold text-slate-700 dark:text-slate-300">
               {ticket.categoria}
             </span>
@@ -87,8 +104,8 @@ export default function DetalleTicketModal({
           {ticket.proveedor_asignado && (
             <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-base">
-                  🛠️
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                  <Wrench className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider block">
@@ -99,7 +116,8 @@ export default function DetalleTicketModal({
                   </span>
                 </div>
               </div>
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                <ShieldCheck className="w-3.5 h-3.5" />
                 SLA Activo
               </span>
             </div>
@@ -130,7 +148,13 @@ export default function DetalleTicketModal({
                     >
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <span>{esAdmin ? "🏢" : esProveedor ? "🔧" : "👤"}</span>
+                          {esAdmin ? (
+                            <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+                          ) : esProveedor ? (
+                            <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                          ) : (
+                            <User className="w-3.5 h-3.5 text-slate-500" />
+                          )}
                           <span>{c.autor}</span>
                         </span>
                         <span className="text-[10px] text-slate-400">{c.fecha}</span>
@@ -165,9 +189,10 @@ export default function DetalleTicketModal({
           <button
             type="submit"
             disabled={!comentarioTexto.trim()}
-            className="px-4 h-10 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-xl text-xs shadow transition disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 h-10 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-xl text-xs shadow transition disabled:opacity-50 cursor-pointer"
           >
-            Enviar Mensaje
+            <span>Enviar</span>
+            <Send className="w-3.5 h-3.5" />
           </button>
         </form>
       </div>

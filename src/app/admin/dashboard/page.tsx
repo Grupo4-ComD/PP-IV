@@ -8,7 +8,10 @@ import {
   Wrench,
   Settings,
   LogOut,
-  PlusCircle,
+  Plus,
+  PawPrint,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -107,8 +110,9 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow transition">
-              + Emitir Expensas
+            <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+              <Plus className="w-4 h-4" />
+              <span>Emitir Expensas</span>
             </button>
           </div>
         </header>
@@ -166,10 +170,16 @@ export default function AdminDashboardPage() {
                 <tr className="hover:bg-slate-50/80">
                   <td className="px-4 py-3.5 font-bold text-slate-900">UF 1A</td>
                   <td className="px-4 py-3.5">González, Mario</td>
-                  <td className="px-4 py-3.5">🐕 1 Perro</td>
                   <td className="px-4 py-3.5">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Al día
+                    <span className="inline-flex items-center gap-1 text-slate-700">
+                      <PawPrint className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>1 Perro</span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Al día</span>
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right font-medium text-slate-900">$0</td>
@@ -177,10 +187,16 @@ export default function AdminDashboardPage() {
                 <tr className="hover:bg-slate-50/80">
                   <td className="px-4 py-3.5 font-bold text-slate-900">UF 2B</td>
                   <td className="px-4 py-3.5">Martínez, Laura</td>
-                  <td className="px-4 py-3.5">🐈 2 Gatos</td>
                   <td className="px-4 py-3.5">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                      En mora (1 mes)
+                    <span className="inline-flex items-center gap-1 text-slate-700">
+                      <PawPrint className="w-3.5 h-3.5 text-amber-500" />
+                      <span>2 Gatos</span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>En mora (1 mes)</span>
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right font-medium text-rose-600">$48.500</td>

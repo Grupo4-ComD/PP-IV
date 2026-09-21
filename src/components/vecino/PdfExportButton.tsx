@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { FileDown, Loader2 } from "lucide-react";
 
 interface PdfExportProps {
   unidad: {
@@ -222,9 +223,13 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
     <button
       onClick={handleGeneratePdf}
       disabled={generating}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-sm cursor-pointer disabled:opacity-50"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs cursor-pointer disabled:opacity-50"
     >
-      <span>📄</span>
+      {generating ? (
+        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+      ) : (
+        <FileDown className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+      )}
       <span>{generating ? "Generando Extracto..." : "Descargar Extracto PDF"}</span>
     </button>
   );

@@ -2,6 +2,16 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import {
+  Bot,
+  Sparkles,
+  Send,
+  Ticket,
+  ArrowRight,
+  X,
+  MessageSquareQuote,
+  ShieldCheck,
+} from "lucide-react";
 
 interface Message {
   id: string;
@@ -19,7 +29,7 @@ export default function ChatbotReglamento() {
       id: "1",
       role: "assistant",
       content:
-        "¡Hola! Soy el **Asistente Virtual de Convivencia** del Consorcio Calle 425 🐾. ¿En qué puedo ayudarte hoy sobre el reglamento, ruidos molestos, mascotas o espacios comunes?",
+        "¡Hola! Soy el **Asistente Virtual de Convivencia** del Consorcio Calle 425. ¿En qué puedo ayudarte hoy sobre el reglamento, ruidos molestos, tenencia de mascotas o espacios comunes?",
       timestamp: "Ahora",
     },
   ]);
@@ -116,16 +126,17 @@ export default function ChatbotReglamento() {
           {/* Header del Chat */}
           <div className="bg-indigo-600 text-white p-4 flex items-center justify-between shadow-md">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-base">
-                🤖
+              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h3 className="text-xs font-bold leading-tight flex items-center gap-1.5">
                   <span>Asistente IA de Convivencia</span>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </h3>
-                <p className="text-[10px] text-indigo-200">
-                  Reglamento Consorcio Calle 425
+                <p className="text-[10px] text-indigo-200 flex items-center gap-1 mt-0.5">
+                  <ShieldCheck className="w-3 h-3 text-indigo-200" />
+                  <span>Reglamento Consorcio Calle 425</span>
                 </p>
               </div>
             </div>
@@ -133,10 +144,10 @@ export default function ChatbotReglamento() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xs transition"
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xs transition cursor-pointer"
                 aria-label="Minimizar chat"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -157,7 +168,7 @@ export default function ChatbotReglamento() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] p-3 rounded-2xl leading-relaxed whitespace-pre-line shadow-xs ${
+                    className={`max-w-[85%] p-3.5 rounded-2xl leading-relaxed whitespace-pre-line shadow-xs ${
                       isUser
                         ? "bg-indigo-600 text-white rounded-br-xs"
                         : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-xs"
@@ -171,10 +182,11 @@ export default function ChatbotReglamento() {
                         <Link
                           href="/vecino/mesa-ayuda"
                           onClick={() => setIsOpen(false)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold text-[11px] hover:bg-indigo-100 transition"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold text-[11px] hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition group"
                         >
-                          <span>🎫</span>
-                          <span>Abrir Mesa de Ayuda ITIL →</span>
+                          <Ticket className="w-3.5 h-3.5" />
+                          <span>Abrir Mesa de Ayuda ITIL</span>
+                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                         </Link>
                       </div>
                     )}
@@ -205,9 +217,10 @@ export default function ChatbotReglamento() {
                 <button
                   key={idx}
                   onClick={() => handleSend(q)}
-                  className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 transition"
+                  className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 transition cursor-pointer flex items-center gap-1"
                 >
-                  {q}
+                  <MessageSquareQuote className="w-2.5 h-2.5 text-indigo-500" />
+                  <span>{q}</span>
                 </button>
               ))}
             </div>
@@ -232,8 +245,9 @@ export default function ChatbotReglamento() {
               type="submit"
               disabled={!input.trim() || loading}
               className="px-3 h-9 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow transition disabled:opacity-40 cursor-pointer flex items-center justify-center"
+              aria-label="Enviar pregunta"
             >
-              <span>➤</span>
+              <Send className="w-3.5 h-3.5" />
             </button>
           </form>
         </div>
@@ -242,11 +256,15 @@ export default function ChatbotReglamento() {
       {/* BOTÓN FLOTANTE TRIGGER */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center text-2xl transition-all cursor-pointer relative group"
+        className="w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center transition-all cursor-pointer relative group"
         aria-label="Abrir Asistente Virtual"
       >
         <span className="transition-transform group-hover:scale-110">
-          {isOpen ? "✕" : "🤖"}
+          {isOpen ? (
+            <X className="w-6 h-6 stroke-[2.2]" />
+          ) : (
+            <Bot className="w-6 h-6 stroke-[2.2]" />
+          )}
         </span>
 
         {!isOpen && (

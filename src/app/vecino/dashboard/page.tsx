@@ -3,6 +3,19 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  Bot,
+  Sparkles,
+  Droplets,
+  CalendarCheck,
+  ArrowRight,
+  ArrowLeftRight,
+  LifeBuoy,
+  Vote,
+  CheckCircle2,
+  Clock,
+  ListTodo,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import EstadoCuentaCard, { ExpensaData, UnidadData } from "@/components/vecino/EstadoCuentaCard";
 import VecinoSidebar from "@/components/vecino/VecinoSidebar";
@@ -131,7 +144,7 @@ export default function VecinoDashboardPage() {
               href="/vecino/mesa-ayuda"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40 text-xs font-semibold hover:bg-indigo-100 transition"
             >
-              <span>🤖</span>
+              <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>Consultar IA (Gemini)</span>
             </Link>
 
@@ -157,15 +170,15 @@ export default function VecinoDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Hola, {unidad.propietario_nombre.split(",")[0]} 👋
+                Hola, {unidad.propietario_nombre.split(",")[0]}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Bienvenido al panel del Consorcio Calle 425. Aquí tiene el control integral de su unidad.
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300 shadow-sm self-start sm:self-auto">
-              <span>💧</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300 shadow-xs self-start sm:self-auto">
+              <Droplets className="w-3.5 h-3.5 text-sky-500" />
               <span>Tanque de Agua: <strong>Limpio (12/08)</strong></span>
             </div>
           </div>
@@ -183,8 +196,8 @@ export default function VecinoDashboardPage() {
             {/* Banner de semana activa */}
             <div className="w-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xl shrink-0">
-                  🧹
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 stroke-[2]" />
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
@@ -196,13 +209,15 @@ export default function VecinoDashboardPage() {
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 text-xs font-semibold shadow-xs border border-amber-200 dark:border-amber-800/50">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 text-xs font-semibold shadow-xs border border-amber-200 dark:border-amber-800/50">
+                <Clock className="w-3.5 h-3.5" />
                 En progreso (3 días restantes)
               </span>
             </div>
 
             <div className="mb-4">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>Checklist interactivo de guardia</span>
                 <span className="text-[11px] text-slate-400 font-normal">
                   (Reglamento Interno Art. 9)
@@ -251,15 +266,17 @@ export default function VecinoDashboardPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Link
                 href="/vecino/limpieza"
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition"
               >
-                Ver Calendario Anual de Guardias →
+                <span>Ver Calendario Anual de Guardias</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/vecino/limpieza"
-                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Solicitar Permuta de Turno ⇄
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Solicitar Permuta de Turno</span>
               </Link>
             </div>
           </section>
@@ -270,7 +287,8 @@ export default function VecinoDashboardPage() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                  <span>🎫</span> Mesa de Ayuda ITIL
+                  <LifeBuoy className="w-4 h-4" />
+                  <span>Mesa de Ayuda ITIL</span>
                 </div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   Reportar Incidencia o Falla
@@ -284,9 +302,10 @@ export default function VecinoDashboardPage() {
                 <span className="text-xs text-slate-400">1 Ticket en curso</span>
                 <Link
                   href="/vecino/mesa-ayuda"
-                  className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-xs font-semibold transition"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-xs font-semibold transition"
                 >
-                  Abrir Ticket →
+                  <span>Abrir Ticket</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
@@ -295,7 +314,8 @@ export default function VecinoDashboardPage() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                  <span>🗳️</span> Democracia Consorcial
+                  <Vote className="w-4 h-4" />
+                  <span>Democracia Consorcial</span>
                 </div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   Votación de Presupuestos
@@ -309,9 +329,10 @@ export default function VecinoDashboardPage() {
                 <span className="text-xs text-emerald-600 font-semibold">1 Votación Activa</span>
                 <Link
                   href="/vecino/votaciones"
-                  className="px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-semibold transition"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-semibold transition"
                 >
-                  Votar Ahora →
+                  <span>Votar Ahora</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>

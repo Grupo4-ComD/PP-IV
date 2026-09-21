@@ -5,6 +5,22 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Building2,
+  Home,
+  ShieldCheck,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Zap,
+  KeyRound,
+  ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  X,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -156,7 +172,7 @@ export default function LoginPage() {
 
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-indigo-200/60 dark:border-indigo-800/40">
-                <span>🏢</span>
+                <Building2 className="w-3.5 h-3.5" />
                 <span>Propiedad Horizontal</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -175,14 +191,14 @@ export default function LoginPage() {
           {/* Feedback de errores y éxitos */}
           {errorMsg && (
             <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5 animate-shake">
-              <span className="text-base">⚠️</span>
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
               <span className="font-medium">{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
             <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2.5">
-              <span className="text-base">✅</span>
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
               <span className="font-medium">{successMsg}</span>
             </div>
           )}
@@ -199,8 +215,8 @@ export default function LoginPage() {
                 <span className="text-[11px] text-slate-400 font-normal">Vecinos y Admin</span>
               </label>
               <div className="relative flex items-center">
-                <span className="absolute left-3 text-slate-400 text-base pointer-events-none">
-                  ✉️
+                <span className="absolute left-3 text-slate-400 pointer-events-none">
+                  <Mail className="w-4 h-4" />
                 </span>
                 <input
                   id="identifier"
@@ -229,15 +245,15 @@ export default function LoginPage() {
                     setShowForgotModal(true);
                     setForgotEmail(identifier);
                   }}
-                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline transition"
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline transition cursor-pointer"
                 >
                   ¿Olvidaste tu clave?
                 </button>
               </div>
 
               <div className="relative flex items-center">
-                <span className="absolute left-3 text-slate-400 text-base pointer-events-none">
-                  🔒
+                <span className="absolute left-3 text-slate-400 pointer-events-none">
+                  <Lock className="w-4 h-4" />
                 </span>
                 <input
                   id="password"
@@ -252,9 +268,13 @@ export default function LoginPage() {
                   type="button"
                   aria-label="Mostrar u ocultar contraseña"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 text-xs"
+                  className="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 transition cursor-pointer"
                 >
-                  {showPassword ? "Ocultar" : "Ver"}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -272,7 +292,8 @@ export default function LoginPage() {
               </label>
 
               <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <span>🛡️</span> Portal Seguro TLS
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Portal Seguro TLS</span>
               </span>
             </div>
 
@@ -280,17 +301,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all disabled:opacity-70 cursor-pointer"
+              className="mt-2 w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all disabled:opacity-70 cursor-pointer group"
             >
               {loading ? (
                 <>
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Verificando credenciales...</span>
                 </>
               ) : (
                 <>
                   <span>Ingresar al Consorcio</span>
-                  <span>→</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}
             </button>
@@ -300,7 +321,8 @@ export default function LoginPage() {
           <section className="rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <span>⚡</span> Accesos Rápidos de Demostración
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>Accesos Rápidos de Demostración</span>
               </span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
                 Live Demo
@@ -315,8 +337,8 @@ export default function LoginPage() {
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold">
-                    🏢
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <Building2 className="w-4 h-4" />
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
@@ -332,9 +354,7 @@ export default function LoginPage() {
                     </span>
                   </div>
                 </div>
-                <span className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all text-sm">
-                  →
-                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Demo Vecino */}
@@ -344,8 +364,8 @@ export default function LoginPage() {
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
-                    🏠
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <Home className="w-4 h-4" />
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
@@ -361,9 +381,7 @@ export default function LoginPage() {
                     </span>
                   </div>
                 </div>
-                <span className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all text-sm">
-                  →
-                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
               </button>
             </div>
           </section>
@@ -386,14 +404,14 @@ export default function LoginPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
             <button
               onClick={() => setShowForgotModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-sm"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition cursor-pointer"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
 
             <div className="text-center mb-5">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl mx-auto mb-3">
-                🔑
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
+                <KeyRound className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 Recuperar Contraseña
@@ -405,13 +423,18 @@ export default function LoginPage() {
 
             {forgotMsg && (
               <div
-                className={`p-3 rounded-xl text-xs mb-4 ${
+                className={`p-3 rounded-xl text-xs mb-4 flex items-center gap-2 ${
                   forgotMsg.type === "success"
                     ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200"
                     : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200"
                 }`}
               >
-                {forgotMsg.text}
+                {forgotMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                )}
+                <span>{forgotMsg.text}</span>
               </div>
             )}
 
@@ -434,16 +457,23 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="w-1/2 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-1/2 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow transition disabled:opacity-70"
+                  className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow transition disabled:opacity-70 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  {forgotLoading ? "Enviando..." : "Enviar Enlace"}
+                  {forgotLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <span>Enviar Enlace</span>
+                  )}
                 </button>
               </div>
             </form>

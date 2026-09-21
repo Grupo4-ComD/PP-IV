@@ -1,6 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import {
+  Receipt,
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Paperclip,
+  CreditCard,
+  TrendingUp,
+  Wallet,
+  ShieldCheck,
+} from "lucide-react";
 import UploadComprobanteModal from "./UploadComprobanteModal";
 import PdfExportButton from "./PdfExportButton";
 
@@ -85,7 +97,8 @@ export default function EstadoCuentaCard({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 stroke-[2.2]" />
               Estado de Cuenta y Expensas
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
@@ -102,15 +115,18 @@ export default function EstadoCuentaCard({
         <div>
           {expensa.estado === "pagado" ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
-              <span>●</span> Expensa al Día
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 stroke-[2.2]" />
+              Expensa al Día
             </span>
           ) : expensa.estado === "en_verificacion" ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
-              <span className="animate-pulse">●</span> Pago en Verificación
+              <Clock className="w-3.5 h-3.5 text-indigo-600 animate-spin stroke-[2.2]" />
+              Pago en Verificación
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
-              <span>●</span> Pendiente de Pago
+              <AlertCircle className="w-3.5 h-3.5 text-rose-600 stroke-[2.2]" />
+              Pendiente de Pago
             </span>
           )}
         </div>
@@ -120,23 +136,26 @@ export default function EstadoCuentaCard({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 my-6">
         {/* Monto Ordinario */}
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Gasto Ordinario Base
-          </span>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Gasto Ordinario Base</span>
+          </div>
           <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
             ${expensa.monto_ordinario.toLocaleString("es-AR")}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Vence: {expensa.fecha_vencimiento}
-          </p>
+          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
+            <Calendar className="w-3 h-3" />
+            <span>Vence: {expensa.fecha_vencimiento}</span>
+          </div>
         </div>
 
         {/* Recargo por Mora (7%) */}
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Recargo por Mora
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Recargo por Mora</span>
+            </div>
             {tieneMora && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">
                 +7% Vencido
@@ -155,9 +174,10 @@ export default function EstadoCuentaCard({
 
         {/* Total a Pagar */}
         <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40">
-          <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
-            Total a Liquidar
-          </span>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Total a Liquidar</span>
+          </div>
           <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
             ${expensa.total_pagar.toLocaleString("es-AR")}
           </div>
@@ -180,7 +200,7 @@ export default function EstadoCuentaCard({
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200/60 dark:border-indigo-800/40 transition"
             >
-              <span>📎</span>
+              <Paperclip className="w-3.5 h-3.5" />
               <span>Ver Comprobante Adjunto</span>
             </a>
           )}
@@ -192,7 +212,7 @@ export default function EstadoCuentaCard({
             onClick={() => setIsModalOpen(true)}
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/25 transition cursor-pointer flex items-center gap-2"
           >
-            <span>💳</span>
+            <CreditCard className="w-4 h-4 stroke-[2]" />
             <span>
               {expensa.estado === "en_verificacion"
                 ? "Reemplazar Comprobante"
