@@ -1,0 +1,59 @@
+name: CI/CD Pipeline - DeveloPet Friendly
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Type Check, Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout código fuente
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Instalar Dependencias
+        run: npm ci
+
+      - name: 🛡️ Generar Cliente Prisma
+        run: npx prisma generate
+
+      - name: 🔍 Validación de Tipos TypeScript (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: 🧹 Ejecutar Linter (ESLint)
+        run: npm run lint
+
+      - name: 🏗️ Compilar Proyecto (Next.js Build Test)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres' }}
+
+  deploy:
+    name: 🚀 Deploy a Vercel
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout código fuente
+        uses: actions/checkout@v4
+
+      - name: 🌐 Notificación de Deploy a Vercel
+        run: |
+          echo "Validaciones de TypeScript, Lint y Build completadas exitosamente."
+          echo "El repositorio está vinculado a Vercel para auto-deploy en branch 'main'."

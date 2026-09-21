@@ -1,0 +1,216 @@
+"use client";
+
+import React, { useState } from "react";
+import UploadComprobanteModal from "./UploadComprobanteModal";
+import PdfExportButton from "./PdfExportButton";
+
+export interface ExpensaData {
+  id: number | string;
+  unidad_id: number;
+  periodo_mes: number;
+  periodo_anio: number;
+  monto_ordinario: number;
+  recargo_mora: number;
+  total_pagar: number;
+  fecha_vencimiento: string;
+  estado: "pendiente" | "en_verificacion" | "pagado";
+  comprobante_url?: string | null;
+  fecha_pago?: string | null;
+}
+
+export interface UnidadData {
+  id: number;
+  numero_uf: number;
+  piso_depto: string;
+  propietario_nombre: string;
+  email: string;
+}
+
+interface EstadoCuentaProps {
+  expensaInicial?: ExpensaData;
+  unidadInicial?: UnidadData;
+}
+
+const mesesNombres = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+];
+
+export default function EstadoCuentaCard({
+  expensaInicial,
+  unidadInicial,
+}: EstadoCuentaProps) {
+  // Datos por defecto para demostración fluida
+  const [unidad] = useState<UnidadData>(
+    unidadInicial || {
+      id: 3,
+      numero_uf: 3,
+      piso_depto: "1° B",
+      propietario_nombre: "Martínez, Laura",
+      email: "laura.martinez@calle425.com",
+    }
+  );
+
+  const [expensa, setExpensa] = useState<ExpensaData>(
+    expensaInicial || {
+      id: 101,
+      unidad_id: 3,
+      periodo_mes: 9,
+      periodo_anio: 2026,
+      monto_ordinario: 48500,
+      recargo_mora: 3395, // 7% aplicado si venció
+      total_pagar: 51895,
+      fecha_vencimiento: "2026-09-10",
+      estado: "pendiente",
+      comprobante_url: null,
+    }
+  );
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const nombreMes = mesesNombres[expensa.periodo_mes - 1] || "Mes Actual";
+  const tieneMora = expensa.recargo_mora > 0 && expensa.estado !== "pagado";
+
+  const handleUploadSuccess = (comprobanteUrl: string) => {
+    setExpensa((prev) => ({
+      ...prev,
+      estado: "en_verificacion",
+      comprobante_url: comprobanteUrl,
+    }));
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm transition-all">
+      {/* Header de la tarjeta */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              Estado de Cuenta y Expensas
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              UF 0{unidad.numero_uf} ({unidad.piso_depto})
+            </span>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            Período {nombreMes} {expensa.periodo_anio}
+          </h2>
+        </div>
+
+        {/* Badge de Estado */}
+        <div>
+          {expensa.estado === "pagado" ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+              <span>●</span> Expensa al Día
+            </span>
+          ) : expensa.estado === "en_verificacion" ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
+              <span className="animate-pulse">●</span> Pago en Verificación
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
+              <span>●</span> Pendiente de Pago
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Desglose de Montos */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 my-6">
+        {/* Monto Ordinario */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            Gasto Ordinario Base
+          </span>
+          <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
+            ${expensa.monto_ordinario.toLocaleString("es-AR")}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Vence: {expensa.fecha_vencimiento}
+          </p>
+        </div>
+
+        {/* Recargo por Mora (7%) */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Recargo por Mora
+            </span>
+            {tieneMora && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">
+                +7% Vencido
+              </span>
+            )}
+          </div>
+          <div className={`text-xl font-bold mt-1 ${tieneMora ? "text-rose-600 dark:text-rose-400" : "text-slate-400"}`}>
+            ${expensa.recargo_mora.toLocaleString("es-AR")}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {tieneMora
+              ? "Calculado automáticamente por trigger SQL"
+              : "Sin mora aplicada"}
+          </p>
+        </div>
+
+        {/* Total a Pagar */}
+        <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40">
+          <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+            Total a Liquidar
+          </span>
+          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+            ${expensa.total_pagar.toLocaleString("es-AR")}
+          </div>
+          <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/70 mt-1">
+            {expensa.estado === "pagado" ? "Saldo cancelado" : "Importe exigible"}
+          </p>
+        </div>
+      </div>
+
+      {/* Barra de Acciones */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          {/* Botón de Exportar PDF */}
+          <PdfExportButton unidad={unidad} expensa={expensa} />
+
+          {expensa.comprobante_url && (
+            <a
+              href={expensa.comprobante_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200/60 dark:border-indigo-800/40 transition"
+            >
+              <span>📎</span>
+              <span>Ver Comprobante Adjunto</span>
+            </a>
+          )}
+        </div>
+
+        {/* Botón de Pagar / Informar Transferencia */}
+        {expensa.estado !== "pagado" && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/25 transition cursor-pointer flex items-center gap-2"
+          >
+            <span>💳</span>
+            <span>
+              {expensa.estado === "en_verificacion"
+                ? "Reemplazar Comprobante"
+                : "Informar Transferencia / Mercado Pago"}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Modal de Carga de Comprobante */}
+      <UploadComprobanteModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        expensaId={expensa.id}
+        totalPagar={expensa.total_pagar}
+        periodoTexto={`${nombreMes} ${expensa.periodo_anio}`}
+        onSuccess={handleUploadSuccess}
+      />
+    </div>
+  );
+}
