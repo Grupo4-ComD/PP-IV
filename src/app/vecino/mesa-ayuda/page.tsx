@@ -1,121 +1,585 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import NuevoTicketModal, { TicketItem } from "@/components/vecino/NuevoTicketModal";
+import DetalleTicketModal from "@/components/vecino/DetalleTicketModal";
 
 export default function MesaAyudaPage() {
+  const supabase = createClient();
+
+  const [unidad] = useState({
+    id: 3,
+    numero_uf: 3,
+    piso_depto: "1° B",
+    propietario_nombre: "Martínez, Laura",
+  });
+
+  // Lista de Tickets
+  const [tickets, setTickets] = useState<TicketItem[]>([
+    {
+      id: 1,
+      ticket_code: "#TK-104",
+      unidad_id: 3,
+      numero_uf: 3,
+      titulo: "Falla cerradura electromagnética puerta de ingreso principal",
+      descripcion:
+        "La cerradura eléctrica emite un zumbido constante y no traba automáticamente al cerrar el blindex exterior. Representa un riesgo inminente de acceso indebido.",
+      categoria: "cerrajeria",
+      estado: "en_revision",
+      prioridad: "urgente",
+      ubicacion: "Acceso PB / Entrada General",
+      proveedor_asignado: "Cerrajería Integral San Martín (O.T. #8834)",
+      fecha_creacion: "Ayer, 16:30 hs",
+      comentarios: [
+        {
+          id: 1,
+          autor: "Martínez, Laura (UF 03)",
+          rol: "vecino",
+          texto: "Notamos que anoche quedó abierta de par en par. Sugiero revisión urgente del electroimán.",
+          fecha: "Ayer 16:35 hs",
+        },
+        {
+          id: 2,
+          autor: "Paula Admin",
+          rol: "admin",
+          texto: "Ticket clasificado con prioridad Urgente. Se coordinó visita técnica con Cerrajería San Martín.",
+          fecha: "Ayer 17:10 hs",
+        },
+        {
+          id: 3,
+          autor: "Cerrajería San Martín",
+          rol: "proveedor",
+          texto: "Visita pactada para hoy 10:00 hs con repuesto de bobina electromagnética de 300kg.",
+          fecha: "Hoy 08:30 hs",
+        },
+      ],
+    },
+    {
+      id: 2,
+      ticket_code: "#TK-098",
+      unidad_id: 5,
+      numero_uf: 5,
+      titulo: "Humedad en cielorraso palier piso 2",
+      descripcion:
+        "Se detectó una mancha circular de 40cm con desprendimiento de pintura sobre el sector frente a los ascensores. Posible filtración en caño de desagüe pluvial.",
+      categoria: "plomeria",
+      estado: "abierto",
+      prioridad: "media",
+      ubicacion: "Palier común 2° piso",
+      proveedor_asignado: "HidroServicios SRL (En inspección)",
+      fecha_creacion: "04 de Septiembre",
+      comentarios: [
+        {
+          id: 1,
+          autor: "Fernández, Lucía (UF 05)",
+          rol: "vecino",
+          texto: "Empezó a gotear luego de las lluvias del fin de semana.",
+          fecha: "04 Sep 11:20 hs",
+        },
+        {
+          id: 2,
+          autor: "Paula Admin",
+          rol: "admin",
+          texto: "Se solicitó presupuesto y diagnóstico con cámara térmica al plomero.",
+          fecha: "04 Sep 14:00 hs",
+        },
+      ],
+    },
+    {
+      id: 3,
+      ticket_code: "#TK-092",
+      unidad_id: 1,
+      numero_uf: 1,
+      titulo: "Reemplazo luminaria dicroica LED acceso cochera",
+      descripcion:
+        "La lámpara del acceso vehicular parpadea intermitentemente impidiendo visibilidad nocturna en portón.",
+      categoria: "electricidad",
+      estado: "resuelto",
+      prioridad: "baja",
+      ubicacion: "Rampa Cochera Subsuelo",
+      proveedor_asignado: "ElectroSur Instalaciones",
+      fecha_creacion: "28 de Agosto",
+      comentarios: [
+        {
+          id: 1,
+          autor: "ElectroSur Instalaciones",
+          rol: "proveedor",
+          texto: "Se reemplazó driver y artefacto LED estanco de 18W. Funcionamiento verificado.",
+          fecha: "29 Ago 16:00 hs",
+        },
+      ],
+    },
+  ]);
+
+  // Filtros de navegación
+  const [tabFiltro, setTabFiltro] = useState<"mis" | "todos" | "resueltos">("mis");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Modales
+  const [showNuevoModal, setShowNuevoModal] = useState(false);
+  const [ticketSeleccionado, setTicketSeleccionado] = useState<TicketItem | null>(null);
+
+  // Cargar tickets de Supabase si existen
+  useEffect(() => {
+    async function loadTickets() {
+      try {
+        const { data } = await supabase
+          .from("tickets_reclamos")
+          .select("*, unidades(numero_uf, piso_depto)")
+          .order("id", { ascending: false });
+
+        if (data && data.length > 0) {
+          const mapped: TicketItem[] = data.map((t: any) => ({
+            id: t.id,
+            ticket_code: `#TK-${t.id + 100}`,
+            unidad_id: t.unidad_id,
+            numero_uf: t.unidades?.numero_uf || 3,
+            titulo: t.titulo,
+            descripcion: t.descripcion,
+            categoria: t.categoria || "varios",
+            estado: t.estado || "abierto",
+            prioridad: "media",
+            ubicacion: "Áreas Comunes",
+            fecha_creacion: new Date(t.fecha_creacion).toLocaleDateString("es-AR"),
+            comentarios: [],
+          }));
+
+          setTickets(mapped);
+        }
+      } catch (err) {
+        console.warn("Usando datos locales para mesa de ayuda:", err);
+      }
+    }
+    loadTickets();
+  }, []);
+
+  const handleTicketCreated = (newTicket: TicketItem) => {
+    setTickets((prev) => [newTicket, ...prev]);
+  };
+
+  const handleAddComment = (ticketId: number, nuevoComentario: string) => {
+    setTickets((prev) =>
+      prev.map((t) => {
+        if (t.id === ticketId) {
+          const updatedComentarios = [
+            ...(t.comentarios || []),
+            {
+              id: Date.now(),
+              autor: `${unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
+              rol: "vecino" as const,
+              texto: nuevoComentario,
+              fecha: "Recién",
+            },
+          ];
+          return { ...t, comentarios: updatedComentarios };
+        }
+        return t;
+      })
+    );
+
+    if (ticketSeleccionado && ticketSeleccionado.id === ticketId) {
+      setTicketSeleccionado((prev) =>
+        prev
+          ? {
+              ...prev,
+              comentarios: [
+                ...(prev.comentarios || []),
+                {
+                  id: Date.now(),
+                  autor: `${unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
+                  rol: "vecino",
+                  texto: nuevoComentario,
+                  fecha: "Recién",
+                },
+              ],
+            }
+          : null
+      );
+    }
+  };
+
+  // Filtrado de tickets
+  const filteredTickets = tickets.filter((t) => {
+    // Filtro por Tab
+    if (tabFiltro === "mis" && t.unidad_id !== unidad.id) return false;
+    if (tabFiltro === "resueltos" && t.estado !== "resuelto") return false;
+
+    // Filtro por Categoría
+    if (filtroCategoria !== "todas" && t.categoria !== filtroCategoria) return false;
+
+    // Búsqueda por texto o código
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      const matchTitulo = t.titulo.toLowerCase().includes(term);
+      const matchDesc = t.descripcion.toLowerCase().includes(term);
+      const matchCode = t.ticket_code.toLowerCase().includes(term);
+      return matchTitulo || matchDesc || matchCode;
+    }
+
+    return true;
+  });
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 shrink-0">
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <span className="text-2xl">🐾</span>
-            <div>
-              <h2 className="font-bold text-white text-base">Calle 425</h2>
-              <span className="text-xs text-indigo-400 font-medium">Portal Residente</span>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
+      {/* SIDEBAR */}
+      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 shrink-0 z-20">
+        <div className="flex flex-col gap-6">
+          <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Unidad Funcional
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Al Día
+              </span>
             </div>
+            <div className="text-base font-bold text-slate-900 dark:text-white">
+              UF 03 • 1° Piso B
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              {unidad.propietario_nombre}
+            </p>
           </div>
 
           <nav className="space-y-1">
             <Link
               href="/vecino/dashboard"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm transition"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
             >
-              <span>📊</span> Resumen General
+              <span>📊</span>
+              <span>Panel Principal</span>
             </Link>
             <Link
               href="/vecino/limpieza"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm transition"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
             >
-              <span>🧹</span> Turnos de Limpieza
+              <span>🧹</span>
+              <span>Turnos de Limpieza</span>
             </Link>
             <Link
               href="/vecino/mesa-ayuda"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs shadow-md shadow-indigo-600/20"
             >
-              <span>🎫</span> Mesa de Ayuda ITIL
+              <span>🎫</span>
+              <span>Mesa de Ayuda ITIL</span>
             </Link>
             <Link
               href="/vecino/votaciones"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm transition"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
             >
-              <span>🗳️</span> Votaciones y Asambleas
+              <span>🗳️</span>
+              <span>Votaciones y Asambleas</span>
             </Link>
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-slate-800 text-xs text-slate-400">
-          <p className="font-semibold text-white">UF 4B - Torre 1</p>
-          <p className="truncate">vecino@calle425.com</p>
-          <Link href="/login" className="text-rose-400 hover:underline mt-2 inline-block">
-            Cerrar Sesión
-          </Link>
+        <div className="flex flex-col gap-3">
+          <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-2xl p-3.5 flex items-start gap-2.5">
+            <span className="text-xl">🚨</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
+                Guardia / Urgencias
+              </span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                Plomería & Gas 24h
+              </span>
+              <a
+                href="tel:08004253343"
+                className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5 hover:underline"
+              >
+                0800-425-EDIF
+              </a>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 text-center flex items-center justify-between text-xs text-slate-400">
+            <span>DeveloPet Friendly v2.4</span>
+            <Link href="/login" className="text-rose-500 hover:underline">
+              Salir
+            </Link>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        <header className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Mesa de Ayuda ITIL e Incidentes
-            </h1>
-            <p className="text-sm text-slate-500">
-              Registre y haga seguimiento de requerimientos e incidencias edilicias con estándares de calidad ITIL 4.
-            </p>
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* TOPBAR */}
+        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🐾</span>
+            <div>
+              <h1 className="text-sm font-bold text-slate-900 dark:text-white">
+                Calle 425 • Mesa de Ayuda ITIL
+              </h1>
+              <p className="text-[11px] text-slate-400">
+                Service Desk & Mantenimiento Edilicio
+              </p>
+            </div>
           </div>
-          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow transition">
-            + Nuevo Ticket
+
+          <button
+            onClick={() => setShowNuevoModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/25 transition cursor-pointer"
+          >
+            <span>+</span>
+            <span>Nuevo Reclamo</span>
           </button>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Formulario / Lista */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base mb-4">Mis Tickets Activos</h2>
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-slate-800 text-sm">#TCK-1042</span>
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                      Prioridad Alta
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      En Curso
-                    </span>
-                  </div>
-                  <h3 className="font-medium text-slate-900 text-sm">Filtro de agua en bomba principal</h3>
-                  <p className="text-xs text-slate-500 mt-1">Proveedor asignado: HidroServicios SRL — SLA estimado: 24hs</p>
-                </div>
-                <span className="text-xs text-slate-400">Hace 2 horas</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Asistente IA Reglamento */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        {/* MAIN BODY */}
+        <main className="p-6 sm:p-8 space-y-8 max-w-6xl w-full mx-auto">
+          {/* Header de Sección */}
+          <section className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs uppercase tracking-wider mb-2">
-                <span>🤖</span> IA del Reglamento Interno
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2 border border-indigo-200/60 dark:border-indigo-800/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+                <span>ITIL 4 Service Desk • SLA Promedio 4.2h</span>
               </div>
-              <h3 className="font-bold text-lg mb-2">¿Dudas sobre normas consorciales o mascotas?</h3>
-              <p className="text-xs text-slate-300 mb-4">
-                Consulte al bot inteligente potenciado por Gemini sobre convivencia, ruidos molestos, mascotas y espacios comunes.
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Mesa de Ayuda & Mantenimiento Edilicio
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                Reporte y haga seguimiento en tiempo real de fallas e incidentes edilicios con asignación formal de proveedores homologados y acuerdos de nivel de servicio.
               </p>
             </div>
-            <div className="pt-4 border-t border-slate-800">
-              <input
-                type="text"
-                placeholder="Preguntar sobre el reglamento..."
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400 mb-2"
-              />
-              <button className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">
-                Consultar IA
+          </section>
+
+          {/* METRIC STRIP */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Tickets Activos
+              </span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">03</span>
+                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                  ✓ 2 resueltos
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Tiempo 1ra Respuesta
+              </span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                  18 <span className="text-sm font-normal text-slate-400">min</span>
+                </span>
+                <span className="text-xs font-semibold text-indigo-600">🤖 Triaje Activo</span>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Proveedores Guardia
+              </span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                  03 <span className="text-sm font-normal text-slate-400">listos</span>
+                </span>
+                <span className="text-xs text-slate-400">Plom., Elect., Cerra.</span>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Satisfacción Vecinal
+              </span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">98.4%</span>
+                <span className="text-xs font-semibold text-amber-500">★ 4.9 / 5</span>
+              </div>
+            </div>
+          </section>
+
+          {/* BARRA DE FILTROS & TABS */}
+          <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 w-fit">
+              <button
+                onClick={() => setTabFiltro("mis")}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  tabFiltro === "mis"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                Mis Reclamos ({tickets.filter((t) => t.unidad_id === unidad.id).length})
+              </button>
+              <button
+                onClick={() => setTabFiltro("todos")}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  tabFiltro === "todos"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                Reclamos del Edificio ({tickets.length})
+              </button>
+              <button
+                onClick={() => setTabFiltro("resueltos")}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  tabFiltro === "resueltos"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                Historial Resueltos ({tickets.filter((t) => t.estado === "resuelto").length})
               </button>
             </div>
-          </div>
-        </div>
-      </main>
+
+            <div className="flex items-center gap-3">
+              <div className="relative w-full sm:w-60">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar #TK o palabra..."
+                  className="w-full h-10 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs"
+                />
+              </div>
+
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                className="h-10 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs cursor-pointer"
+              >
+                <option value="todas">Todas las categorías</option>
+                <option value="plomeria">💧 Plomería</option>
+                <option value="electricidad">⚡ Electricidad</option>
+                <option value="cerrajeria">🔑 Cerrajería</option>
+                <option value="varios">🛠️ Varios</option>
+              </select>
+            </div>
+          </section>
+
+          {/* FEED DE TICKETS ITIL */}
+          <section className="space-y-4">
+            {filteredTickets.length > 0 ? (
+              filteredTickets.map((t) => {
+                const esMio = t.unidad_id === unidad.id;
+                const esUrgente = t.prioridad === "urgente";
+
+                return (
+                  <article
+                    key={t.id}
+                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-4"
+                  >
+                    {/* Top row */}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 flex-wrap text-xs">
+                        <span className="font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                          {t.ticket_code}
+                        </span>
+                        <span className="text-slate-400">• {t.fecha_creacion}</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-slate-950 text-slate-500 text-[11px] border border-slate-200 dark:border-slate-800">
+                          👤 UF 0{t.numero_uf} {esMio && "(Vos)"}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold capitalize border border-indigo-100 dark:border-indigo-900">
+                          {t.categoria === "plomeria"
+                            ? "💧 Plomería"
+                            : t.categoria === "electricidad"
+                            ? "⚡ Electricidad"
+                            : t.categoria === "cerrajeria"
+                            ? "🔑 Cerrajería"
+                            : "🛠️ Varios"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {esUrgente && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200">
+                            🚨 Urgente
+                          </span>
+                        )}
+
+                        {t.estado === "resuelto" ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200">
+                            ✓ Resuelto
+                          </span>
+                        ) : t.estado === "en_revision" ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200">
+                            ● En Curso / Proveedor Asignado
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-200">
+                            ● Pendiente de Triaje
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div>
+                      <div className="text-[11px] text-slate-400 mb-1">
+                        📍 Sector: {t.ubicacion || "Áreas Comunes"}
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        {t.titulo}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                        {t.descripcion}
+                      </p>
+                    </div>
+
+                    {/* Footer con Proveedor y Botón */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      {t.proveedor_asignado ? (
+                        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold">
+                          <span>🛠️</span>
+                          <span>{t.proveedor_asignado}</span>
+                        </div>
+                      ) : (
+                        <div className="text-slate-400 italic">
+                          En proceso de asignación técnica por administración
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setTicketSeleccionado(t)}
+                        className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                      >
+                        <span>💬</span>
+                        <span>Ver Seguimiento ({t.comentarios?.length || 0} comentarios)</span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <span className="text-4xl mb-3 block">📋</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  No se encontraron tickets con este criterio
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Cambie de pestaña o cree un nuevo ticket si detectó algún inconveniente.
+                </p>
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
+
+      {/* MODAL CREAR TICKET */}
+      <NuevoTicketModal
+        isOpen={showNuevoModal}
+        onClose={() => setShowNuevoModal(false)}
+        unidadId={unidad.id}
+        numeroUf={unidad.numero_uf}
+        onTicketCreated={handleTicketCreated}
+      />
+
+      {/* MODAL DETALLE DE TICKET */}
+      <DetalleTicketModal
+        ticket={ticketSeleccionado}
+        onClose={() => setTicketSeleccionado(null)}
+        onAddComment={handleAddComment}
+      />
     </div>
   );
 }
