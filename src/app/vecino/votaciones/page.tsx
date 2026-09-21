@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ProgressBarConsenso from "@/components/vecino/ProgressBarConsenso";
+import VecinoSidebar from "@/components/vecino/VecinoSidebar";
 
 interface PresupuestoItem {
   id: number;
@@ -236,86 +237,8 @@ export default function VotacionesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
-      {/* SIDEBAR */}
-      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 shrink-0 z-20">
-        <div className="flex flex-col gap-6">
-          <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Unidad Funcional
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800/40">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Al Día
-              </span>
-            </div>
-            <div className="text-base font-bold text-slate-900 dark:text-white">
-              UF 03 • 1° Piso B
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-              {miUnidad.propietario_nombre}
-            </p>
-          </div>
-
-          <nav className="space-y-1">
-            <Link
-              href="/vecino/dashboard"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
-            >
-              <span>📊</span>
-              <span>Panel Principal</span>
-            </Link>
-            <Link
-              href="/vecino/limpieza"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
-            >
-              <span>🧹</span>
-              <span>Turnos de Limpieza</span>
-            </Link>
-            <Link
-              href="/vecino/mesa-ayuda"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition"
-            >
-              <span>🎫</span>
-              <span>Mesa de Ayuda ITIL</span>
-            </Link>
-            <Link
-              href="/vecino/votaciones"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs shadow-md shadow-indigo-600/20"
-            >
-              <span>🗳️</span>
-              <span>Votaciones y Asambleas</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-2xl p-3.5 flex items-start gap-2.5">
-            <span className="text-xl">🚨</span>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
-                Guardia / Urgencias
-              </span>
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                Plomería & Gas 24h
-              </span>
-              <a
-                href="tel:08004253343"
-                className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5 hover:underline"
-              >
-                0800-425-EDIF
-              </a>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 text-center flex items-center justify-between text-xs text-slate-400">
-            <span>DeveloPet Friendly v2.4</span>
-            <Link href="/login" className="text-rose-500 hover:underline">
-              Salir
-            </Link>
-          </div>
-        </div>
-      </aside>
+      {/* SIDEBAR REUTILIZABLE CON ICONOS MODERNOS */}
+      <VecinoSidebar unidad={miUnidad} />
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">

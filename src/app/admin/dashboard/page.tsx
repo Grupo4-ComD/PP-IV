@@ -1,55 +1,88 @@
 import React from "react";
 import Link from "next/link";
+import {
+  Building2,
+  LayoutDashboard,
+  Receipt,
+  Wrench,
+  Settings,
+  LogOut,
+  PlusCircle,
+} from "lucide-react";
 
 export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
       {/* Sidebar Admin */}
-      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col justify-between p-6 shrink-0 border-r border-slate-800">
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <span className="text-2xl">🏢</span>
+      <aside className="w-72 bg-slate-950 text-slate-300 flex flex-col justify-between p-6 shrink-0 border-r border-slate-800/80 shadow-xl">
+        <div className="flex flex-col gap-6">
+          {/* Header Administración */}
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+              <Building2 className="w-5 h-5 stroke-[2.2]" />
+            </div>
             <div>
-              <h2 className="font-bold text-white text-base">Consorcio 425</h2>
-              <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">
-                Administración
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-white text-sm tracking-tight">Consorcio 425</span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                  ADMIN
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">Gestión Central</p>
             </div>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1.5" aria-label="Navegación del Administrador">
             <Link
               href="/admin/dashboard"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md shadow-emerald-600/25 ring-1 ring-emerald-500 transition"
             >
-              <span>📈</span> Panel Central
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                <LayoutDashboard className="w-4 h-4 stroke-[2]" />
+              </div>
+              <span>Panel Central</span>
             </Link>
             <a
               href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 text-sm transition"
+              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
             >
-              <span>💰</span> Liquidación Expensas
+              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
+                <Receipt className="w-4 h-4 stroke-[2]" />
+              </div>
+              <span>Liquidación Expensas</span>
             </a>
             <a
               href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 text-sm transition"
+              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
             >
-              <span>🛠️</span> Mesa ITIL & Proveedores
+              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
+                <Wrench className="w-4 h-4 stroke-[2]" />
+              </div>
+              <span>Mesa ITIL & Proveedores</span>
             </a>
             <a
               href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 text-sm transition"
+              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
             >
-              <span>⚙️</span> Configuración Consorcio
+              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
+                <Settings className="w-4 h-4 stroke-[2]" />
+              </div>
+              <span>Configuración Consorcio</span>
             </a>
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-slate-800 text-xs text-slate-400">
-          <p className="font-semibold text-white">Paula Admin</p>
-          <p className="truncate">admin@calle425.com</p>
-          <Link href="/login" className="text-rose-400 hover:underline mt-2 inline-block">
-            Cerrar Sesión
+        <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div>
+            <p className="font-semibold text-white">Paula Admin</p>
+            <p className="text-[11px] text-slate-500 truncate">admin@calle425.com</p>
+          </div>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-400 font-medium transition"
+          >
+            <LogOut className="w-3.5 h-3.5 stroke-[2]" />
+            <span>Salir</span>
           </Link>
         </div>
       </aside>
