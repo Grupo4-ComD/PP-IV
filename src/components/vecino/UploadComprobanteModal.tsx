@@ -192,7 +192,7 @@ export default function UploadComprobanteModal({
                     className="max-h-32 object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
                   />
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ✓ {file?.name} ({(file?.size! / 1024).toFixed(0)} KB)
+                    ✓ {file?.name} ({file ? (file.size / 1024).toFixed(0) : 0} KB)
                   </span>
                   <span className="text-[11px] text-indigo-600 dark:text-indigo-400 underline">
                     Cambiar archivo
