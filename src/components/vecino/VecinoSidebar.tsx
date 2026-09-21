@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -60,10 +61,17 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
   return (
     <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 shrink-0 z-20">
       <div className="flex flex-col gap-6">
-        {/* Header Consorcio & Brand */}
+        {/* Header Consorcio & Brand con Logo Oficial */}
         <div className="flex items-center gap-3 px-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
-            <Building2 className="w-5 h-5 stroke-[2.2]" />
+          <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm bg-white shrink-0">
+            <Image
+              src="/logo.png"
+              alt="Logo Consorcio Inteligente Calle 425"
+              fill
+              sizes="44px"
+              className="object-contain p-0.5"
+              priority
+            />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
@@ -75,7 +83,7 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              DeveloPet Friendly
+              Consorcio Inteligente
             </p>
           </div>
         </div>

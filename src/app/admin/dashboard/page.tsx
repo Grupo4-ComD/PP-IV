@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Building2,
   LayoutDashboard,
@@ -16,10 +17,17 @@ export default function AdminDashboardPage() {
       {/* Sidebar Admin */}
       <aside className="w-72 bg-slate-950 text-slate-300 flex flex-col justify-between p-6 shrink-0 border-r border-slate-800/80 shadow-xl">
         <div className="flex flex-col gap-6">
-          {/* Header Administración */}
+          {/* Header Administración con Logo Oficial */}
           <div className="flex items-center gap-3 px-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-              <Building2 className="w-5 h-5 stroke-[2.2]" />
+            <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-800 shadow-md bg-white shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Logo Consorcio 425"
+                fill
+                sizes="44px"
+                className="object-contain p-0.5"
+                priority
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">

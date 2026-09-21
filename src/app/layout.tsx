@@ -15,9 +15,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DeveloPet Friendly 🐾 — Consorcio Calle 425",
+  title: "Consorcio Calle 425 — Consorcio Inteligente",
   description:
-    "Plataforma integral de gestión residencial para el Consorcio Calle 425.",
+    "Plataforma integral de gestión residencial, transparencia y convivencia para el Consorcio Calle 425.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

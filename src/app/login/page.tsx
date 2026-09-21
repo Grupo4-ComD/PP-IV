@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -140,10 +141,17 @@ export default function LoginPage() {
       <main className="w-full max-w-[32rem] relative z-10">
         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col gap-6">
           
-          {/* Header & Identidad Consorcio Calle 425 */}
+          {/* Header & Identidad Consorcio Calle 425 con Logo Oficial */}
           <header className="flex flex-col items-center text-center gap-3">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800/50 p-2 shadow-inner flex items-center justify-center text-3xl">
-              🐾
+            <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 p-1.5 shadow-lg bg-white dark:bg-slate-900 flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Logo Consorcio Calle 425"
+                width={88}
+                height={88}
+                className="object-contain rounded-xl"
+                priority
+              />
             </div>
 
             <div>

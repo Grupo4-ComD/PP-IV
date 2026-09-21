@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import NuevoTicketModal, { TicketItem } from "@/components/vecino/NuevoTicketModal";
 import DetalleTicketModal from "@/components/vecino/DetalleTicketModal";
@@ -230,10 +231,18 @@ export default function MesaAyudaPage() {
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* TOPBAR */}
+        {/* TOPBAR CON LOGO OFICIAL */}
         <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🐾</span>
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white shrink-0 shadow-xs">
+              <Image
+                src="/logo.png"
+                alt="Logo Consorcio 425"
+                fill
+                sizes="32px"
+                className="object-contain p-0.5"
+              />
+            </div>
             <div>
               <h1 className="text-sm font-bold text-slate-900 dark:text-white">
                 Calle 425 • Mesa de Ayuda ITIL
