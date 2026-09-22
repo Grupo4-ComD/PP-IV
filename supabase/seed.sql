@@ -77,25 +77,33 @@ END $$;
 
 
 -- ------------------------------------------------------------------------------
--- 2. INSERTAR LAS 9 UNIDADES FUNCIONALES DEL CONSORCIO CALLE 425
+-- 2. INSERTAR LAS 9 UNIDADES FUNCIONALES DEL CONSORCIO CALLE 425 (CON PORCENTUAL M2)
 -- ------------------------------------------------------------------------------
-INSERT INTO public.unidades (numero_uf, piso_depto, propietario_nombre, email, telefono, rol_user, user_id)
+-- Distribución oficial según m2 de unidades funcionales:
+-- 1 - PB A: 7.60% | 2 - PB B: 7.60% | 3 - PB C: 11.20%
+-- 4 - 1° A: 9.20% | 5 - 1° B: 9.20% | 6 - 1° C: 9.50%
+-- 7 - 2° A: 15.70% | 8 - 2° B: 15.70% | 9 - 2° C: 14.30% (Total: 100.00%)
+
+ALTER TABLE public.unidades ADD COLUMN IF NOT EXISTS porcentual_m2 NUMERIC(5, 2) NOT NULL DEFAULT 11.11;
+
+INSERT INTO public.unidades (numero_uf, piso_depto, propietario_nombre, email, telefono, rol_user, user_id, porcentual_m2)
 VALUES
-    (1, 'PB A', 'Paula Administradora', 'paula.admin@calle425.com', '+54 9 11 4000-0001', 'admin'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000001'),
-    (2, 'PB B', 'González, Mario', 'mario.gonzalez@calle425.com', '+54 9 11 4000-0002', 'vecino'::rol_usuario_enum, NULL),
-    (3, 'Piso 1 A', 'Martínez, Laura', 'laura.martinez@calle425.com', '+54 9 11 4000-0003', 'vecino'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000003'),
-    (4, 'Piso 1 B', 'Rodríguez, Carlos', 'carlos.rodriguez@calle425.com', '+54 9 11 4000-0004', 'vecino'::rol_usuario_enum, NULL),
-    (5, 'Piso 2 A', 'Fernández, Lucía', 'lucia.fernandez@calle425.com', '+54 9 11 4000-0005', 'vecino'::rol_usuario_enum, NULL),
-    (6, 'Piso 2 B', 'López, Diego', 'diego.lopez@calle425.com', '+54 9 11 4000-0006', 'vecino'::rol_usuario_enum, NULL),
-    (7, 'Piso 3 A', 'Sciulli, Guillermo', 'gsciulli@calle425.com', '+54 9 11 4000-0007', 'vecino'::rol_usuario_enum, NULL),
-    (8, 'Piso 3 B', 'Greco, Verónica', 'veronica.greco@calle425.com', '+54 9 11 4000-0008', 'vecino'::rol_usuario_enum, NULL),
-    (9, 'Piso 4 A', 'Perea, Braian', 'braian.perea@calle425.com', '+54 9 11 4000-0009', 'vecino'::rol_usuario_enum, NULL)
+    (1, 'PB A', 'Paula Administradora', 'paula.admin@calle425.com', '+54 9 11 4000-0001', 'admin'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000001', 7.60),
+    (2, 'PB B', 'González, Mario', 'mario.gonzalez@calle425.com', '+54 9 11 4000-0002', 'vecino'::rol_usuario_enum, NULL, 7.60),
+    (3, 'PB C', 'Martínez, Laura', 'laura.martinez@calle425.com', '+54 9 11 4000-0003', 'vecino'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000003', 11.20),
+    (4, '1° A', 'Rodríguez, Carlos', 'carlos.rodriguez@calle425.com', '+54 9 11 4000-0004', 'vecino'::rol_usuario_enum, NULL, 9.20),
+    (5, '1° B', 'Fernández, Lucía', 'lucia.fernandez@calle425.com', '+54 9 11 4000-0005', 'vecino'::rol_usuario_enum, NULL, 9.20),
+    (6, '1° C', 'López, Diego', 'diego.lopez@calle425.com', '+54 9 11 4000-0006', 'vecino'::rol_usuario_enum, NULL, 9.50),
+    (7, '2° A', 'Sciulli, Guillermo', 'gsciulli@calle425.com', '+54 9 11 4000-0007', 'vecino'::rol_usuario_enum, NULL, 15.70),
+    (8, '2° B', 'Greco, Verónica', 'veronica.greco@calle425.com', '+54 9 11 4000-0008', 'vecino'::rol_usuario_enum, NULL, 15.70),
+    (9, '2° C', 'Perea, Braian', 'braian.perea@calle425.com', '+54 9 11 4000-0009', 'vecino'::rol_usuario_enum, NULL, 14.30)
 ON CONFLICT (numero_uf) DO UPDATE SET
     piso_depto = EXCLUDED.piso_depto,
     propietario_nombre = EXCLUDED.propietario_nombre,
     email = EXCLUDED.email,
     telefono = EXCLUDED.telefono,
     rol_user = EXCLUDED.rol_user,
+    porcentual_m2 = EXCLUDED.porcentual_m2,
     user_id = COALESCE(EXCLUDED.user_id, public.unidades.user_id);
 
 

@@ -17,6 +17,9 @@ import {
   HelpCircle,
   RotateCcw,
   Sparkles,
+  Bot,
+  BookOpen,
+  FileCode,
 } from "lucide-react";
 
 interface ConfigData {
@@ -38,6 +41,7 @@ const DEFAULT_CONFIG: ConfigData = {
 export default function AdminConfiguracionPage() {
   const supabase = createClient();
 
+  const [activeTab, setActiveTab] = useState<"parametros" | "ia_reglamento">("parametros");
   const [config, setConfig] = useState<ConfigData>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,7 +68,6 @@ export default function AdminConfiguracionPage() {
             dias_vencimiento_expensas: Number(data.dias_vencimiento_expensas) || DEFAULT_CONFIG.dias_vencimiento_expensas,
           });
         } else {
-          // Fallback a localStorage si existe
           const localStored = localStorage.getItem("calle425_config");
           if (localStored) {
             setConfig(JSON.parse(localStored));
@@ -88,7 +91,6 @@ export default function AdminConfiguracionPage() {
     setErrorMsg(null);
 
     try {
-      // Guardar en Supabase
       const { error } = await supabase
         .from("configuracion_consorcio")
         .upsert({
@@ -101,12 +103,9 @@ export default function AdminConfiguracionPage() {
           updated_at: new Date().toISOString(),
         });
 
-      // Guardar en localStorage como respaldo
       localStorage.setItem("calle425_config", JSON.stringify(config));
 
       if (error) {
-        // Si la tabla remota no fue creada aún en Supabase, confirmar guardado local
-        console.warn("Supabase upsert warning:", error);
         setSuccessMsg("¡Parámetros guardados y sincronizados localmente con éxito!");
       } else {
         setSuccessMsg("¡Parámetros del Consorcio Calle 425 actualizados correctamente en Supabase!");
@@ -144,18 +143,18 @@ export default function AdminConfiguracionPage() {
 
       {/* Contenido Principal */}
       <main className="flex-1 p-6 sm:p-10 overflow-y-auto max-w-6xl">
-        {/* Header de la Pantalla */}
-        <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Header Stitch 09 */}
+        <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
               <Settings className="w-4 h-4" />
               <span>Consorcio Calle 425 • 9 UFs</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Configuración del Consorcio
+              Configuración & Base de Conocimiento IA
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Parámetros operacionales, tasas de mora, pasarela de pagos y reglas de consenso edilicio.
+              Parámetros operacionales, tasas de mora, pasarela de pagos y reglas de convivencia para Gemini.
             </p>
           </div>
 
@@ -170,6 +169,35 @@ export default function AdminConfiguracionPage() {
             </button>
           </div>
         </header>
+
+        {/* Selector de Pestañas Stitch 09 */}
+        <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab("parametros")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === "parametros"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Parámetros Operacionales</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("ia_reglamento")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === "ia_reglamento"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            <Bot className="w-4 h-4 text-emerald-400" />
+            <span>Reglamento & Prompts de IA</span>
+          </button>
+        </div>
 
         {/* Notificaciones */}
         {successMsg && (
@@ -186,12 +214,7 @@ export default function AdminConfiguracionPage() {
           </div>
         )}
 
-        {loading ? (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center gap-3">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-            <p className="text-xs text-slate-400 font-medium">Cargando parámetros del consorcio...</p>
-          </div>
-        ) : (
+        {activeTab === "parametros" ? (
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
@@ -322,9 +345,6 @@ export default function AdminConfiguracionPage() {
                       <span>Para una cobranza de $500.000:</span>
                       <span className="font-mono">Retención: ${comisionMpEjemplo}</span>
                     </div>
-                    <p className="text-[10px] text-sky-700 dark:text-sky-400 mt-0.5">
-                      Ingreso neto al consorcio: <strong className="font-mono">${(500000 - 500000 * (config.comision_pasarela_mp / 100)).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</strong>
-                    </p>
                   </div>
                 </div>
               </div>
@@ -488,7 +508,7 @@ export default function AdminConfiguracionPage() {
               </div>
             </div>
 
-            {/* Barra de Acciones y Guardado */}
+            {/* Barra de Guardado */}
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <Sparkles className="w-4 h-4 text-emerald-500" />
@@ -514,6 +534,72 @@ export default function AdminConfiguracionPage() {
               </button>
             </div>
           </form>
+        ) : (
+          /* Pestaña: Base de Conocimiento IA y Reglamento */
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    Base de Conocimiento de Convivencia (System Prompt)
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Reglamento oficial cargado en Google Gemini para responder consultas a las 9 UFs.
+                  </p>
+                </div>
+              </div>
+
+              <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Gemini Activo</span>
+              </span>
+            </div>
+
+            <div className="space-y-4 text-xs leading-relaxed">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-indigo-500" />
+                  <span>1. Normas de Ruidos Molestos & Horarios de Descanso</span>
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Horario de descanso obligatorio de <strong>22:00 a 08:00 hs</strong> los días de semana, y hasta las <strong>10:00 hs</strong> sábados, domingos y feriados. Obras ruidosas permitidas de 08:00 a 17:00 hs.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-500" />
+                  <span>2. Tenencia Responsable de Mascotas (DeveloPet Friendly)</span>
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Se permite un máximo de 2 mascotas por UF. En espacios comunes (palieres, hall, ascensor) deben circular con correa obligatoria.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-amber-500" />
+                  <span>3. Recolección de Residuos & Limpieza Rotativa</span>
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Disposición de residuos de <strong>19:00 a 20:30 hs</strong> en bolsas herméticas. Las 9 UFs cumplen guardias rotativas semanales; el incumplimiento genera multa de $24.000 a favor de la UF sustituta.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-sky-500" />
+                  <span>4. Mudanzas & Derivación a Mesa de Ayuda</span>
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Las mudanzas deben coordinarse con 48 hs de anticipación. Para cualquier incidente no tipificado, la IA instruye al vecino abrir un ticket en la Mesa de Ayuda ITIL.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
