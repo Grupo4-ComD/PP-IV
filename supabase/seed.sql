@@ -81,15 +81,15 @@ END $$;
 -- ------------------------------------------------------------------------------
 INSERT INTO public.unidades (numero_uf, piso_depto, propietario_nombre, email, telefono, rol_user, user_id)
 VALUES
-    (1, 'PB A', 'Paula Administradora', 'paula.admin@calle425.com', '+54 9 11 4000-0001', 'admin', 'a0000000-0000-0000-0000-000000000001'),
-    (2, 'PB B', 'González, Mario', 'mario.gonzalez@calle425.com', '+54 9 11 4000-0002', 'vecino', NULL),
-    (3, 'Piso 1 A', 'Martínez, Laura', 'laura.martinez@calle425.com', '+54 9 11 4000-0003', 'vecino', 'a0000000-0000-0000-0000-000000000003'),
-    (4, 'Piso 1 B', 'Rodríguez, Carlos', 'carlos.rodriguez@calle425.com', '+54 9 11 4000-0004', 'vecino', NULL),
-    (5, 'Piso 2 A', 'Fernández, Lucía', 'lucia.fernandez@calle425.com', '+54 9 11 4000-0005', 'vecino', NULL),
-    (6, 'Piso 2 B', 'López, Diego', 'diego.lopez@calle425.com', '+54 9 11 4000-0006', 'vecino', NULL),
-    (7, 'Piso 3 A', 'Sciulli, Guillermo', 'gsciulli@calle425.com', '+54 9 11 4000-0007', 'vecino', NULL),
-    (8, 'Piso 3 B', 'Greco, Verónica', 'veronica.greco@calle425.com', '+54 9 11 4000-0008', 'vecino', NULL),
-    (9, 'Piso 4 A', 'Perea, Braian', 'braian.perea@calle425.com', '+54 9 11 4000-0009', 'vecino', NULL)
+    (1, 'PB A', 'Paula Administradora', 'paula.admin@calle425.com', '+54 9 11 4000-0001', 'admin'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000001'),
+    (2, 'PB B', 'González, Mario', 'mario.gonzalez@calle425.com', '+54 9 11 4000-0002', 'vecino'::rol_usuario_enum, NULL),
+    (3, 'Piso 1 A', 'Martínez, Laura', 'laura.martinez@calle425.com', '+54 9 11 4000-0003', 'vecino'::rol_usuario_enum, 'a0000000-0000-0000-0000-000000000003'),
+    (4, 'Piso 1 B', 'Rodríguez, Carlos', 'carlos.rodriguez@calle425.com', '+54 9 11 4000-0004', 'vecino'::rol_usuario_enum, NULL),
+    (5, 'Piso 2 A', 'Fernández, Lucía', 'lucia.fernandez@calle425.com', '+54 9 11 4000-0005', 'vecino'::rol_usuario_enum, NULL),
+    (6, 'Piso 2 B', 'López, Diego', 'diego.lopez@calle425.com', '+54 9 11 4000-0006', 'vecino'::rol_usuario_enum, NULL),
+    (7, 'Piso 3 A', 'Sciulli, Guillermo', 'gsciulli@calle425.com', '+54 9 11 4000-0007', 'vecino'::rol_usuario_enum, NULL),
+    (8, 'Piso 3 B', 'Greco, Verónica', 'veronica.greco@calle425.com', '+54 9 11 4000-0008', 'vecino'::rol_usuario_enum, NULL),
+    (9, 'Piso 4 A', 'Perea, Braian', 'braian.perea@calle425.com', '+54 9 11 4000-0009', 'vecino'::rol_usuario_enum, NULL)
 ON CONFLICT (numero_uf) DO UPDATE SET
     piso_depto = EXCLUDED.piso_depto,
     propietario_nombre = EXCLUDED.propietario_nombre,
@@ -165,7 +165,7 @@ DELETE FROM public.limpieza_rotativa WHERE semana_inicio >= '2026-09-01';
 
 -- Semana 1: UF 1 (Paula Admin) - Cumplida
 INSERT INTO public.limpieza_rotativa (unidad_id_asignada, semana_inicio, semana_fin, estado, observaciones)
-SELECT id, '2026-09-01'::DATE, '2026-09-07'::DATE, 'cumplido', 'Limpieza general de hall de entrada y pasillos cumplida en tiempo y forma.'
+SELECT id, '2026-09-01'::DATE, '2026-09-07'::DATE, 'cumplido'::estado_limpieza_enum, 'Limpieza general de hall de entrada y pasillos cumplida en tiempo y forma.'
 FROM public.unidades WHERE numero_uf = 1;
 
 -- Semana 2: UF 2 (Mario González) - Incumplida / Multada (Sustituida por UF 3)
@@ -174,7 +174,7 @@ SELECT
     u2.id,
     '2026-09-08'::DATE,
     '2026-09-14'::DATE,
-    'multado',
+    'multado'::estado_limpieza_enum,
     u3.id,
     'No se realizó el aseo programado del piso 1 y terraza; guardia cubierta por la UF 3.'
 FROM public.unidades u2, public.unidades u3
@@ -195,12 +195,12 @@ ON CONFLICT DO NOTHING;
 
 -- Semana 3: UF 3 (Laura Martínez) - Cumplida
 INSERT INTO public.limpieza_rotativa (unidad_id_asignada, semana_inicio, semana_fin, estado, observaciones)
-SELECT id, '2026-09-15'::DATE, '2026-09-21'::DATE, 'cumplido', 'Turno regular completado con desinfección de barandas y terraza.'
+SELECT id, '2026-09-15'::DATE, '2026-09-21'::DATE, 'cumplido'::estado_limpieza_enum, 'Turno regular completado con desinfección de barandas y terraza.'
 FROM public.unidades WHERE numero_uf = 3;
 
 -- Semana 4: UF 4 (Carlos Rodríguez) - Próxima guardia
 INSERT INTO public.limpieza_rotativa (unidad_id_asignada, semana_inicio, semana_fin, estado, observaciones)
-SELECT id, '2026-09-22'::DATE, '2026-09-28'::DATE, 'cumplido', 'Guardia de limpieza rotativa en curso.'
+SELECT id, '2026-09-22'::DATE, '2026-09-28'::DATE, 'cumplido'::estado_limpieza_enum, 'Guardia de limpieza rotativa en curso.'
 FROM public.unidades WHERE numero_uf = 4;
 
 
@@ -225,8 +225,8 @@ WITH nuevo_ticket_1 AS (
         u.id,
         'Filtración de agua en montante principal y sala de bombas',
         'Se detectó pérdida de presión de agua y humedad constante en el subsuelo. Urge recambio de tramo de caño maestro y sellado termofusión de 2 pulgadas.',
-        'plomeria',
-        'en_revision',
+        'plomeria'::categoria_ticket_enum,
+        'en_revision'::estado_ticket_enum,
         NOW() - INTERVAL '3 days'
     FROM public.unidades u
     WHERE u.numero_uf = 3
@@ -243,7 +243,7 @@ presupuestos_t1 AS (
         'Recambio integral de tramo termofusión de 2 pulgadas, 2 llaves de paso esféricas italianas y mano de obra con 12 meses de garantía escrita.',
         'https://storage.calle425.com/presupuestos/hidro_soluciones_tk01.pdf',
         4,
-        'aprobado' -- 4 de 9 UFs (44.4% >= 30%)
+        'aprobado'::estado_presupuesto_enum
     FROM nuevo_ticket_1 t
     UNION ALL
     SELECT
@@ -253,7 +253,7 @@ presupuestos_t1 AS (
         'Reparación de tramo galvanizado mediante acople rápido y sellador epoxi de alta resistencia.',
         'https://storage.calle425.com/presupuestos/plomeria_integral_tk01.pdf',
         1,
-        'rechazado'
+        'rechazado'::estado_presupuesto_enum
     FROM nuevo_ticket_1 t
     RETURNING id, proveedor_nombre, ticket_id
 )
@@ -290,8 +290,8 @@ WITH nuevo_ticket_2 AS (
         u.id,
         'Reparación y automatización del portón de cochera',
         'El motor de apertura del portón vehicular principal emite zumbidos anormales y se traba en el recorrido nocturno de cierre.',
-        'cerrajeria',
-        'abierto',
+        'cerrajeria'::categoria_ticket_enum,
+        'abierto'::estado_ticket_enum,
         NOW() - INTERVAL '1 day'
     FROM public.unidades u
     WHERE u.numero_uf = 4
@@ -308,7 +308,7 @@ presupuestos_t2 AS (
         'Sustitución de cremallera de acero, cambio de bujes del motor y provisión de 10 controles remotos de código rotativo.',
         'https://storage.calle425.com/presupuestos/portones_sur_tk02.pdf',
         2,
-        'en_votacion' -- 2 de 9 UFs (22.2% < 30%)
+        'en_votacion'::estado_presupuesto_enum
     FROM nuevo_ticket_2 t
     UNION ALL
     SELECT
@@ -318,7 +318,7 @@ presupuestos_t2 AS (
         'Mantenimiento general, lubricación industrial de guías y reemplazo de placa receptora monofásica.',
         'https://storage.calle425.com/presupuestos/cerrajeria_centro_tk02.pdf',
         0,
-        'en_votacion'
+        'en_votacion'::estado_presupuesto_enum
     FROM nuevo_ticket_2 t
     RETURNING id, proveedor_nombre, ticket_id
 )
