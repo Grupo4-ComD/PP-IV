@@ -1,13 +1,13 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import {
   Building2,
-  LayoutDashboard,
   Receipt,
   Wrench,
   Settings,
-  LogOut,
   Plus,
   PawPrint,
   CheckCircle2,
@@ -17,86 +17,8 @@ import {
 export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar Admin */}
-      <aside className="w-72 bg-slate-950 text-slate-300 flex flex-col justify-between p-6 shrink-0 border-r border-slate-800/80 shadow-xl">
-        <div className="flex flex-col gap-6">
-          {/* Header Administración con Logo Oficial */}
-          <div className="flex items-center gap-3 px-1">
-            <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-800 shadow-md bg-white shrink-0">
-              <Image
-                src="/logo.png"
-                alt="Logo Consorcio 425"
-                fill
-                sizes="44px"
-                className="object-contain p-0.5"
-                priority
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-white text-sm tracking-tight">Consorcio 425</span>
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                  ADMIN
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium">Gestión Central</p>
-            </div>
-          </div>
-
-          <nav className="space-y-1.5" aria-label="Navegación del Administrador">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md shadow-emerald-600/25 ring-1 ring-emerald-500 transition"
-            >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                <LayoutDashboard className="w-4 h-4 stroke-[2]" />
-              </div>
-              <span>Panel Central</span>
-            </Link>
-            <a
-              href="#"
-              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
-            >
-              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
-                <Receipt className="w-4 h-4 stroke-[2]" />
-              </div>
-              <span>Liquidación Expensas</span>
-            </a>
-            <a
-              href="#"
-              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
-            >
-              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
-                <Wrench className="w-4 h-4 stroke-[2]" />
-              </div>
-              <span>Mesa ITIL & Proveedores</span>
-            </a>
-            <a
-              href="#"
-              className="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 text-xs font-medium transition"
-            >
-              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-950/50 transition">
-                <Settings className="w-4 h-4 stroke-[2]" />
-              </div>
-              <span>Configuración Consorcio</span>
-            </a>
-          </nav>
-        </div>
-
-        <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <div>
-            <p className="font-semibold text-white">Paula Admin</p>
-            <p className="text-[11px] text-slate-500 truncate">admin@calle425.com</p>
-          </div>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-400 font-medium transition"
-          >
-            <LogOut className="w-3.5 h-3.5 stroke-[2]" />
-            <span>Salir</span>
-          </Link>
-        </div>
-      </aside>
+      {/* Sidebar Admin Modular */}
+      <AdminSidebar />
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-y-auto">
