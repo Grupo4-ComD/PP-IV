@@ -1,4 +1,4 @@
-import { PrismaClient, TipoProrrateo } from '@prisma/client';
+import { PrismaClient, CategoriaGasto } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,9 +13,17 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     orderBy: { numeroUf: 'asc' },
   });
 
+  const fechaInicio = new Date(periodoAnio, periodoMes - 1, 1);
+  const fechaFin = new Date(periodoAnio, periodoMes, 0, 23, 59, 59);
+
   // 2. Obtener gastos del período actual
   const gastosMes = await prisma.gasto.findMany({
-    where: { periodoMes, periodoAnio },
+    where: { 
+      fechaGasto: {
+        gte: fechaInicio,
+        lte: fechaFin
+      }
+    },
   });
 
   // 3. Separar gastos por tipo de prorrateo
@@ -23,9 +31,9 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
   let totalExtraordinarias = 0;
 
   gastosMes.forEach(gasto => {
-    if (gasto.tipoProrrateo === TipoProrrateo.ordinario) {
+    if (gasto.categoria === CategoriaGasto.ordinario) {
       totalOrdinarias += Number(gasto.monto);
-    } else if (gasto.tipoProrrateo === TipoProrrateo.extraordinario) {
+    } else if (gasto.categoria === CategoriaGasto.fondo_comun) {
       totalExtraordinarias += Number(gasto.monto);
     }
   });
@@ -44,8 +52,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
   const distribucion = await Promise.all(unidades.map(async (unidad) => {
     const porcentual = Number(unidad.coeficienteProrrateo);
     
-    // a) Deuda Histórica (Deuda previa al mes actual)
-    // Esto en un sistema real puede ser complejo, aquí sumamos todo lo anterior y restamos pagos anteriores
+    // a) Deuda Histórica
     const pagosAnt = await prisma.pagoVecino.aggregate({
       where: {
         unidadId: unidad.id,
@@ -69,25 +76,23 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
       _sum: { monto: true }
     });
     
-    // En el futuro, se debe sumar también el prorrateo histórico de gastos.
-    // Por ahora usamos un cálculo base.
     const deudaAnt = Number(unidad.saldoAnteriorInicial) + Number(cargosAnt._sum.monto || 0) - Number(pagosAnt._sum.monto || 0);
 
     // b) Pagos del mes actual para esta unidad
     const pagosUnidad = pagosMes.filter(p => p.unidadId === unidad.id).reduce((sum, p) => sum + Number(p.monto), 0);
 
-    // c) Subtotal (Deuda - Pagos)
+    // c) Subtotal
     const subtotal = deudaAnt - pagosUnidad;
 
     // d) Prorrateos
     const ordinariasUnidad = (totalOrdinarias * porcentual) / 100;
     
-    // Las cuotas extra (Cargos particulares tipo 'CUOTA') suman a extraordinarias
     const cargosEspeciales = cargosMes.filter(c => c.unidadId === unidad.id);
     const cuotasExtra = cargosEspeciales.filter(c => c.concepto.toUpperCase().includes('CUOTA')).reduce((s, c) => s + Number(c.monto), 0);
+    
     const extraordinariasUnidad = ((totalExtraordinarias * porcentual) / 100) + cuotasExtra;
 
-    // e) Cargos Particulares (Multas, intereses, etc)
+    // e) Cargos Particulares
     const otrosCargos = cargosEspeciales.filter(c => !c.concepto.toUpperCase().includes('CUOTA')).reduce((s, c) => s + Number(c.monto), 0);
 
     // f) Total a Pagar
@@ -109,11 +114,10 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
   }));
 
   // --- CÁLCULO ESTADO DE CAJA ---
-  // (Simplificado para emular el array ESTADO_CAJA_ITEMS)
-  let saldoCajaActual = 0; // Aquí iría una query sumando ingresos históricos - gastos históricos
-  const estadoCaja = [];
+  let saldoCajaActual = 0; 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const estadoCaja: any[] = []; 
 
-  // Ingresos del mes
   pagosMes.forEach(pago => {
     const u = unidades.find(u => u.id === pago.unidadId);
     saldoCajaActual += Number(pago.monto);
@@ -128,20 +132,19 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     });
   });
 
-  // Egresos del mes
   gastosMes.forEach(gasto => {
-    if (gasto.tipoProrrateo !== TipoProrrateo.no_prorrateable) {
+    if (gasto.categoria !== CategoriaGasto.comision_pasarela) {
       saldoCajaActual -= Number(gasto.monto);
     }
     
     estadoCaja.push({
-      tipo: gasto.tipoProrrateo === TipoProrrateo.no_prorrateable ? "fondo" : "egreso",
+      tipo: gasto.categoria === CategoriaGasto.comision_pasarela ? "fondo" : "egreso",
       detalle: gasto.concepto,
       ingresos: null,
-      ordinarias: gasto.tipoProrrateo === TipoProrrateo.ordinario ? Number(gasto.monto) : null,
-      extraordinaria: gasto.tipoProrrateo === TipoProrrateo.extraordinario ? Number(gasto.monto) : null,
-      saldo: gasto.tipoProrrateo !== TipoProrrateo.no_prorrateable ? saldoCajaActual : null,
-      nota: gasto.tipoProrrateo === TipoProrrateo.no_prorrateable ? "Gasto no descuenta de caja general" : null
+      ordinarias: gasto.categoria === CategoriaGasto.ordinario ? Number(gasto.monto) : null,
+      extraordinaria: gasto.categoria === CategoriaGasto.fondo_comun ? Number(gasto.monto) : null,
+      saldo: gasto.categoria !== CategoriaGasto.comision_pasarela ? saldoCajaActual : null,
+      nota: null
     });
   });
 

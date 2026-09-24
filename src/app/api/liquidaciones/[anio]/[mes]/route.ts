@@ -3,9 +3,10 @@ import { generarLiquidacionConsolidada } from '@/lib/liquidaciones';
 
 export async function GET(
   request: Request,
-  { params }: { params: { anio: string; mes: string } }
+  props: { params: Promise<{ anio: string; mes: string }> }
 ) {
   try {
+    const params = await props.params;
     const periodoAnio = parseInt(params.anio, 10);
     const periodoMes = parseInt(params.mes, 10);
 
