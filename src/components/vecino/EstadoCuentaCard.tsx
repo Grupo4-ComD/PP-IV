@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import UploadComprobanteModal from "./UploadComprobanteModal";
 import PdfExportButton from "./PdfExportButton";
+import CuponPagoModal from "./CuponPagoModal";
+import LiquidacionConsolidadaModal from "../admin/LiquidacionConsolidadaModal";
 
 export interface ExpensaData {
   id: number | string;
@@ -57,7 +59,7 @@ export default function EstadoCuentaCard({
     unidadInicial || {
       id: 3,
       numero_uf: 3,
-      piso_depto: "1° B",
+      piso_depto: "PB C",
       propietario_nombre: "Martínez, Laura",
       email: "laura.martinez@calle425.com",
     }
@@ -67,20 +69,22 @@ export default function EstadoCuentaCard({
     expensaInicial || {
       id: 101,
       unidad_id: 3,
-      periodo_mes: 9,
+      periodo_mes: 8,
       periodo_anio: 2026,
-      monto_ordinario: 48500,
-      recargo_mora: 3395, // 7% aplicado si venció
-      total_pagar: 51895,
-      fecha_vencimiento: "2026-09-10",
+      monto_ordinario: 20693.73,
+      recargo_mora: 0,
+      total_pagar: 52966.38,
+      fecha_vencimiento: "2026-08-10",
       estado: "pendiente",
       comprobante_url: null,
     }
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCuponOpen, setIsCuponOpen] = useState(false);
+  const [isLiquidacionOpen, setIsLiquidacionOpen] = useState(false);
 
-  const nombreMes = mesesNombres[expensa.periodo_mes - 1] || "Mes Actual";
+  const nombreMes = mesesNombres[expensa.periodo_mes - 1] || "Agosto";
   const tieneMora = expensa.recargo_mora > 0 && expensa.estado !== "pagado";
 
   const handleUploadSuccess = (comprobanteUrl: string) => {
@@ -138,10 +142,10 @@ export default function EstadoCuentaCard({
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             <Wallet className="w-3.5 h-3.5" />
-            <span>Gasto Ordinario Base</span>
+            <span>Gasto Ordinario (Prorrateo)</span>
           </div>
           <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
-            ${expensa.monto_ordinario.toLocaleString("es-AR")}
+            ${expensa.monto_ordinario.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
           </div>
           <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
             <Calendar className="w-3 h-3" />
@@ -149,26 +153,19 @@ export default function EstadoCuentaCard({
           </div>
         </div>
 
-        {/* Recargo por Mora (7%) */}
+        {/* Extraordinaria / Reserva */}
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Recargo por Mora</span>
+              <span>Extraord. / Cuota Fondo</span>
             </div>
-            {tieneMora && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">
-                +7% Vencido
-              </span>
-            )}
           </div>
-          <div className={`text-xl font-bold mt-1 ${tieneMora ? "text-rose-600 dark:text-rose-400" : "text-slate-400"}`}>
-            ${expensa.recargo_mora.toLocaleString("es-AR")}
+          <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
+            $32.275,11
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            {tieneMora
-              ? "Calculado automáticamente por trigger SQL"
-              : "Sin mora aplicada"}
+            Recupero obras y reserva
           </p>
         </div>
 
@@ -179,31 +176,34 @@ export default function EstadoCuentaCard({
             <span>Total a Liquidar</span>
           </div>
           <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-            ${expensa.total_pagar.toLocaleString("es-AR")}
+            ${expensa.total_pagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/70 mt-1">
-            {expensa.estado === "pagado" ? "Saldo cancelado" : "Importe exigible"}
+            {expensa.estado === "pagado" ? "Saldo cancelado" : "Importe exigible (Vence 10/08)"}
           </p>
         </div>
       </div>
 
-      {/* Barra de Acciones */}
+      {/* Barra de Acciones con Nuevos Botones Interactivos */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          {/* Botón de Exportar PDF */}
-          <PdfExportButton unidad={unidad} expensa={expensa} />
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Botón Ver Cupón Oficial */}
+          <button
+            onClick={() => setIsCuponOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
+          >
+            <Receipt className="w-4 h-4 text-indigo-600" />
+            <span>Ver Cupón de Pago</span>
+          </button>
 
-          {expensa.comprobante_url && (
-            <a
-              href={expensa.comprobante_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200/60 dark:border-indigo-800/40 transition"
-            >
-              <Paperclip className="w-3.5 h-3.5" />
-              <span>Ver Comprobante Adjunto</span>
-            </a>
-          )}
+          {/* Botón Ver Liquidación Completa (Hojas 1 y 2) */}
+          <button
+            onClick={() => setIsLiquidacionOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+          >
+            <CreditCard className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            <span>Ver Liquidación 9 UFs</span>
+          </button>
         </div>
 
         {/* Botón de Pagar / Informar Transferencia */}
@@ -222,7 +222,7 @@ export default function EstadoCuentaCard({
         )}
       </div>
 
-      {/* Modal de Carga de Comprobante */}
+      {/* Modales Interactivos */}
       <UploadComprobanteModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -230,6 +230,25 @@ export default function EstadoCuentaCard({
         totalPagar={expensa.total_pagar}
         periodoTexto={`${nombreMes} ${expensa.periodo_anio}`}
         onSuccess={handleUploadSuccess}
+      />
+
+      <CuponPagoModal
+        isOpen={isCuponOpen}
+        onClose={() => setIsCuponOpen(false)}
+        data={{
+          mes: `${String(expensa.periodo_mes).padStart(2, "0")}/${expensa.periodo_anio}`,
+          vencimiento: expensa.fecha_vencimiento,
+          propietario: unidad.propietario_nombre,
+          unidad: `${unidad.numero_uf} - ${unidad.piso_depto}`,
+          totalPagar: expensa.total_pagar,
+          gastosOrdinarios: expensa.monto_ordinario,
+        }}
+      />
+
+      <LiquidacionConsolidadaModal
+        isOpen={isLiquidacionOpen}
+        onClose={() => setIsLiquidacionOpen(false)}
+        periodo={`${String(expensa.periodo_mes).padStart(2, "0")} / ${expensa.periodo_anio}`}
       />
     </div>
   );

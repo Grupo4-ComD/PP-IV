@@ -15,9 +15,12 @@ import {
   Calendar,
   Building2,
   Search,
+  Layers,
 } from "lucide-react";
+import LiquidacionConsolidadaModal from "@/components/admin/LiquidacionConsolidadaModal";
 
 interface ExpensaRecord {
+
   id: number;
   unidad_id: number;
   periodo_mes: number;
@@ -42,6 +45,7 @@ export default function LiquidacionExpensasPage() {
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   const [busqueda, setBusqueda] = useState<string>("");
+  const [isLiquidacionModalOpen, setIsLiquidacionModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadExpensas() {
@@ -174,13 +178,23 @@ export default function LiquidacionExpensasPage() {
             </p>
           </div>
 
-          <Link
-            href="/admin/expensas/generar"
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 transition flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Emitir Nueva Expensa</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsLiquidacionModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-md transition flex items-center gap-2 cursor-pointer"
+            >
+              <Layers className="w-4 h-4 text-emerald-400" />
+              <span>Ver Liquidación Oficial (9 UFs)</span>
+            </button>
+
+            <Link
+              href="/admin/expensas/generar"
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 transition flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Emitir Nueva Expensa</span>
+            </Link>
+          </div>
         </header>
 
         {/* Filtros */}
@@ -278,6 +292,12 @@ export default function LiquidacionExpensasPage() {
             </table>
           </div>
         </div>
+
+        {/* Modal de Liquidación Consolidada */}
+        <LiquidacionConsolidadaModal
+          isOpen={isLiquidacionModalOpen}
+          onClose={() => setIsLiquidacionModalOpen(false)}
+        />
       </main>
     </div>
   );
