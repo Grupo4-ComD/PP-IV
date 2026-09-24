@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextResponse } from "next/server";
 
 const REGLAMENTO_SISTEMA_PROMPT = `
@@ -63,8 +63,9 @@ export async function POST(request: Request) {
     }
 
     try {
+      const google = createGoogleGenerativeAI({ apiKey });
       const result = await streamText({
-        model: google('gemini-1.5-flash', { apiKey }),
+        model: google('gemini-1.5-flash'),
         system: REGLAMENTO_SISTEMA_PROMPT,
         messages,
       });
