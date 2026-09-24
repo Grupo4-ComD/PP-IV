@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     try {
       const google = createGoogleGenerativeAI({ apiKey });
       const result = await streamText({
-        model: google('gemini-1.5-flash'),
+        model: google('gemini-3.5-flash'),
         system: REGLAMENTO_SISTEMA_PROMPT,
         messages,
       });
