@@ -24,7 +24,7 @@ export default function ChatbotReglamento() {
         id: "1",
         role: "assistant",
         content:
-          "¡Hola! Soy el **Asistente Virtual de Convivencia** del Consorcio Calle 425. ¿En qué puedo ayudarte hoy sobre el reglamento, ruidos molestos, tenencia de mascotas o espacios comunes?",
+          "¡Hola! Soy el **Asistente Virtual** del Consorcio Calle 425 - Rodríguez Peña 1454. ¿En qué puedo ayudarte hoy sobre el reglamento de copropiedad, expensas, reparaciones o uso de espacios comunes?",
       }
     ]
   });
@@ -42,10 +42,10 @@ export default function ChatbotReglamento() {
   }, [messages, isOpen, isLoading]);
 
   const suggestedQuestions = [
-    "¿Puedo pasear a mi mascota sin correa?",
-    "¿Cuáles son los horarios de descanso y ruidos?",
-    "¿Cómo funciona la multa por no limpiar?",
-    "¿A qué hora se saca la basura?",
+    "¿Puedo dejar mi bicicleta en el pasillo?",
+    "¿Hasta qué día puedo pagar las expensas?",
+    "¿Qué pasa si me atraso con el pago?",
+    "¿Puedo poner una oficina en mi departamento?",
   ];
 
   const handleSuggestedQuestion = (q: string) => {
