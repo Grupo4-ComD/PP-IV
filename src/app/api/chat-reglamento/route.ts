@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     } catch (apiError: any) {
       console.warn("Error invocando Gemini API, usando motor de respaldo:", apiError);
       const lastMessage = messages[messages.length - 1];
-      const fallback = generarRespuestaLocal(lastMessage?.content || "");
+      const fallback = generarRespuestaLocal(lastMessage?.content || "") + "\n\n(DEBUG INFO: " + (apiError?.message || "Unknown error") + ")";
       return createFallbackStream(fallback);
     }
   } catch (error) {
