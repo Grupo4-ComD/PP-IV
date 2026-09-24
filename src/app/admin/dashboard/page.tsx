@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import RegistrarCobroModal from "@/components/admin/RegistrarCobroModal";
 import {
   Building2,
   Receipt,
@@ -12,6 +13,7 @@ import {
   AlertCircle,
   Sparkles,
   Loader2,
+  DollarSign
 } from "lucide-react";
 
 interface Unidad {
@@ -36,28 +38,30 @@ export default function AdminDashboardPage() {
   });
   const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const res = await fetch("/api/admin/dashboard");
-        if (res.ok) {
-          const data = await res.json();
-          setMetricas({
-            recaudacionMes: data.recaudacionMes,
-            ufsAlDia: data.ufsAlDia,
-            ufsMora: data.ufsMora,
-            totalMoraPendiente: data.totalMoraPendiente,
-            ticketsActivos: data.ticketsActivos
-          });
-          setUnidades(data.unidades);
-        }
-      } catch (err) {
-        console.error("Error al cargar el dashboard real:", err);
-      } finally {
-        setCargando(false);
-      }
-    }
+  const [isCobroModalOpen, setIsCobroModalOpen] = useState(false);
 
+  const loadDashboard = async () => {
+    try {
+      const res = await fetch("/api/admin/dashboard");
+      if (res.ok) {
+        const data = await res.json();
+        setMetricas({
+          recaudacionMes: data.recaudacionMes,
+          ufsAlDia: data.ufsAlDia,
+          ufsMora: data.ufsMora,
+          totalMoraPendiente: data.totalMoraPendiente,
+          ticketsActivos: data.ticketsActivos
+        });
+        setUnidades(data.unidades);
+      }
+    } catch (err) {
+      console.error("Error al cargar el dashboard real:", err);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
     loadDashboard();
   }, []);
 
@@ -93,10 +97,17 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={() => setIsCobroModalOpen(true)}
+              className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5 w-full sm:w-auto justify-center"
+            >
+              <DollarSign className="w-4 h-4 text-emerald-500" />
+              <span>+ Registrar Cobro</span>
+            </button>
             <Link
               href="/admin/expensas/generar"
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 w-full sm:w-auto justify-center"
             >
               <Plus className="w-4 h-4" />
               <span>+ Emitir Expensas</span>
@@ -227,6 +238,13 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+
+        <RegistrarCobroModal 
+          isOpen={isCobroModalOpen}
+          onClose={() => setIsCobroModalOpen(false)}
+          unidades={unidades}
+          onCobroExitoso={loadDashboard}
+        />
       </main>
     </div>
   );
