@@ -108,6 +108,17 @@ function generarRespuestaLocal(pregunta: string): string {
     );
   }
 
+  if (p.includes("hola") || p.includes("buen dia") || p.includes("buenas tardes") || p.includes("saludo") || p.includes("ayuda")) {
+    return (
+      "¡Hola! Soy el Asistente Virtual del Consorcio Calle 425 en mi versión de respaldo. Todavía no me han configurado mi inteligencia avanzada, pero conozco las reglas básicas.\n\n" +
+      "Pregúntame sobre:\n" +
+      "• Pasillos y bicicletas\n" +
+      "• Pago de expensas y vencimientos\n" +
+      "• Destino de las unidades (vivienda)\n" +
+      "• Reparaciones y arreglos"
+    );
+  }
+
   // Respuesta general de triaje recomendando la Mesa de Ayuda
   return (
     "Hola vecino/a. Para este requerimiento específico o situación que requiere inspección y gestión directa, le recomendamos abrir un ticket en la **Mesa de Ayuda ITIL** (`/vecino/mesa-ayuda`).\n\n" +
