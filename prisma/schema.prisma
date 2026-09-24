@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -20,6 +21,22 @@ enum EstadoExpensa {
   pagado
 
   @@map("estado_expensa_enum")
+}
+
+enum EstadoPago {
+  pendiente
+  aprobado
+  rechazado
+
+  @@map("estado_pago_enum")
+}
+
+enum TipoProrrateo {
+  ordinario
+  extraordinario
+  no_prorrateable
+
+  @@map("tipo_prorrateo_enum")
 }
 
 enum CategoriaGasto {
@@ -64,24 +81,29 @@ enum EstadoPresupuesto {
 }
 
 model Unidad {
-  id                 BigInt        @id @default(autoincrement())
-  userId             String?       @map("user_id") @db.Uuid
-  numeroUf           Int           @unique @map("numero_uf")
-  pisoDepto          String        @map("piso_depto") @db.VarChar(10)
-  propietarioNombre  String        @map("propietario_nombre") @db.VarChar(150)
-  email              String        @unique @db.VarChar(255)
-  telefono           String?       @db.VarChar(50)
-  rolUser            RolUsuario    @default(vecino) @map("rol_user")
-  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id                   BigInt     @id @default(autoincrement())
+  userId               String?    @map("user_id") @db.Uuid
+  numeroUf             Int        @unique @map("numero_uf")
+  pisoDepto            String     @map("piso_depto") @db.VarChar(10)
+  propietarioNombre    String     @map("propietario_nombre") @db.VarChar(150)
+  email                String     @unique @db.VarChar(255)
+  telefono             String?    @db.VarChar(50)
+  rolUser              RolUsuario @default(vecino) @map("rol_user")
+  coeficienteProrrateo Decimal    @default(0.00) @map("coeficiente_prorrateo") @db.Decimal(5, 2)
+  saldoAnteriorInicial Decimal    @default(0.00) @map("saldo_anterior_inicial") @db.Decimal(12, 2)
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   expensas           Expensa[]
+  pagos              PagoVecino[]
+  cargosParticulares CargoParticular[]
   limpiezasAsignadas LimpiezaRotativa[] @relation("LimpiezaAsignada")
   limpiezasSustituta LimpiezaRotativa[] @relation("LimpiezaSustituta")
   multasInfractor    Multa[]            @relation("MultasInfractor")
   multasAcreditadas  Multa[]            @relation("MultasAcreditadas")
   tickets            TicketReclamo[]
   votos              VotoVecino[]
+  usuarios           Usuario[]
 
   @@map("unidades")
 }
@@ -101,68 +123,100 @@ model Expensa {
   createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  unidad           Unidad        @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@unique([unidadId, periodoMes, periodoAnio], name: "uq_unidad_periodo")
   @@map("expensas")
 }
 
+model PagoVecino {
+  id             BigInt     @id @default(autoincrement())
+  unidadId       BigInt     @map("unidad_id")
+  monto          Decimal    @db.Decimal(12, 2)
+  fechaPago      DateTime   @map("fecha_pago") @db.Date
+  periodoMes     Int        @map("periodo_mes")
+  periodoAnio    Int        @map("periodo_anio")
+  comprobanteUrl String?    @map("comprobante_url")
+  estado         EstadoPago @default(pendiente)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
+  @@map("pagos_vecinos")
+}
+
+model CargoParticular {
+  id          BigInt   @id @default(autoincrement())
+  unidadId    BigInt   @map("unidad_id")
+  concepto    String   @db.VarChar(255)
+  monto       Decimal  @db.Decimal(12, 2)
+  periodoMes  Int      @map("periodo_mes")
+  periodoAnio Int      @map("periodo_anio")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
+  @@map("cargos_particulares")
+}
+
 model Gasto {
-  id                   BigInt         @id @default(autoincrement())
-  concepto             String         @db.VarChar(255)
-  monto                Decimal        @db.Decimal(12, 2)
-  categoria            CategoriaGasto @default(ordinario)
-  fechaGasto           DateTime       @default(now()) @map("fecha_gasto") @db.Date
-  deduccionMpPorcentaje Decimal       @default(0.60) @map("deduccion_mp_porcentaje") @db.Decimal(5, 2)
-  comprobanteUrl       String?        @map("comprobante_url")
-  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  id                    BigInt         @id @default(autoincrement())
+  concepto              String         @db.VarChar(255)
+  monto                 Decimal        @db.Decimal(12, 2)
+  categoria             CategoriaGasto @default(ordinario)
+  fechaGasto            DateTime       @default(now()) @map("fecha_gasto") @db.Date
+  deduccionMpPorcentaje Decimal        @default(0.60) @map("deduccion_mp_porcentaje") @db.Decimal(5, 2)
+  comprobanteUrl        String?        @map("comprobante_url")
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz()
 
   @@map("gastos")
 }
 
 model LimpiezaRotativa {
-  id               BigInt         @id @default(autoincrement())
-  unidadIdAsignada BigInt         @map("unidad_id_asignada")
-  semanaInicio     DateTime       @map("semana_inicio") @db.Date
-  semanaFin        DateTime       @map("semana_fin") @db.Date
-  estado           EstadoLimpieza @default(cumplido)
-  unidadIdSustituta BigInt?       @map("unidad_id_sustituta")
-  observaciones    String?
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  id                BigInt         @id @default(autoincrement())
+  unidadIdAsignada  BigInt         @map("unidad_id_asignada")
+  semanaInicio      DateTime       @map("semana_inicio") @db.Date
+  semanaFin         DateTime       @map("semana_fin") @db.Date
+  estado            EstadoLimpieza @default(cumplido)
+  unidadIdSustituta BigInt?        @map("unidad_id_sustituta")
+  observaciones     String?
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz()
 
-  unidadAsignada   Unidad         @relation("LimpiezaAsignada", fields: [unidadIdAsignada], references: [id], onDelete: Restrict)
-  unidadSustituta  Unidad?        @relation("LimpiezaSustituta", fields: [unidadIdSustituta], references: [id], onDelete: SetNull)
+  unidadAsignada  Unidad  @relation("LimpiezaAsignada", fields: [unidadIdAsignada], references: [id], onDelete: Restrict)
+  unidadSustituta Unidad? @relation("LimpiezaSustituta", fields: [unidadIdSustituta], references: [id], onDelete: SetNull)
 
   @@map("limpieza_rotativa")
 }
 
 model Multa {
-  id                  BigInt    @id @default(autoincrement())
-  unidadIdInfractora  BigInt    @map("unidad_id_infractora")
-  monto               Decimal   @default(24000.00) @db.Decimal(12, 2)
-  acreditadoAUnidadId BigInt?   @map("acreditado_a_unidad_id")
-  fechaImputacion     DateTime  @default(now()) @map("fecha_imputacion") @db.Timestamptz()
-  motivo              String    @default("Incumplimiento de turno de limpieza rotativa") @db.VarChar(255)
-  pagada              Boolean   @default(false)
+  id                  BigInt   @id @default(autoincrement())
+  unidadIdInfractora  BigInt   @map("unidad_id_infractora")
+  monto               Decimal  @default(24000.00) @db.Decimal(12, 2)
+  acreditadoAUnidadId BigInt?  @map("acreditado_a_unidad_id")
+  fechaImputacion     DateTime @default(now()) @map("fecha_imputacion") @db.Timestamptz()
+  motivo              String   @default("Incumplimiento de turno de limpieza rotativa") @db.VarChar(255)
+  pagada              Boolean  @default(false)
 
-  unidadInfractora    Unidad    @relation("MultasInfractor", fields: [unidadIdInfractora], references: [id], onDelete: Cascade)
-  unidadAcreditada    Unidad?   @relation("MultasAcreditadas", fields: [acreditadoAUnidadId], references: [id], onDelete: SetNull)
+  unidadInfractora Unidad  @relation("MultasInfractor", fields: [unidadIdInfractora], references: [id], onDelete: Cascade)
+  unidadAcreditada Unidad? @relation("MultasAcreditadas", fields: [acreditadoAUnidadId], references: [id], onDelete: SetNull)
 
   @@map("multas")
 }
 
 model TicketReclamo {
-  id               BigInt           @id @default(autoincrement())
-  unidadId         BigInt           @map("unidad_id")
-  titulo           String           @db.VarChar(200)
-  descripcion      String
-  categoria        CategoriaTicket  @default(varios)
-  estado           EstadoTicket     @default(abierto)
-  fechaCreacion    DateTime         @default(now()) @map("fecha_creacion") @db.Timestamptz()
-  fechaResolucion  DateTime?        @map("fecha_resolucion") @db.Timestamptz()
+  id              BigInt          @id @default(autoincrement())
+  unidadId        BigInt          @map("unidad_id")
+  titulo          String          @db.VarChar(200)
+  descripcion     String
+  categoria       CategoriaTicket @default(varios)
+  estado          EstadoTicket    @default(abierto)
+  fechaCreacion   DateTime        @default(now()) @map("fecha_creacion") @db.Timestamptz()
+  fechaResolucion DateTime?       @map("fecha_resolucion") @db.Timestamptz()
 
-  unidad           Unidad           @relation(fields: [unidadId], references: [id], onDelete: Cascade)
-  presupuestos     PresupuestoVotacion[]
+  unidad       Unidad                @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  presupuestos PresupuestoVotacion[]
 
   @@map("tickets_reclamos")
 }
@@ -179,21 +233,34 @@ model PresupuestoVotacion {
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  ticket          TicketReclamo     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  votos           VotoVecino[]
+  ticket TicketReclamo @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  votos  VotoVecino[]
 
   @@map("presupuestos_votacion")
 }
 
 model VotoVecino {
-  id            BigInt              @id @default(autoincrement())
-  presupuestoId BigInt              @map("presupuesto_id")
-  unidadId      BigInt              @map("unidad_id")
-  fechaVoto     DateTime            @default(now()) @map("fecha_voto") @db.Timestamptz()
+  id            BigInt   @id @default(autoincrement())
+  presupuestoId BigInt   @map("presupuesto_id")
+  unidadId      BigInt   @map("unidad_id")
+  fechaVoto     DateTime @default(now()) @map("fecha_voto") @db.Timestamptz()
 
-  presupuesto   PresupuestoVotacion @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
-  unidad        Unidad              @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  presupuesto PresupuestoVotacion @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
+  unidad      Unidad              @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@unique([presupuestoId, unidadId], name: "uq_presupuesto_unidad")
   @@map("votos_vecinos")
+}
+
+model Usuario {
+  id        BigInt   @id @default(autoincrement())
+  username  String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  rol       String   @default("vecino") @db.VarChar(50)
+  unidadId  BigInt?  @map("unidad_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  unidad    Unidad?  @relation(fields: [unidadId], references: [id], onDelete: SetNull)
+
+  @@map("usuarios")
 }

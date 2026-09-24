@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   FileDown,
@@ -12,6 +12,7 @@ import {
   Info,
   Calendar,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -30,7 +31,8 @@ export interface DistribucionItem {
   total: number;
 }
 
-export const DISTRIBUCION_AGOSTO_2026: DistribucionItem[] = [
+// Datos de respaldo (mock) si la base de datos falla o está vacía temporalmente
+const MOCK_DISTRIBUCION: DistribucionItem[] = [
   { uf: 1, pisoDepto: "PB A", propietario: "Paula Administradora", porcentual: 7.60, deudaAnt: 36071.60, pagos: -36100.00, subtotal: -28.40, ordinarias: 14042.17, extraordinarias: 21900.97, cargos: 0.00, total: 35914.74 },
   { uf: 2, pisoDepto: "PB B", propietario: "González, Mario", porcentual: 7.60, deudaAnt: 90264.84, pagos: -14170.75, subtotal: 76094.09, ordinarias: 14042.17, extraordinarias: 21900.97, cargos: 5326.59, total: 117363.82 },
   { uf: 3, pisoDepto: "PB C", propietario: "Martínez, Laura", porcentual: 11.20, deudaAnt: 53157.54, pagos: -53160.00, subtotal: -2.46, ordinarias: 20693.73, extraordinarias: 32275.11, cargos: 0.00, total: 52966.38 },
@@ -42,7 +44,7 @@ export const DISTRIBUCION_AGOSTO_2026: DistribucionItem[] = [
   { uf: 9, pisoDepto: "2° C", propietario: "Perea, Braian", porcentual: 14.30, deudaAnt: 93915.18, pagos: -93916.00, subtotal: -0.82, ordinarias: 26421.46, extraordinarias: 41208.40, cargos: 0.00, total: 67629.04 },
 ];
 
-export const ESTADO_CAJA_ITEMS = [
+const MOCK_ESTADO_CAJA = [
   { tipo: "saldo_anterior", detalle: "SALDO ANTERIOR ACUMULADO", ingresos: null, ordinarias: null, extraordinaria: null, saldo: 1709442.29, nota: null },
   { tipo: "ingreso", detalle: "Cobro Unidad 1 - PB A", ingresos: 36100.00, ordinarias: null, extraordinaria: null, saldo: 1745542.29, nota: null },
   { tipo: "ingreso", detalle: "Cobro Unidad 2 - PB B", ingresos: 14170.75, ordinarias: null, extraordinaria: null, saldo: 1759713.04, nota: null },
@@ -62,7 +64,7 @@ export const ESTADO_CAJA_ITEMS = [
   { tipo: "fondo", detalle: "CUOTA: Fondo (Fondo)", ingresos: null, ordinarias: null, extraordinaria: 200000.00, saldo: null, nota: "Cuota para juntar fondos de reserva y obras, no representa egreso de caja" },
 ];
 
-export const ESTADO_CAJA_TOTALES = {
+const MOCK_ESTADO_CAJA_TOTALES = {
   totalIngresos: 452319.17,
   totalOrdinarias: 184765.45,
   totalExtraordinarias: 288170.60,
@@ -82,6 +84,63 @@ export default function LiquidacionConsolidadaModal({
 }: LiquidacionModalProps) {
   const [tabActiva, setTabActiva] = useState<"caja" | "distribucion">("caja");
   const [exportando, setExportando] = useState(false);
+  
+  // Estados para datos dinámicos
+  const [cargandoDatos, setCargandoDatos] = useState(true);
+  const [distribucion, setDistribucion] = useState<DistribucionItem[]>(MOCK_DISTRIBUCION);
+  const [estadoCajaItems, setEstadoCajaItems] = useState<any[]>(MOCK_ESTADO_CAJA);
+  const [totalesCaja, setTotalesCaja] = useState<any>(MOCK_ESTADO_CAJA_TOTALES);
+  const [usandoMock, setUsandoMock] = useState(false);
+
+  // Fetch a la API Route de Liquidaciones
+  useEffect(() => {
+    if (isOpen) {
+      const cargarLiquidacion = async () => {
+        try {
+          setCargandoDatos(true);
+          const [mesStr, anioStr] = periodo.split(" / ");
+          const mes = mesStr.trim();
+          const anio = anioStr.trim();
+          
+          const res = await fetch(`/api/liquidaciones/${anio}/${mes}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.distribucion && data.distribucion.length > 0) {
+              setDistribucion(data.distribucion);
+              setEstadoCajaItems(data.estadoCaja || []);
+              setTotalesCaja(data.totalesCaja || MOCK_ESTADO_CAJA_TOTALES);
+              setUsandoMock(false);
+            } else {
+              // Si la BD está vacía (sin unidades), usamos mock para no romper la UI
+              throw new Error("Base de datos vacía");
+            }
+          } else {
+            throw new Error("Error en API (probablemente falla conexión BD)");
+          }
+        } catch (error) {
+          console.warn("Usando datos de respaldo (Mock) porque la BD falló:", error);
+          setDistribucion(MOCK_DISTRIBUCION);
+          setEstadoCajaItems(MOCK_ESTADO_CAJA);
+          setTotalesCaja(MOCK_ESTADO_CAJA_TOTALES);
+          setUsandoMock(true);
+        } finally {
+          setCargandoDatos(false);
+        }
+      };
+
+      cargarLiquidacion();
+    }
+  }, [isOpen, periodo]);
+
+  // Cálculos dinámicos de los totales de la planilla de distribución
+  const totalGralDeudaAnt = distribucion.reduce((acc, item) => acc + item.deudaAnt, 0);
+  const totalGralPagos = distribucion.reduce((acc, item) => acc + Math.abs(item.pagos), 0);
+  const totalGralSubtotal = distribucion.reduce((acc, item) => acc + item.subtotal, 0);
+  const totalGralOrdinarias = distribucion.reduce((acc, item) => acc + item.ordinarias, 0);
+  const totalGralExtra = distribucion.reduce((acc, item) => acc + item.extraordinarias, 0);
+  const totalGralCargos = distribucion.reduce((acc, item) => acc + item.cargos, 0);
+  const totalGralTotal = distribucion.reduce((acc, item) => acc + item.total, 0);
+
 
   if (!isOpen) return null;
 
@@ -112,7 +171,7 @@ export default function LiquidacionConsolidadaModal({
       doc.setFontSize(12);
       doc.text("1. ESTADO DE CAJA", 105, 34, { align: "center" });
 
-      const bodyCaja: any[] = ESTADO_CAJA_ITEMS.map((item) => [
+      const bodyCaja: any[] = estadoCajaItems.map((item) => [
         item.detalle,
         item.ingresos ? `$ ${item.ingresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "",
         item.ordinarias ? `$ ${item.ordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "",
@@ -123,10 +182,10 @@ export default function LiquidacionConsolidadaModal({
       // Fila final
       bodyCaja.push([
         { content: "TOTALES DEL PERÍODO", fontStyle: "bold" },
-        { content: `$ ${ESTADO_CAJA_TOTALES.totalIngresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${ESTADO_CAJA_TOTALES.totalOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${ESTADO_CAJA_TOTALES.totalExtraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${ESTADO_CAJA_TOTALES.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalesCaja.totalIngresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalesCaja.totalOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalesCaja.totalExtraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalesCaja.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
       ]);
 
       autoTable(doc, {
@@ -157,9 +216,9 @@ export default function LiquidacionConsolidadaModal({
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(15, 23, 42);
-      doc.text("2. PLANILLA DE DISTRIBUCIÓN - PERÍODO 08 / 2026", 105, 18, { align: "center" });
+      doc.text(`2. PLANILLA DE DISTRIBUCIÓN - PERÍODO ${periodo}`, 105, 18, { align: "center" });
 
-      const bodyDist: any[] = DISTRIBUCION_AGOSTO_2026.map((item) => [
+      const bodyDist: any[] = distribucion.map((item) => [
         `${item.uf} - ${item.pisoDepto}`,
         `${item.porcentual.toFixed(2)}%`,
         `$ ${item.deudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
@@ -175,13 +234,13 @@ export default function LiquidacionConsolidadaModal({
       bodyDist.push([
         { content: "TOTALES GENERALES", fontStyle: "bold" },
         { content: "100.00%", fontStyle: "bold" },
-        { content: "$ 541.881,16", fontStyle: "bold" },
-        { content: "- $ 452.319,17", fontStyle: "bold" },
-        { content: "$ 89.561,99", fontStyle: "bold" },
-        { content: "$ 184.765,45", fontStyle: "bold" },
-        { content: "$ 288.170,60", fontStyle: "bold" },
-        { content: "$ 3.514,69", fontStyle: "bold" },
-        { content: "$ 566.012,73", fontStyle: "bold" },
+        { content: `$ ${totalGralDeudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `- $ ${totalGralPagos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalGralSubtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalGralOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalGralExtra.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalGralCargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${totalGralTotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
       ]);
 
       autoTable(doc, {
@@ -252,6 +311,17 @@ export default function LiquidacionConsolidadaModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
+        
+        {/* Loader Overlay */}
+        {cargandoDatos && (
+          <div className="absolute inset-0 z-10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm flex items-center justify-center flex-col gap-3">
+            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Calculando Prorrateos Dinámicos...
+            </span>
+          </div>
+        )}
+
         {/* Header Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
           <div className="flex items-center gap-2">
@@ -260,7 +330,10 @@ export default function LiquidacionConsolidadaModal({
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 Liquidación Oficial de Expensas — Consorcio Calle 425
               </h3>
-              <p className="text-xs text-slate-500">Período {periodo} • 9 Unidades Funcionales</p>
+              <p className="text-xs text-slate-500">
+                Período {periodo} • {distribucion.length} Unidades Funcionales
+                {usandoMock && <span className="ml-2 text-amber-500 font-medium">(Modo Prueba)</span>}
+              </p>
             </div>
           </div>
           <button
@@ -293,7 +366,7 @@ export default function LiquidacionConsolidadaModal({
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
-            <span>2. Planilla de Distribución (9 UFs)</span>
+            <span>2. Planilla de Distribución ({distribucion.length} UFs)</span>
           </button>
         </div>
 
@@ -309,7 +382,8 @@ export default function LiquidacionConsolidadaModal({
                     Saldo Anterior Acumulado:
                   </span>
                   <span className="font-bold text-sm text-slate-900 dark:text-white font-mono">
-                    $1.709.442,29
+                    {/* Placeholder dinámico si tuvieramos el estadoCajaItem inicial, asumo el primero */}
+                    ${estadoCajaItems[0]?.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 }) || "0.00"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
@@ -317,7 +391,7 @@ export default function LiquidacionConsolidadaModal({
                     Saldo Final Real en Caja:
                   </span>
                   <span className="font-bold text-sm text-emerald-700 dark:text-emerald-300 font-mono">
-                    $2.005.796,01
+                    ${totalesCaja.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
@@ -329,16 +403,13 @@ export default function LiquidacionConsolidadaModal({
                   <span>Aclaración sobre Egresos, Compensaciones y Fondos:</span>
                 </div>
                 <p>
-                  • <strong>Recupero Mario 4/4 ($88.170,60):</strong> Es un gasto de materiales que ya fue descontado oportunamente de caja en el período en que se compraron los insumos. En esta liquidación solo se está recuperando de los copropietarios, <u>por eso no se vuelve a descontar del saldo</u>.
+                  • <strong>Recupero:</strong> Gasto de materiales ya descontado que se recupera de expensas, no descuenta de saldo nuevamente.
                 </p>
                 <p>
-                  • <strong>Guardia Sustituta de Limpieza ($16.800,00) y Multa ($24.000,00):</strong> Si un departamento no cumple su turno de limpieza, <u>se le imputa una multa como cargo en sus expensas</u> (ej. UF 6 con +$24.000). Al vecino que asume el reemplazo y realiza la limpieza <u>se le descuenta y retribuye en sus expensas como crédito</u> (ej. UF 7 con -$16.800 en la columna Cargos). Por eso se recauda y no requiere desembolso directo de caja.
+                  • <strong>Multas y Compensaciones (Ej. Limpieza):</strong> Se imputan en los cargos de las UFs. No requieren desembolso de caja directo.
                 </p>
                 <p>
-                  • <strong>Internet ($12.000,00):</strong> Es provisto por la UF 8, por lo que su valor se le descuenta directamente en sus expensas (crédito de -$12.000).
-                </p>
-                <p>
-                  • <strong>CUOTA: Fondo de Reserva ($200.000,00):</strong> Es una cuota extraordinaria emitida para constituir el fondo común de obras; <u>no representa un gasto ni un egreso de caja</u>.
+                  • <strong>Fondo de Reserva:</strong> Cuota para juntar fondos de obras, no representa egreso de caja general.
                 </p>
               </div>
 
@@ -354,7 +425,7 @@ export default function LiquidacionConsolidadaModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                    {ESTADO_CAJA_ITEMS.map((item, idx) => (
+                    {estadoCajaItems.map((item, idx) => (
                       <tr
                         key={idx}
                         className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 ${
@@ -392,16 +463,16 @@ export default function LiquidacionConsolidadaModal({
                     <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-900 dark:text-white">
                       <td className="p-2.5">TOTALES DEL PERÍODO</td>
                       <td className="p-2.5 text-right text-emerald-600 font-mono">
-                        ${ESTADO_CAJA_TOTALES.totalIngresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${totalesCaja.totalIngresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="p-2.5 text-right font-mono">
-                        ${ESTADO_CAJA_TOTALES.totalOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${totalesCaja.totalOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="p-2.5 text-right text-indigo-600 dark:text-indigo-400 font-mono">
-                        ${ESTADO_CAJA_TOTALES.totalExtraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${totalesCaja.totalExtraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="p-2.5 text-right text-emerald-600 dark:text-emerald-400 font-mono font-extrabold text-sm">
-                        ${ESTADO_CAJA_TOTALES.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${totalesCaja.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   </tbody>
@@ -427,7 +498,7 @@ export default function LiquidacionConsolidadaModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                    {DISTRIBUCION_AGOSTO_2026.map((item) => (
+                    {distribucion.map((item) => (
                       <tr key={item.uf} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                         <td className="p-2 font-medium">{item.uf} - {item.pisoDepto}</td>
                         <td className="p-2 text-center text-slate-500">{item.porcentual.toFixed(2)}%</td>
@@ -449,14 +520,14 @@ export default function LiquidacionConsolidadaModal({
                     <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-900 dark:text-white">
                       <td className="p-2">TOTALES</td>
                       <td className="p-2 text-center">100%</td>
-                      <td className="p-2 text-right font-mono">$541.881,16</td>
-                      <td className="p-2 text-right text-emerald-600 font-mono">- $452.319,17</td>
-                      <td className="p-2 text-right font-mono">$89.561,99</td>
-                      <td className="p-2 text-right font-mono">$184.765,45</td>
-                      <td className="p-2 text-right font-mono">$288.170,60</td>
-                      <td className="p-2 text-right font-mono">$3.514,69</td>
+                      <td className="p-2 text-right font-mono">${totalGralDeudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right text-emerald-600 font-mono">- ${totalGralPagos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-mono">${totalGralSubtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-mono">${totalGralOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-mono">${totalGralExtra.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-mono">${totalGralCargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
                       <td className="p-2 text-right text-emerald-600 dark:text-emerald-400 font-extrabold font-mono">
-                        $566.012,73
+                        ${totalGralTotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   </tbody>
@@ -470,7 +541,7 @@ export default function LiquidacionConsolidadaModal({
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between">
           <button
             onClick={exportarPdfOficial2Paginas}
-            disabled={exportando}
+            disabled={exportando || cargandoDatos}
             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <FileDown className="w-4 h-4" />
