@@ -1,5 +1,6 @@
+import { streamText } from 'ai';
+import { google } from '@ai-sdk/google';
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const REGLAMENTO_SISTEMA_PROMPT = `
 Eres el "Asistente Virtual de Convivencia y Reglamento" del Consorcio Inteligente Calle 425 (Proyecto DeveloPet Friendly).
@@ -41,57 +42,40 @@ REGLAS DE RESPUESTA:
 3. Si la duda o situación planteada por el vecino REQUIERE INTERVENCIÓN HUMANA, inspección técnica, una excepción formal o NO ESTÁ TIPIFICADA en el reglamento, indícale claramente que debe crear un ticket en la Mesa de Ayuda ITIL (/vecino/mesa-ayuda) para que la Administradora Paula o el proveedor correspondiente lo gestione.
 `;
 
+// Opcional, forzar entorno de ejecución
+export const runtime = 'edge';
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { message, conversationHistory } = body;
+    const { messages } = await request.json();
 
-    if (!message || typeof message !== "string") {
-      return NextResponse.json(
-        { error: "El mensaje es obligatorio." },
-        { status: 400 }
-      );
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     // Si no hay clave real configurada o es "demo", usamos el motor inteligente de reglas local
     if (!apiKey || apiKey === "demo" || apiKey === "your-gemini-api-key" || apiKey.startsWith("AIzaSyTuClave")) {
-      const respuestaLocal = generarRespuestaLocal(message);
-      return NextResponse.json({
-        response: respuestaLocal,
-        source: "local-rule-engine",
+      const lastMessage = messages[messages.length - 1];
+      const respuestaLocal = generarRespuestaLocal(lastMessage?.content || "");
+      
+      // Enviamos la respuesta local formateada para Vercel AI SDK
+      return new Response(respuestaLocal, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
     }
 
-    // Si hay clave real de Gemini, invocamos la API oficial
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        systemInstruction: REGLAMENTO_SISTEMA_PROMPT,
+      const result = await streamText({
+        model: google('gemini-1.5-flash', { apiKey }),
+        system: REGLAMENTO_SISTEMA_PROMPT,
+        messages,
       });
 
-      // Formatear historial si existe
-      const history = (conversationHistory || []).map((msg: any) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      }));
-
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessage(message);
-      const reply = result.response.text();
-
-      return NextResponse.json({
-        response: reply,
-        source: "gemini-api",
-      });
+      return result.toDataStreamResponse();
     } catch (apiError: any) {
       console.warn("Error invocando Gemini API, usando motor de respaldo:", apiError);
-      const fallback = generarRespuestaLocal(message);
-      return NextResponse.json({
-        response: fallback,
-        source: "fallback-rule-engine",
+      const lastMessage = messages[messages.length - 1];
+      const fallback = generarRespuestaLocal(lastMessage?.content || "");
+      return new Response(fallback, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
     }
   } catch (error) {
