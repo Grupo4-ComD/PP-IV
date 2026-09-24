@@ -28,14 +28,14 @@ export async function GET() {
     // 2. PAGOS DE VECINOS (Simulando pagos del mes anterior - Mes 7)
     await prisma.pagoVecino.createMany({
       data: [
-        { unidadId: 1n, monto: 35000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-05'), estado: EstadoPago.aprobado },
-        { unidadId: 2n, monto: 35000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-08'), estado: EstadoPago.aprobado },
-        { unidadId: 3n, monto: 48500, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-10'), estado: EstadoPago.aprobado },
-        { unidadId: 5n, monto: 40000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-12'), estado: EstadoPago.aprobado },
-        { unidadId: 6n, monto: 42000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-15'), estado: EstadoPago.aprobado },
-        { unidadId: 7n, monto: 60000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-02'), estado: EstadoPago.aprobado }, // UF 7 (Guillermo) pago OK
-        { unidadId: 8n, monto: 60000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-05'), estado: EstadoPago.aprobado },
-        { unidadId: 9n, monto: 55000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-09'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(1), monto: 35000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-05'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(2), monto: 35000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-08'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(3), monto: 48500, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-10'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(5), monto: 40000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-12'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(6), monto: 42000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-15'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(7), monto: 60000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-02'), estado: EstadoPago.aprobado }, // UF 7 (Guillermo) pago OK
+        { unidadId: BigInt(8), monto: 60000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-05'), estado: EstadoPago.aprobado },
+        { unidadId: BigInt(9), monto: 55000, periodoMes: 7, periodoAnio: 2026, fechaPago: new Date('2026-07-09'), estado: EstadoPago.aprobado },
         // UF 4 (Carlos) NO PAGÓ EL MES 7 (Generará mora real)
       ]
     });
@@ -43,15 +43,15 @@ export async function GET() {
     // 3. TICKETS DE RECLAMOS
     await prisma.ticketReclamo.createMany({
       data: [
-        { unidadId: 3n, titulo: 'Humedad en techo baño', descripcion: 'Mancha que crece desde el piso de arriba', categoria: CategoriaTicket.plomeria, estado: EstadoTicket.abierto },
-        { unidadId: 7n, titulo: 'Luz quemada palier 2do piso', descripcion: 'Foco parpadea y se apaga', categoria: CategoriaTicket.electricidad, estado: EstadoTicket.en_revision },
+        { unidadId: BigInt(3), titulo: 'Humedad en techo baño', descripcion: 'Mancha que crece desde el piso de arriba', categoria: CategoriaTicket.plomeria, estado: EstadoTicket.abierto },
+        { unidadId: BigInt(7), titulo: 'Luz quemada palier 2do piso', descripcion: 'Foco parpadea y se apaga', categoria: CategoriaTicket.electricidad, estado: EstadoTicket.en_revision },
       ]
     });
 
     // 4. LIMPIEZA ROTATIVA
     await prisma.limpiezaRotativa.createMany({
       data: [
-        { unidadIdAsignada: 7n, semanaInicio: new Date('2026-09-22'), semanaFin: new Date('2026-09-28'), estado: EstadoLimpieza.cumplido }
+        { unidadIdAsignada: BigInt(7), semanaInicio: new Date('2026-09-22'), semanaFin: new Date('2026-09-28'), estado: EstadoLimpieza.cumplido }
       ]
     });
 
