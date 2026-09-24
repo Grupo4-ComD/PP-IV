@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     try {
       const google = createGoogleGenerativeAI({ apiKey });
       const result = await streamText({
-        model: google('gemini-1.5-flash'),
+        model: google('gemini-3.7-flash'),
         system: REGLAMENTO_SISTEMA_PROMPT,
         messages,
       });
@@ -68,7 +68,10 @@ function createFallbackStream(text: string) {
     },
   });
   return new Response(stream, {
-    headers: { 'X-Vercel-AI-Data-Stream': 'v1' },
+    headers: { 
+      'X-Vercel-AI-Data-Stream': 'v1',
+      'Content-Type': 'text/plain; charset=utf-8'
+    },
   });
 }
 
