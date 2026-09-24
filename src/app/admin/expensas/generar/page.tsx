@@ -35,23 +35,10 @@ interface Unidad {
   porcentual_m2: number;
 }
 
-// Distribución oficial según m2 de unidades funcionales (Consorcio Calle 425)
-const UNIDADES_DEFAULT: Unidad[] = [
-  { id: 1, numero_uf: 1, piso_depto: "PB A", propietario_nombre: "Paula Administradora", email: "paula.admin@calle425.com", porcentual_m2: 7.60 },
-  { id: 2, numero_uf: 2, piso_depto: "PB B", propietario_nombre: "González, Mario", email: "mario.gonzalez@calle425.com", porcentual_m2: 7.60 },
-  { id: 3, numero_uf: 3, piso_depto: "PB C", propietario_nombre: "Martínez, Laura", email: "laura.martinez@calle425.com", porcentual_m2: 11.20 },
-  { id: 4, numero_uf: 4, piso_depto: "1° A", propietario_nombre: "Rodríguez, Carlos", email: "carlos.rodriguez@calle425.com", porcentual_m2: 9.20 },
-  { id: 5, numero_uf: 5, piso_depto: "1° B", propietario_nombre: "Fernández, Lucía", email: "lucia.fernandez@calle425.com", porcentual_m2: 9.20 },
-  { id: 6, numero_uf: 6, piso_depto: "1° C", propietario_nombre: "López, Diego", email: "diego.lopez@calle425.com", porcentual_m2: 9.50 },
-  { id: 7, numero_uf: 7, piso_depto: "2° A", propietario_nombre: "Sciulli, Guillermo", email: "gsciulli@calle425.com", porcentual_m2: 15.70 },
-  { id: 8, numero_uf: 8, piso_depto: "2° B", propietario_nombre: "Greco, Verónica", email: "veronica.greco@calle425.com", porcentual_m2: 15.70 },
-  { id: 9, numero_uf: 9, piso_depto: "2° C", propietario_nombre: "Perea, Braian", email: "braian.perea@calle425.com", porcentual_m2: 14.30 },
-];
-
 export default function GenerarExpensasPage() {
   const supabase = createClient();
 
-  const [unidades, setUnidades] = useState<Unidad[]>(UNIDADES_DEFAULT);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [periodoMes, setPeriodoMes] = useState<number>(new Date().getMonth() + 1);
   const [periodoAnio, setPeriodoAnio] = useState<number>(new Date().getFullYear());
   const [fechaVencimiento, setFechaVencimiento] = useState<string>(
@@ -60,16 +47,8 @@ export default function GenerarExpensasPage() {
       .split("T")[0]
   );
 
-  // Gastos ordinarios cargados para el período
-  const [gastos, setGastos] = useState<{ id: string; fecha: string; concepto: string; rubro: string; tipo: string; monto: number }[]>([
-    { id: "1", fecha: "02/09/2026", concepto: "EDELAP S.A. - Fuerza motriz y bombas", rubro: "Electricidad Común", tipo: "Ordinaria", monto: 112400 },
-    { id: "2", fecha: "05/09/2026", concepto: "Aguas Bonaerenses ABSA - Servicio central", rubro: "Servicios Públicos", tipo: "Ordinaria", monto: 48600 },
-    { id: "3", fecha: "10/09/2026", concepto: "Insumos Limpieza & Químicos Quilmes", rubro: "Limpieza & Insumos", tipo: "Ordinaria", monto: 99000 },
-    { id: "4", fecha: "15/09/2026", concepto: "Ascensores Platenses S.R.L. - Abono mensual", rubro: "Abono Mantenimiento", tipo: "Ordinaria", monto: 100000 },
-    { id: "5", fecha: "18/09/2026", concepto: "Seguro Integral contra Incendio", rubro: "Seguros Edilicios", tipo: "Ordinaria", monto: 76500 },
-  ]);
-
-  // Nuevo gasto temporal para el formulario
+  // Gastos ordinarios cargados para el período desde la BD
+  const [gastos, setGastos] = useState<any[]>([]);
   const [nuevoConcepto, setNuevoConcepto] = useState("");
   const [nuevoMonto, setNuevoMonto] = useState("");
   const [nuevoRubro, setNuevoRubro] = useState("Servicios Públicos");
@@ -81,66 +60,98 @@ export default function GenerarExpensasPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Cargar las 9 UFs de Supabase
+  // Cargar las UFs de Supabase
   useEffect(() => {
     async function fetchUnidades() {
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from("unidades")
-          .select("id, numero_uf, piso_depto, propietario_nombre, email, porcentual_m2")
+          .select("id, numero_uf, piso_depto, propietario_nombre, email, coeficiente_prorrateo")
           .order("numero_uf", { ascending: true });
 
-        if (data && data.length > 0 && !error) {
-          // Si Supabase trae datos, mapear asegurando los porcentuales
-          const merged = data.map((d: any) => {
-            const def = UNIDADES_DEFAULT.find((u) => u.numero_uf === d.numero_uf);
-            return {
-              ...d,
-              porcentual_m2: Number(d.porcentual_m2) || def?.porcentual_m2 || 11.11,
-            };
-          });
-          setUnidades(merged);
-        } else {
-          setUnidades(UNIDADES_DEFAULT);
+        if (data && !error) {
+          const mapped = data.map((d: any) => ({
+            id: d.id,
+            numero_uf: d.numero_uf,
+            piso_depto: d.piso_depto,
+            propietario_nombre: d.propietario_nombre,
+            email: d.email,
+            porcentual_m2: Number(d.coeficiente_prorrateo)
+          }));
+          setUnidades(mapped);
         }
       } catch (err) {
-        console.warn("Usando unidades por defecto:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-
     fetchUnidades();
   }, [supabase]);
+
+  // Cargar los Gastos del Mes desde la API Real
+  useEffect(() => {
+    async function fetchGastos() {
+      try {
+        const res = await fetch(`/api/gastos?mes=${periodoMes}&anio=${periodoAnio}`);
+        if (res.ok) {
+          const data = await res.json();
+          setGastos(data);
+        }
+      } catch (error) {
+        console.error("Error cargando gastos:", error);
+      }
+    }
+    fetchGastos();
+  }, [periodoMes, periodoAnio]);
 
   // Cálculos contables de la liquidación
   const totalGastosOrdinarios = gastos.reduce((acc, g) => acc + g.monto, 0);
   const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
   const totalProrratear = totalGastosOrdinarios + montoFondoReserva;
 
-  // Agregar gasto a la lista
-  const handleAgregarGasto = (e: React.FormEvent) => {
+  // Agregar gasto a la base de datos
+  const handleAgregarGasto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoConcepto || !nuevoMonto) return;
 
-    setGastos((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        fecha: new Date().toLocaleDateString("es-AR"),
-        concepto: nuevoConcepto,
-        rubro: nuevoRubro,
-        tipo: "Ordinaria",
-        monto: parseFloat(nuevoMonto) || 0,
-      },
-    ]);
-    setNuevoConcepto("");
-    setNuevoMonto("");
+    try {
+      // Forzamos fecha al periodo activo seleccionado para el ejemplo
+      const diaAleatorio = Math.floor(Math.random() * 28) + 1;
+      const fechaGasto = new Date(periodoAnio, periodoMes - 1, diaAleatorio).toISOString();
+      
+      const res = await fetch("/api/gastos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          concepto: nuevoConcepto,
+          monto: nuevoMonto,
+          categoria: "ordinario",
+          fechaGasto
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setGastos((prev) => [data, ...prev]);
+        setNuevoConcepto("");
+        setNuevoMonto("");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleEliminarGasto = (id: string) => {
-    setGastos((prev) => prev.filter((g) => g.id !== id));
+  const handleEliminarGasto = async (id: string) => {
+    try {
+      const res = await fetch(`/api/gastos?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setGastos((prev) => prev.filter((g) => g.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const mesesNombres = [
@@ -373,7 +384,9 @@ export default function GenerarExpensasPage() {
                   >
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900 dark:text-white truncate">{g.concepto}</p>
-                      <span className="text-[10px] text-slate-400">{g.rubro} • {g.fecha}</span>
+                      <span className="text-[10px] text-slate-400">
+                        {g.categoria.toUpperCase()} • {new Date(g.fechaGasto).toLocaleDateString("es-AR")}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="font-mono font-bold text-slate-900 dark:text-white">
