@@ -60,51 +60,16 @@ export default function VecinoDashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData?.user) {
-          const { data: uData } = await supabase
-            .from("unidades")
-            .select("*")
-            .or(`user_id.eq.${userData.user.id},email.eq.${userData.user.email}`)
-            .single();
-
-          if (uData) {
-            setUnidad({
-              id: uData.id,
-              numero_uf: uData.numero_uf,
-              piso_depto: uData.piso_depto,
-              propietario_nombre: uData.propietario_nombre,
-              email: uData.email,
-            });
-
-            // Cargar última expensa
-            const { data: expData } = await supabase
-              .from("expensas")
-              .select("*")
-              .eq("unidad_id", uData.id)
-              .order("periodo_anio", { ascending: false })
-              .order("periodo_mes", { ascending: false })
-              .limit(1)
-              .single();
-
-            if (expData) {
-              setExpensa({
-                id: expData.id,
-                unidad_id: expData.unidad_id,
-                periodo_mes: expData.periodo_mes,
-                periodo_anio: expData.periodo_anio,
-                monto_ordinario: Number(expData.monto_ordinario),
-                recargo_mora: Number(expData.recargo_mora || 0),
-                total_pagar: Number(expData.total_pagar),
-                fecha_vencimiento: expData.fecha_vencimiento,
-                estado: expData.estado,
-                comprobante_url: expData.comprobante_url,
-              });
-            }
-          }
+        // Temporalmente hardcodeamos unidadId=7 (Guillermo Sciulli) hasta que hagamos el Login Real (Fase 2.3)
+        // Luego leeremos esto directo de la sesión JWT
+        const res = await fetch("/api/vecino/dashboard?unidadId=7");
+        if (res.ok) {
+          const data = await res.json();
+          setUnidad(data.unidad);
+          setExpensa(data.expensa);
         }
       } catch (err) {
-        console.warn("Utilizando datos de demostración local:", err);
+        console.warn("Error cargando panel del vecino:", err);
       }
     }
     loadData();
