@@ -91,42 +91,8 @@ export default function AdminMesaAyudaPage() {
           `)
           .order("id", { ascending: false });
 
-        if (data && data.length > 0 && !error) {
+        if (data && !error) {
           setTickets(data as any);
-        } else {
-          // Fallback mock inicial
-          setTickets([
-            {
-              id: 1,
-              unidad_id: 3,
-              titulo: "Filtración de agua en montante principal y sala de bombas",
-              descripcion: "Pérdida de presión en subsuelo y humedad constante. Requiere recambio de caño maestro de 2 pulgadas.",
-              categoria: "plomeria",
-              estado: "en_revision",
-              fecha_creacion: "2026-09-20",
-              unidades: { numero_uf: 3, piso_depto: "PB C", propietario_nombre: "Martínez, Laura" },
-            },
-            {
-              id: 2,
-              unidad_id: 4,
-              titulo: "Reparación y automatización del portón de cochera",
-              descripcion: "El motor vehicular emite zumbidos anormales y se traba en el recorrido nocturno de cierre.",
-              categoria: "cerrajeria",
-              estado: "abierto",
-              fecha_creacion: "2026-09-21",
-              unidades: { numero_uf: 4, piso_depto: "1° A", propietario_nombre: "Rodríguez, Carlos" },
-            },
-            {
-              id: 3,
-              unidad_id: 7,
-              titulo: "Luminaria LED quemada en descanso de escalera 2° piso",
-              descripcion: "Sin iluminación de emergencia en el tramo entre piso 1 y piso 2.",
-              categoria: "electricidad",
-              estado: "resuelto",
-              fecha_creacion: "2026-09-15",
-              unidades: { numero_uf: 7, piso_depto: "2° A", propietario_nombre: "Sciulli, Guillermo" },
-            },
-          ]);
         }
       } catch (err) {
         console.warn("Error cargando tickets:", err);

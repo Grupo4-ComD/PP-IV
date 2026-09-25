@@ -74,64 +74,8 @@ export default function LiquidacionExpensasPage() {
           .order("periodo_mes", { ascending: false })
           .order("unidad_id", { ascending: true });
 
-        if (data && data.length > 0 && !error) {
+        if (data && !error) {
           setExpensas(data as any);
-        } else {
-          // Mock data fallback
-          setExpensas([
-            {
-              id: 1,
-              unidad_id: 1,
-              periodo_mes: 9,
-              periodo_anio: 2026,
-              monto_ordinario: 52000,
-              recargo_mora: 0,
-              total_pagar: 52000,
-              fecha_vencimiento: "2026-09-25",
-              estado: "pagado",
-              fecha_pago: "2026-09-18",
-              unidades: { numero_uf: 1, piso_depto: "PB A", propietario_nombre: "Paula Administradora" },
-            },
-            {
-              id: 2,
-              unidad_id: 2,
-              periodo_mes: 9,
-              periodo_anio: 2026,
-              monto_ordinario: 52000,
-              recargo_mora: 0,
-              total_pagar: 52000,
-              fecha_vencimiento: "2026-09-25",
-              estado: "pendiente",
-              fecha_pago: null,
-              unidades: { numero_uf: 2, piso_depto: "PB B", propietario_nombre: "González, Mario" },
-            },
-            {
-              id: 3,
-              unidad_id: 3,
-              periodo_mes: 9,
-              periodo_anio: 2026,
-              monto_ordinario: 52000,
-              recargo_mora: 0,
-              total_pagar: 52000,
-              fecha_vencimiento: "2026-09-25",
-              estado: "pagado",
-              fecha_pago: "2026-09-20",
-              unidades: { numero_uf: 3, piso_depto: "Piso 1 A", propietario_nombre: "Martínez, Laura" },
-            },
-            {
-              id: 4,
-              unidad_id: 2,
-              periodo_mes: 8,
-              periodo_anio: 2026,
-              monto_ordinario: 48500,
-              recargo_mora: 3395,
-              total_pagar: 51895,
-              fecha_vencimiento: "2026-08-15",
-              estado: "pendiente",
-              fecha_pago: null,
-              unidades: { numero_uf: 2, piso_depto: "PB B", propietario_nombre: "González, Mario" },
-            },
-          ]);
         }
       } catch (err) {
         console.warn("Error cargando expensas:", err);
