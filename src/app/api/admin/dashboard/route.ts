@@ -11,9 +11,10 @@ export async function GET() {
       orderBy: { numeroUf: 'asc' },
     });
 
-    // Usaremos el mes 8/2026 ya que los Mocks que insertamos son de ese mes
-    const periodoMes = 8;
-    const periodoAnio = 2026;
+    // Tomamos el mes y año actual dinámicamente
+    const hoy = new Date();
+    const periodoMes = hoy.getMonth() + 1;
+    const periodoAnio = hoy.getFullYear();
 
     const pagos = await prisma.pagoVecino.findMany({
       where: { periodoMes, periodoAnio, estado: 'aprobado' }
@@ -25,52 +26,38 @@ export async function GET() {
       where: { estado: EstadoTicket.abierto }
     });
 
+    // Calcular mora y estados desde la tabla real de Expensas
+    const expensasPendientes = await prisma.expensa.findMany({
+      where: { estado: { not: 'pagado' } }
+    });
+
     let ufsAlDia = 0;
     let ufsMora = 0;
-    let totalMoraPendiente = 0;
+    let totalMoraPendiente = expensasPendientes.reduce((sum, e) => sum + Number(e.totalPagar), 0);
 
-    const unidadesConEstado = await Promise.all(unidades.map(async (u) => {
-      // Deuda histórica de la unidad
-      const pagosAntResult = await prisma.pagoVecino.aggregate({
-        where: { 
-          unidadId: u.id, 
-          estado: 'aprobado', 
-          OR: [{ periodoAnio: { lt: periodoAnio } }, { periodoAnio, periodoMes: { lt: periodoMes } }] 
-        },
-        _sum: { monto: true }
-      });
-      const cargosAntResult = await prisma.cargoParticular.aggregate({
-        where: { 
-          unidadId: u.id, 
-          OR: [{ periodoAnio: { lt: periodoAnio } }, { periodoAnio, periodoMes: { lt: periodoMes } }] 
-        },
-        _sum: { monto: true }
-      });
-
-      const deudaAnt = Number(u.saldoAnteriorInicial) + Number(cargosAntResult._sum.monto || 0) - Number(pagosAntResult._sum.monto || 0);
-      const pagosUnidad = pagos.filter(p => p.unidadId === u.id).reduce((sum, p) => sum + Number(p.monto), 0);
-      
-      const saldoPendiente = deudaAnt - pagosUnidad;
-      const enMora = saldoPendiente > 0;
+    const unidadesConEstado = unidades.map((u) => {
+      // Filtrar las expensas impagas de esta unidad
+      const deudaUnidadList = expensasPendientes.filter(e => e.unidadId === u.id);
+      const deudaUnidad = deudaUnidadList.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+      const enMora = deudaUnidad > 0;
 
       if (enMora) {
         ufsMora++;
-        totalMoraPendiente += saldoPendiente;
       } else {
         ufsAlDia++;
       }
 
       return {
-        id: u.id.toString(), // BigInt a string para poder enviarlo por JSON
+        id: u.id.toString(),
         numero_uf: u.numeroUf,
         piso_depto: u.pisoDepto,
         propietario_nombre: u.propietarioNombre,
         email: u.email,
         porcentual_m2: Number(u.coeficienteProrrateo),
         estado_expensa: enMora ? "pendiente" : "pagado",
-        saldo_pendiente: saldoPendiente > 0 ? saldoPendiente : 0
+        saldo_pendiente: deudaUnidad
       };
-    }));
+    });
 
     // --- CÁLCULO DE SALDO DE CAJA Y MOVIMIENTOS ---
     const gastosData = await prisma.gasto.findMany({
@@ -107,8 +94,8 @@ export async function GET() {
     const totalPagos = await prisma.pagoVecino.aggregate({ where: { estado: 'aprobado' }, _sum: { monto: true } });
     const totalGastos = await prisma.gasto.aggregate({ _sum: { monto: true } });
     
-    // Saldo base imaginario + Ingresos - Egresos
-    const saldoCaja = 1200000 + Number(totalPagos._sum.monto || 0) - Number(totalGastos._sum.monto || 0);
+    // Saldo real de Caja Bancaria (Total cobrado histórico - Total gastado histórico)
+    const saldoCaja = Number(totalPagos._sum.monto || 0) - Number(totalGastos._sum.monto || 0);
 
     return NextResponse.json({
       saldoCaja,
