@@ -36,14 +36,7 @@ export async function GET(request: Request) {
         unidad_sustituta_uf: t.unidadSustituta ? t.unidadSustituta.numeroUf : null
       };
     });
-
-    let actualIndex = turnosResult.findIndex(x => x.estado === 'en_curso');
-    if (actualIndex === -1) actualIndex = 0;
-    
-    const startIndex = Math.max(0, actualIndex - 2);
-    const mostrarTurnos = turnosResult.slice(startIndex, startIndex + 9);
-
-    return NextResponse.json(mostrarTurnos);
+    return NextResponse.json(turnosResult);
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

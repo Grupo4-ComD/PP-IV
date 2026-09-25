@@ -36,6 +36,7 @@ export default function LimpiezaPage() {
 
   const [turnos, setTurnos] = useState<TurnoLimpieza[]>([]);
   const [loading, setLoading] = useState(true);
+  const [vista, setVista] = useState<"historial" | "actual" | "proximos">("actual");
 
   useEffect(() => {
     async function loadTurnos() {
@@ -160,6 +161,17 @@ export default function LimpiezaPage() {
   // Turno activo de la semana
   const turnoActivo = turnos.find((t) => t.estado === "en_curso") || turnos[0] || null;
 
+  // Filtrado de turnos según la vista
+  const turnosFiltrados = turnos.filter((t) => {
+    if (vista === "historial") return t.estado === "cumplido" || t.estado === "multado" || t.estado === "incumplido";
+    if (vista === "actual") return t.estado === "en_curso" || t.estado === "proximo" || t.estado === "programado";
+    if (vista === "proximos") return t.estado === "programado" || t.estado === "proximo";
+    return true;
+  });
+
+  // Solo mostrar una ventana razonable para la vista "actual" (por ejemplo el en curso y los 8 siguientes)
+  const turnosAMostrar = vista === "actual" ? turnosFiltrados.slice(0, 9) : turnosFiltrados;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
       {/* SIDEBAR REUTILIZABLE CON ICONOS MODERNOS */}
@@ -272,7 +284,7 @@ export default function LimpiezaPage() {
 
           {/* 2. CALENDARIO SECUENCIAL DE 9 UNIDADES */}
           <section className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   Secuencia de Guardias Rotativas 2026
@@ -282,27 +294,42 @@ export default function LimpiezaPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Cumplido
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" /> Actual
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Tu Turno
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Multado
-                </span>
+              {/* Controles de Vista */}
+              <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl w-fit">
+                <button
+                  onClick={() => setVista("historial")}
+                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                    vista === "historial" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  }`}
+                >
+                  Historial
+                </button>
+                <button
+                  onClick={() => setVista("actual")}
+                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                    vista === "actual" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  }`}
+                >
+                  Ciclo Actual
+                </button>
+                <button
+                  onClick={() => setVista("proximos")}
+                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                    vista === "proximos" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  }`}
+                >
+                  Próximos (Anual)
+                </button>
               </div>
             </div>
 
-            {/* Grid de 9 tarjetas de turnos */}
+            {/* Grid de tarjetas de turnos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading ? (
                 <div className="col-span-3 text-center py-10 text-slate-500">Cargando turnos...</div>
-              ) : turnos.map((t) => {
+              ) : turnosAMostrar.length === 0 ? (
+                <div className="col-span-3 text-center py-10 text-slate-500">No hay turnos para esta vista.</div>
+              ) : turnosAMostrar.map((t) => {
                 const esMiTurno = t.numero_uf === 7;
                 const esActual = t.estado === "en_curso";
                 const esMultado = t.estado === "multado";
