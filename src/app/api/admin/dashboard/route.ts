@@ -23,7 +23,7 @@ export async function GET() {
     const recaudacionMes = pagos.reduce((sum, p) => sum + Number(p.monto), 0);
 
     const tickets = await prisma.ticketReclamo.count({
-      where: { estado: EstadoTicket.abierto }
+      where: { estado: { in: ['abierto', 'en_revision'] } }
     });
 
     // Calcular mora y estados desde la tabla real de Expensas
