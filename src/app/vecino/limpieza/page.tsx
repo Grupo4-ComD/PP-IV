@@ -34,92 +34,25 @@ interface TurnoLimpieza {
 export default function LimpiezaPage() {
   const supabase = createClient();
 
-  // 9 Turnos rotativos secuenciales para las 9 UFs
-  const [turnos, setTurnos] = useState<TurnoLimpieza[]>([
-    {
-      id: 1,
-      semana_numero: 36,
-      rango_fechas: "01 al 07 Sep",
-      numero_uf: 1,
-      piso_depto: "PB A",
-      residente: "Paula Admin",
-      estado: "cumplido",
-      insumos_verificados: true,
-    },
-    {
-      id: 2,
-      semana_numero: 37,
-      rango_fechas: "08 al 14 Sep",
-      numero_uf: 2,
-      piso_depto: "PB B",
-      residente: "González, Mario",
-      estado: "en_curso",
-      insumos_verificados: true,
-    },
-    {
-      id: 3,
-      semana_numero: 38,
-      rango_fechas: "15 al 21 Sep",
-      numero_uf: 3,
-      piso_depto: "1° B",
-      residente: "Martínez, Laura (Tu Unidad)",
-      estado: "proximo",
-    },
-    {
-      id: 4,
-      semana_numero: 39,
-      rango_fechas: "22 al 28 Sep",
-      numero_uf: 4,
-      piso_depto: "1° A",
-      residente: "Rodríguez, Carlos",
-      estado: "programado",
-    },
-    {
-      id: 5,
-      semana_numero: 40,
-      rango_fechas: "29 Sep al 05 Oct",
-      numero_uf: 5,
-      piso_depto: "2° A",
-      residente: "Fernández, Lucía",
-      estado: "programado",
-    },
-    {
-      id: 6,
-      semana_numero: 41,
-      rango_fechas: "06 al 12 Oct",
-      numero_uf: 6,
-      piso_depto: "2° B",
-      residente: "López, Diego",
-      estado: "programado",
-    },
-    {
-      id: 7,
-      semana_numero: 42,
-      rango_fechas: "13 al 19 Oct",
-      numero_uf: 7,
-      piso_depto: "3° A",
-      residente: "Sciulli, Guillermo",
-      estado: "programado",
-    },
-    {
-      id: 8,
-      semana_numero: 43,
-      rango_fechas: "20 al 26 Oct",
-      numero_uf: 8,
-      piso_depto: "3° B",
-      residente: "Greco, Verónica",
-      estado: "programado",
-    },
-    {
-      id: 9,
-      semana_numero: 44,
-      rango_fechas: "27 Oct al 02 Nov",
-      numero_uf: 9,
-      piso_depto: "4° A",
-      residente: "Perea, Braian",
-      estado: "programado",
-    },
-  ]);
+  const [turnos, setTurnos] = useState<TurnoLimpieza[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTurnos() {
+      try {
+        const res = await fetch("/api/vecino/limpieza");
+        if (res.ok) {
+          const data = await res.json();
+          setTurnos(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTurnos();
+  }, []);
 
   // Fondo especial de multas y compensaciones
   const [multasHistorial, setMultasHistorial] = useState<
@@ -224,8 +157,8 @@ export default function LimpiezaPage() {
     setShowPermutaModal(false);
   };
 
-  // Turno activo de la semana (Semana 37)
-  const turnoActivo = turnos.find((t) => t.estado === "en_curso") || turnos[1];
+  // Turno activo de la semana
+  const turnoActivo = turnos.find((t) => t.estado === "en_curso") || turnos[0] || null;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
@@ -296,6 +229,7 @@ export default function LimpiezaPage() {
           </section>
 
           {/* 1. TARJETA DESTACADA: TURNO ACTIVO DE LA SEMANA */}
+          {turnoActivo && (
           <section className="rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 p-6 sm:p-7 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex items-start sm:items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 shrink-0">
@@ -323,10 +257,10 @@ export default function LimpiezaPage() {
             <div className="flex items-center gap-4 bg-white dark:bg-slate-950 px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm self-start lg:self-auto">
               <div className="text-right">
                 <span className="text-[11px] text-slate-400 block">
-                  Próxima entrega de llaves del armario técnico
+                  Turno Activo Actual
                 </span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Sábado 14 Sep, 18:00 hs
+                  {turnoActivo.rango_fechas}
                 </span>
               </div>
               <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-200 dark:border-emerald-800">
@@ -334,6 +268,7 @@ export default function LimpiezaPage() {
               </div>
             </div>
           </section>
+          )}
 
           {/* 2. CALENDARIO SECUENCIAL DE 9 UNIDADES */}
           <section className="space-y-4">
@@ -365,8 +300,10 @@ export default function LimpiezaPage() {
 
             {/* Grid de 9 tarjetas de turnos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {turnos.map((t) => {
-                const esMiTurno = t.numero_uf === 3;
+              {loading ? (
+                <div className="col-span-3 text-center py-10 text-slate-500">Cargando turnos...</div>
+              ) : turnos.map((t) => {
+                const esMiTurno = t.numero_uf === 7;
                 const esActual = t.estado === "en_curso";
                 const esMultado = t.estado === "multado";
                 const esCumplido = t.estado === "cumplido";
