@@ -213,12 +213,14 @@ export default function GenerarExpensasPage() {
         };
       });
 
-      const { error } = await supabase
-        .from("expensas")
-        .upsert(loteExpensas, { onConflict: "unidad_id,periodo_mes,periodo_anio" });
+      const res = await fetch("/api/expensas/emitir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loteExpensas })
+      });
 
-      if (error) {
-        console.warn("Nota: upsert remoto falló o requiere tabla:", error);
+      if (!res.ok) {
+        throw new Error("Error en la API al emitir.");
       }
 
       setSuccessMsg(
