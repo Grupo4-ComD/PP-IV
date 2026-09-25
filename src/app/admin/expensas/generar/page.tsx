@@ -66,14 +66,11 @@ export default function GenerarExpensasPage() {
     async function fetchUnidades() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("unidades")
-          .select("id, numero_uf, piso_depto, propietario_nombre, email, coeficiente_prorrateo")
-          .order("numero_uf", { ascending: true });
-
-        if (data && !error) {
+        const res = await fetch("/api/unidades");
+        if (res.ok) {
+          const data = await res.json();
           const mapped = data.map((d: any) => ({
-            id: d.id,
+            id: Number(d.id),
             numero_uf: d.numero_uf,
             piso_depto: d.piso_depto,
             propietario_nombre: d.propietario_nombre,
