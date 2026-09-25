@@ -41,6 +41,7 @@ enum TipoProrrateo {
 
 enum CategoriaGasto {
   ordinario
+  extraordinario
   fondo_comun
   comision_pasarela
 
@@ -114,6 +115,8 @@ model Expensa {
   periodoMes       Int           @map("periodo_mes")
   periodoAnio      Int           @map("periodo_anio")
   montoOrdinario   Decimal       @map("monto_ordinario") @db.Decimal(12, 2)
+  montoExtraordinario Decimal    @default(0.00) @map("monto_extraordinario") @db.Decimal(12, 2)
+  montoCargos      Decimal       @default(0.00) @map("monto_cargos") @db.Decimal(12, 2)
   recargoMora      Decimal       @default(0.00) @map("recargo_mora") @db.Decimal(12, 2)
   totalPagar       Decimal       @map("total_pagar") @db.Decimal(12, 2)
   fechaVencimiento DateTime      @map("fecha_vencimiento") @db.Date

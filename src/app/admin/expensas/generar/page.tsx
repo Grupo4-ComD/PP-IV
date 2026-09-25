@@ -47,8 +47,9 @@ export default function GenerarExpensasPage() {
       .split("T")[0]
   );
 
-  // Gastos ordinarios cargados para el período desde la BD
+  // Gastos y cargos cargados para el período desde la BD
   const [gastos, setGastos] = useState<any[]>([]);
+  const [cargos, setCargos] = useState<any[]>([]);
   const [nuevoConcepto, setNuevoConcepto] = useState("");
   const [nuevoMonto, setNuevoMonto] = useState("");
   const [nuevoRubro, setNuevoRubro] = useState("Servicios Públicos");
@@ -104,12 +105,35 @@ export default function GenerarExpensasPage() {
       }
     }
     fetchGastos();
+
+    async function fetchCargos() {
+      try {
+        const res = await fetch(`/api/cargos?mes=${periodoMes}&anio=${periodoAnio}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCargos(data);
+        }
+      } catch (error) {
+        console.error("Error cargando cargos:", error);
+      }
+    }
+    fetchCargos();
   }, [periodoMes, periodoAnio]);
 
   // Cálculos contables de la liquidación
-  const totalGastosOrdinarios = gastos.reduce((acc, g) => acc + Number(g.monto), 0);
+  const totalGastosOrdinarios = gastos
+    .filter(g => g.categoria === "ordinario")
+    .reduce((acc, g) => acc + Number(g.monto), 0);
+
+  const totalGastosExtraordinarios = gastos
+    .filter(g => g.categoria === "extraordinario" || g.categoria === "fondo_comun")
+    .reduce((acc, g) => acc + Number(g.monto), 0);
+
+  const totalCargosParticulares = cargos.reduce((acc, c) => acc + Number(c.monto), 0);
+
   const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
-  const totalProrratear = totalGastosOrdinarios + montoFondoReserva;
+  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
+  const totalGeneralProrratear = totalProrratearOrdinario + totalGastosExtraordinarios;
 
   // Agregar gasto a la base de datos
   const handleAgregarGasto = async (e: React.FormEvent) => {
@@ -169,14 +193,20 @@ export default function GenerarExpensasPage() {
     try {
       // Generar lote de expensas calculado por porcentual m2 exacto para cada una de las 9 UFs
       const loteExpensas = unidades.map((u) => {
-        const montoPorUf = Math.round(totalProrratear * (u.porcentual_m2 / 100));
+        const montoUfOrd = Math.round(totalProrratearOrdinario * (u.porcentual_m2 / 100));
+        const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100));
+        const cargosUf = cargos.filter(c => Number(c.unidadId) === u.id).reduce((acc, c) => acc + Number(c.monto), 0);
+        const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
+
         return {
           unidad_id: u.id,
           periodo_mes: periodoMes,
           periodo_anio: periodoAnio,
-          monto_ordinario: montoPorUf,
+          monto_ordinario: montoUfOrd,
+          monto_extraordinario: montoUfExt,
+          monto_cargos: cargosUf,
           recargo_mora: 0.00,
-          total_pagar: montoPorUf,
+          total_pagar: montoUfTotal,
           fecha_vencimiento: fechaVencimiento,
           estado: "pendiente",
           created_at: new Date().toISOString(),
@@ -192,7 +222,7 @@ export default function GenerarExpensasPage() {
       }
 
       setSuccessMsg(
-        `¡Expensas de ${mesesNombres[periodoMes - 1]} ${periodoAnio} emitidas con éxito! Se prorratearon $${totalProrratear.toLocaleString("es-AR")} entre las 9 UFs según sus coeficientes de m2.`
+        `¡Expensas de ${mesesNombres[periodoMes - 1]} ${periodoAnio} emitidas con éxito! Se prorratearon $${totalGeneralProrratear.toLocaleString("es-AR")} entre las 9 UFs.`
       );
     } catch (err: any) {
       setErrorMsg("Ocurrió un error al emitir la liquidación.");
@@ -332,53 +362,53 @@ export default function GenerarExpensasPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gastos Ordinarios</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ordinarias</span>
               <Receipt className="w-4 h-4 text-indigo-500" />
             </div>
             <div className="mt-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
-                ${totalGastosOrdinarios.toLocaleString("es-AR")}
+                ${totalProrratearOrdinario.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">{gastos.length} comprobantes cargados</span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">Incluye {porcentajeFondoReserva}% de Fondo de Reserva</span>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fondo Reserva ({porcentajeFondoReserva}%)</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Extraordinarias</span>
               <Building2 className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="mt-2">
               <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                ${montoFondoReserva.toLocaleString("es-AR")}
+                ${totalGastosExtraordinarios.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Reglamento interno art. 14</span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">Se prorratea por m2</span>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suma Coeficientes</span>
-              <Percent className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cargos Particulares</span>
+              <AlertCircle className="w-4 h-4 text-rose-500" />
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
-                100.00%
+              <span className="text-2xl font-bold text-rose-600 dark:text-rose-400 font-mono">
+                ${totalCargosParticulares.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-emerald-600 font-semibold block mt-0.5">Distribución 9 UFs exacta</span>
+              <span className="text-[11px] text-rose-600 font-semibold block mt-0.5">Multas y reparaciones exclusivas (No prorrateable)</span>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">Total a Prorratear</span>
+              <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">Suma General</span>
               <DollarSign className="w-4 h-4 text-white" />
             </div>
             <div className="mt-2">
               <span className="text-3xl font-bold font-mono">
-                ${totalProrratear.toLocaleString("es-AR")}
+                ${(totalGeneralProrratear + totalCargosParticulares).toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-indigo-200 block mt-0.5">Balance 100% Cuadrado</span>
+              <span className="text-[11px] text-indigo-200 block mt-0.5">Balance General 100% Cuadrado</span>
             </div>
           </div>
         </div>
@@ -484,25 +514,27 @@ export default function GenerarExpensasPage() {
                   <tr>
                     <th className="px-3 py-2.5">UF</th>
                     <th className="px-3 py-2.5">Depto</th>
-                    <th className="px-3 py-2.5">Propietario</th>
                     <th className="px-3 py-2.5 text-center">Coef. m2</th>
                     <th className="px-3 py-2.5 text-right">Ordinarias</th>
+                    <th className="px-3 py-2.5 text-right">Extraordinarias</th>
+                    <th className="px-3 py-2.5 text-right">Cargos Indiv.</th>
                     <th className="px-3 py-2.5 text-right">Total a Liquidar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {unidades.map((u) => {
-                    const montoUf = Math.round(totalProrratear * (u.porcentual_m2 / 100));
+                    const montoUfOrd = Math.round(totalProrratearOrdinario * (u.porcentual_m2 / 100));
+                    const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100));
+                    const cargosUf = cargos.filter(c => Number(c.unidadId) === u.id).reduce((acc, c) => acc + Number(c.monto), 0);
+                    const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
+
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-950/60 transition">
                         <td className="px-3 py-3 font-bold text-slate-900 dark:text-white">
                           UF {u.numero_uf}
                         </td>
-                        <td className="px-3 py-3 font-semibold text-indigo-600 dark:text-indigo-400">
+                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
                           {u.piso_depto}
-                        </td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
-                          {u.propietario_nombre}
                         </td>
                         <td className="px-3 py-3 text-center">
                           <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300">
@@ -510,10 +542,16 @@ export default function GenerarExpensasPage() {
                           </span>
                         </td>
                         <td className="px-3 py-3 text-right font-mono text-slate-600 dark:text-slate-400">
-                          ${Math.round(totalGastosOrdinarios * (u.porcentual_m2 / 100)).toLocaleString("es-AR")}
+                          ${montoUfOrd.toLocaleString("es-AR")}
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono text-slate-600 dark:text-slate-400">
+                          ${montoUfExt.toLocaleString("es-AR")}
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono text-rose-500">
+                          {cargosUf > 0 ? `$${cargosUf.toLocaleString("es-AR")}` : "-"}
                         </td>
                         <td className="px-3 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          ${montoUf.toLocaleString("es-AR")}
+                          ${montoUfTotal.toLocaleString("es-AR")}
                         </td>
                       </tr>
                     );
@@ -521,17 +559,23 @@ export default function GenerarExpensasPage() {
                 </tbody>
                 <tfoot className="border-t-2 border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 font-bold">
                   <tr>
-                    <td colSpan={3} className="px-3 py-3 text-slate-900 dark:text-white">
+                    <td colSpan={2} className="px-3 py-3 text-slate-900 dark:text-white">
                       TOTAL CONDOMINIO (9 UFs)
                     </td>
                     <td className="px-3 py-3 text-center font-mono text-emerald-600">
                       100.00%
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-white">
-                      ${totalGastosOrdinarios.toLocaleString("es-AR")}
+                      ${totalProrratearOrdinario.toLocaleString("es-AR")}
+                    </td>
+                    <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-white">
+                      ${totalGastosExtraordinarios.toLocaleString("es-AR")}
+                    </td>
+                    <td className="px-3 py-3 text-right font-mono text-rose-500">
+                      ${totalCargosParticulares.toLocaleString("es-AR")}
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-emerald-600 text-sm">
-                      ${totalProrratear.toLocaleString("es-AR")}
+                      ${(totalGeneralProrratear + totalCargosParticulares).toLocaleString("es-AR")}
                     </td>
                   </tr>
                 </tfoot>
