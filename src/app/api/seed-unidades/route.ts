@@ -1,1 +1,25 @@
-import { NextResponse } from 'next/server'; import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); export async function GET() { try { await prisma.unidad.createMany({ data: [ { numeroUf: 1, pisoDepto: 'PB A', propietarioNombre: 'Paula Administradora', email: 'paula@mail.com', coeficienteProrrateo: 10.00 }, { numeroUf: 2, pisoDepto: 'PB B', propietarioNombre: 'Gonz·lez, Mario', email: 'mario@mail.com', coeficienteProrrateo: 10.00 }, { numeroUf: 3, pisoDepto: 'Piso 1 A', propietarioNombre: 'MartÌnez, Laura', email: 'laura@mail.com', coeficienteProrrateo: 12.00 }, { numeroUf: 4, pisoDepto: 'Piso 1 B', propietarioNombre: 'RodrÌguez, Carlos', email: 'carlos@mail.com', coeficienteProrrateo: 10.00 }, { numeroUf: 5, pisoDepto: 'Piso 1 C', propietarioNombre: 'Fern·ndez, Ana', email: 'ana@mail.com', coeficienteProrrateo: 10.00 }, { numeroUf: 6, pisoDepto: 'Piso 2 A', propietarioNombre: 'GarcÌa, Pedro', email: 'pedro@mail.com', coeficienteProrrateo: 12.00 }, { numeroUf: 7, pisoDepto: 'Piso 2 B', propietarioNombre: 'Sciulli, Guillermo', email: 'guillermo@mail.com', coeficienteProrrateo: 15.00 }, { numeroUf: 8, pisoDepto: 'Piso 3 A', propietarioNombre: 'LÛpez, MarÌa', email: 'maria@mail.com', coeficienteProrrateo: 11.00 }, { numeroUf: 9, pisoDepto: 'Piso 3 B', propietarioNombre: 'DÌaz, Juan', email: 'juan@mail.com', coeficienteProrrateo: 10.00 } ] }); return NextResponse.json({ message: 'Unidades inyectadas' }); } catch (error) { return NextResponse.json({ error: String(error) }, { status: 500 }); } }
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export async function GET() {
+  try {
+    await prisma.unidad.createMany({
+      data: [
+        { numeroUf: 1, pisoDepto: 'PB A', propietarioNombre: 'Paula Administradora', email: 'paula@mail.com', coeficienteProrrateo: 10.00 },
+        { numeroUf: 2, pisoDepto: 'PB B', propietarioNombre: 'Gonz√°lez, Mario', email: 'mario@mail.com', coeficienteProrrateo: 10.00 },
+        { numeroUf: 3, pisoDepto: 'Piso 1 A', propietarioNombre: 'Mart√≠nez, Laura', email: 'laura@mail.com', coeficienteProrrateo: 12.00 },
+        { numeroUf: 4, pisoDepto: 'Piso 1 B', propietarioNombre: 'Rodr√≠guez, Carlos', email: 'carlos@mail.com', coeficienteProrrateo: 10.00 },
+        { numeroUf: 5, pisoDepto: 'Piso 1 C', propietarioNombre: 'Fern√°ndez, Ana', email: 'ana@mail.com', coeficienteProrrateo: 10.00 },
+        { numeroUf: 6, pisoDepto: 'Piso 2 A', propietarioNombre: 'Garc√≠a, Pedro', email: 'pedro@mail.com', coeficienteProrrateo: 12.00 },
+        { numeroUf: 7, pisoDepto: 'Piso 2 B', propietarioNombre: 'Sciulli, Guillermo', email: 'guillermo@mail.com', coeficienteProrrateo: 15.00 },
+        { numeroUf: 8, pisoDepto: 'Piso 3 A', propietarioNombre: 'L√≥pez, Mar√≠a', email: 'maria@mail.com', coeficienteProrrateo: 11.00 },
+        { numeroUf: 9, pisoDepto: 'Piso 3 B', propietarioNombre: 'D√≠az, Juan', email: 'juan@mail.com', coeficienteProrrateo: 10.00 }
+      ]
+    });
+    return NextResponse.json({ message: 'Unidades inyectadas' });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
