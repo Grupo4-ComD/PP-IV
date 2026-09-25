@@ -4,6 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import RegistrarCobroModal from "@/components/admin/RegistrarCobroModal";
+import RegistrarGastoModal from "@/components/admin/RegistrarGastoModal";
+import CargoVecinoModal from "@/components/admin/CargoVecinoModal";
+import CuotaExtraModal from "@/components/admin/CuotaExtraModal";
+import AjusteCajaModal from "@/components/admin/AjusteCajaModal";
 import {
   Building2,
   Receipt,
@@ -45,6 +49,10 @@ export default function AdminDashboardPage() {
   });
   const [cargando, setCargando] = useState(true);
   const [isCobroModalOpen, setIsCobroModalOpen] = useState(false);
+  const [isGastoModalOpen, setIsGastoModalOpen] = useState(false);
+  const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
+  const [isCuotaModalOpen, setIsCuotaModalOpen] = useState(false);
+  const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   
   // Nuevo estado para tabs
   const [activeTab, setActiveTab] = useState<"movimientos" | "unidades">("movimientos");
@@ -196,25 +204,25 @@ export default function AdminDashboardPage() {
             Centro de Operaciones
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button onClick={() => alert("Modal Ingreso de Gastos en desarrollo")} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-rose-50 hover:border-rose-200 dark:hover:bg-rose-950/30 transition group">
+            <button onClick={() => setIsGastoModalOpen(true)} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-rose-50 hover:border-rose-200 dark:hover:bg-rose-950/30 transition group">
               <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
                 <TrendingDown className="w-6 h-6 text-rose-600 dark:text-rose-400" />
               </div>
               <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Gasto Edificio</span>
             </button>
-            <button onClick={() => alert("Modal Cargo Individual en desarrollo")} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/30 transition group">
+            <button onClick={() => setIsCargoModalOpen(true)} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/30 transition group">
               <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
                 <UserPlus className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Cargo a Vecino</span>
             </button>
-            <button onClick={() => alert("Modal Cuota Extra en desarrollo")} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/30 transition group">
+            <button onClick={() => setIsCuotaModalOpen(true)} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/30 transition group">
               <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
                 <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Cuota Extra</span>
             </button>
-            <button onClick={() => alert("Modal Ajuste Caja en desarrollo")} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition group">
+            <button onClick={() => setIsAjusteModalOpen(true)} className="flex flex-col items-center justify-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition group">
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:scale-110 transition shadow-sm border border-slate-200 dark:border-slate-700">
                 <ArrowRightLeft className="w-6 h-6 text-slate-600 dark:text-slate-400" />
               </div>
@@ -352,6 +360,10 @@ export default function AdminDashboardPage() {
           unidades={unidades}
           onCobroExitoso={loadDashboard}
         />
+        <RegistrarGastoModal isOpen={isGastoModalOpen} onClose={() => setIsGastoModalOpen(false)} />
+        <CargoVecinoModal isOpen={isCargoModalOpen} onClose={() => setIsCargoModalOpen(false)} unidades={unidades} />
+        <CuotaExtraModal isOpen={isCuotaModalOpen} onClose={() => setIsCuotaModalOpen(false)} />
+        <AjusteCajaModal isOpen={isAjusteModalOpen} onClose={() => setIsAjusteModalOpen(false)} />
       </main>
     </div>
   );
