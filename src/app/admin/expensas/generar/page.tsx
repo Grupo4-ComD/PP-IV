@@ -107,7 +107,7 @@ export default function GenerarExpensasPage() {
   }, [periodoMes, periodoAnio]);
 
   // Cálculos contables de la liquidación
-  const totalGastosOrdinarios = gastos.reduce((acc, g) => acc + g.monto, 0);
+  const totalGastosOrdinarios = gastos.reduce((acc, g) => acc + Number(g.monto), 0);
   const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
   const totalProrratear = totalGastosOrdinarios + montoFondoReserva;
 
@@ -239,6 +239,47 @@ export default function GenerarExpensasPage() {
             </Link>
           </div>
         </header>
+
+        {/* Barra de Filtro de Período */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm font-bold text-slate-900 dark:text-white">Período a Liquidar:</span>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <label className="text-[10px] text-slate-400 font-semibold block mb-1">Mes</label>
+              <select
+                value={periodoMes}
+                onChange={(e) => setPeriodoMes(parseInt(e.target.value))}
+                className="w-32 h-9 px-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              >
+                {mesesNombres.map((m, idx) => (
+                  <option key={idx + 1} value={idx + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-400 font-semibold block mb-1">Año</label>
+              <input
+                type="number"
+                value={periodoAnio}
+                onChange={(e) => setPeriodoAnio(parseInt(e.target.value))}
+                className="w-24 h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div className="ml-2 pl-4 border-l border-slate-200 dark:border-slate-800">
+              <label className="text-[10px] text-slate-400 font-semibold block mb-1">Vencimiento Legal</label>
+              <input
+                type="date"
+                value={fechaVencimiento}
+                onChange={(e) => setFechaVencimiento(e.target.value)}
+                className="w-36 h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Stepper de Proceso Contable en 3 Pasos */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
@@ -416,48 +457,6 @@ export default function GenerarExpensasPage() {
                     Ir al Dashboard
                   </Link>
                 </div>
-              </div>
-            </div>
-
-            {/* Parámetros de Período y Vencimiento */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-500" />
-                <span>Período & Vencimiento</span>
-              </h3>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-400 font-semibold block mb-1">Mes</label>
-                  <select
-                    value={periodoMes}
-                    onChange={(e) => setPeriodoMes(parseInt(e.target.value))}
-                    className="w-full h-9 px-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold"
-                  >
-                    {mesesNombres.map((m, idx) => (
-                      <option key={idx + 1} value={idx + 1}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 font-semibold block mb-1">Año</label>
-                  <input
-                    type="number"
-                    value={periodoAnio}
-                    onChange={(e) => setPeriodoAnio(parseInt(e.target.value))}
-                    className="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1">Fecha de Vencimiento Legal</label>
-                <input
-                  type="date"
-                  value={fechaVencimiento}
-                  onChange={(e) => setFechaVencimiento(e.target.value)}
-                  className="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold"
-                />
               </div>
             </div>
           </div>
