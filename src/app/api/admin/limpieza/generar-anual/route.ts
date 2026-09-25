@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     if (unidades.length === 0) return NextResponse.json({ error: 'No hay unidades' }, { status: 400 });
     
     const fechaBase = new Date('2026-01-12T00:00:00Z'); // Lunes semana 1
-    const asignaciones = [];
+    const asignaciones: any[] = [];
     
     for (let i = 0; i < 52; i++) {
       const inicio = new Date(fechaBase);
