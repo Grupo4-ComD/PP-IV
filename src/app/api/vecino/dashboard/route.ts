@@ -21,57 +21,58 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
     }
 
-    // Para el estado de cuenta, usamos el mes actual (o mes 8 de 2026 como en mocks)
-    const periodoMes = 8;
-    const periodoAnio = 2026;
-
-    // Calcular deuda histórica
-    const pagosAntResult = await prisma.pagoVecino.aggregate({
-      where: { 
-        unidadId: unidad.id, 
-        estado: 'aprobado', 
-        OR: [{ periodoAnio: { lt: periodoAnio } }, { periodoAnio, periodoMes: { lt: periodoMes } }] 
-      },
-      _sum: { monto: true }
+    // Obtener la deuda total sumando expensas impagas reales
+    const expensasPendientes = await prisma.expensa.findMany({
+      where: { unidadId: unidad.id, estado: { not: 'pagado' } }
     });
-    
-    const cargosAntResult = await prisma.cargoParticular.aggregate({
-      where: { 
-        unidadId: unidad.id, 
-        OR: [{ periodoAnio: { lt: periodoAnio } }, { periodoAnio, periodoMes: { lt: periodoMes } }] 
-      },
-      _sum: { monto: true }
+    const saldoPendiente = expensasPendientes.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+
+    // Traer la última expensa emitida para mostrar el "Mes Actual"
+    const ultimaExpensa = await prisma.expensa.findFirst({
+      where: { unidadId: unidad.id },
+      orderBy: [
+        { periodoAnio: 'desc' },
+        { periodoMes: 'desc' }
+      ]
     });
 
-    const deudaAnt = Number(unidad.saldoAnteriorInicial) + Number(cargosAntResult._sum.monto || 0) - Number(pagosAntResult._sum.monto || 0);
-    const pagosMes = await prisma.pagoVecino.findMany({
-      where: { unidadId: unidad.id, periodoMes, periodoAnio, estado: 'aprobado' }
-    });
-    const totalPagosMes = pagosMes.reduce((acc, p) => acc + Number(p.monto), 0);
-    const saldoPendiente = deudaAnt - totalPagosMes;
+    let expensaRes = null;
+    if (ultimaExpensa) {
+      expensaRes = {
+        id: ultimaExpensa.id.toString(),
+        unidad_id: ultimaExpensa.unidadId.toString(),
+        periodo_mes: ultimaExpensa.periodoMes,
+        periodo_anio: ultimaExpensa.periodoAnio,
+        monto_ordinario: Number(ultimaExpensa.montoOrdinario),
+        monto_extraordinario: Number(ultimaExpensa.montoExtraordinario),
+        monto_cargos: Number(ultimaExpensa.montoCargos),
+        recargo_mora: Number(ultimaExpensa.recargoMora),
+        total_pagar: Number(ultimaExpensa.totalPagar),
+        fecha_vencimiento: ultimaExpensa.fechaVencimiento.toISOString().split('T')[0],
+        estado: ultimaExpensa.estado,
+        comprobante_url: ultimaExpensa.comprobanteUrl,
+      };
+    }
 
-    // Simulamos la expensa del mes actual a pagar
-    const gastosMes = await prisma.gasto.aggregate({
-      where: { fechaGasto: { gte: new Date(2026, 7, 1), lte: new Date(2026, 7, 31) } },
-      _sum: { monto: true }
+    // Calcular tickets activos del vecino
+    const ticketsActivos = await prisma.ticketReclamo.count({
+      where: { unidadId: unidad.id, estado: { in: ['abierto', 'en_revision'] } }
     });
-    
-    // Prorrateo básico
-    const totalGastos = Number(gastosMes._sum.monto || 0);
-    const montoOrdinario = (totalGastos * 1.05) * (Number(unidad.coeficienteProrrateo) / 100); 
 
-    const expensaMockDinamic = {
-      id: 1,
-      unidad_id: unidad.id.toString(),
-      periodo_mes: periodoMes,
-      periodo_anio: periodoAnio,
-      monto_ordinario: montoOrdinario,
-      recargo_mora: saldoPendiente > 0 ? (saldoPendiente * 0.05) : 0, // 5% punitorio mock
-      total_pagar: saldoPendiente + montoOrdinario,
-      fecha_vencimiento: "2026-09-15",
-      estado: saldoPendiente > 0 ? "pendiente" : "pagado",
-      comprobante_url: null,
-    };
+    // Calcular votaciones activas en todo el consorcio
+    const votacionesActivas = await prisma.presupuestoVotacion.count({
+      where: { estado: 'en_votacion' }
+    });
+
+    // Verificar si el vecino tiene turno de limpieza esta semana
+    const hoy = new Date();
+    const limpieza = await prisma.limpiezaRotativa.findFirst({
+      where: {
+        unidadIdAsignada: unidad.id,
+        semanaInicio: { lte: hoy },
+        semanaFin: { gte: hoy }
+      }
+    });
 
     return NextResponse.json({
       unidad: {
@@ -83,7 +84,15 @@ export async function GET(request: Request) {
         coeficiente_prorrateo: Number(unidad.coeficienteProrrateo),
         saldo_pendiente: saldoPendiente
       },
-      expensa: expensaMockDinamic
+      expensa: expensaRes,
+      metricas: {
+        ticketsActivos,
+        votacionesActivas
+      },
+      limpiezaTurno: limpieza ? {
+        semana_inicio: limpieza.semanaInicio.toISOString().split('T')[0],
+        semana_fin: limpieza.semanaFin.toISOString().split('T')[0],
+      } : null
     });
 
   } catch (error) {

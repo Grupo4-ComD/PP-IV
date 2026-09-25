@@ -31,18 +31,9 @@ export default function VecinoDashboardPage() {
     email: "laura.martinez@calle425.com",
   });
 
-  const [expensa, setExpensa] = useState<ExpensaData>({
-    id: 101,
-    unidad_id: 3,
-    periodo_mes: 9,
-    periodo_anio: 2026,
-    monto_ordinario: 48500,
-    recargo_mora: 3395,
-    total_pagar: 51895,
-    fecha_vencimiento: "2026-09-10",
-    estado: "pendiente",
-    comprobante_url: null,
-  });
+  const [expensa, setExpensa] = useState<ExpensaData | null>(null);
+  const [metricas, setMetricas] = useState({ ticketsActivos: 0, votacionesActivas: 0 });
+  const [limpiezaTurno, setLimpiezaTurno] = useState<{ semana_inicio: string, semana_fin: string } | null>(null);
 
   // Checklist interactivo de limpieza
   const [checklist, setChecklist] = useState([
@@ -67,6 +58,8 @@ export default function VecinoDashboardPage() {
           const data = await res.json();
           setUnidad(data.unidad);
           setExpensa(data.expensa);
+          if (data.metricas) setMetricas(data.metricas);
+          if (data.limpiezaTurno) setLimpiezaTurno(data.limpiezaTurno);
         }
       } catch (err) {
         console.warn("Error cargando panel del vecino:", err);
@@ -150,34 +143,41 @@ export default function VecinoDashboardPage() {
 
           {/* 1. COMPONENTE ESTADO DE CUENTA Y EXPENSAS */}
           <section>
-            <EstadoCuentaCard
-              expensaInicial={expensa}
-              unidadInicial={unidad}
-            />
+            {expensa ? (
+              <EstadoCuentaCard
+                expensaInicial={expensa}
+                unidadInicial={unidad}
+              />
+            ) : (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm text-center">
+                <p className="text-sm font-semibold text-slate-500">No hay expensas emitidas para este mes.</p>
+              </div>
+            )}
           </section>
 
           {/* 2. CRONOGRAMA DE LIMPIEZA & CHECKLIST */}
           <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
-            {/* Banner de semana activa */}
-            <div className="w-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+            <div className={`w-full ${limpiezaTurno ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800'} border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <div className={`w-10 h-10 rounded-lg ${limpiezaTurno ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'} flex items-center justify-center shrink-0`}>
                   <Sparkles className="w-5 h-5 stroke-[2]" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  <span className={`text-[10px] font-bold ${limpiezaTurno ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500'} uppercase tracking-wider`}>
                     Semana de Limpieza Asignada
                   </span>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Del 22 al 28 de Septiembre • Tu Unidad (UF 0{unidad.numero_uf})
+                    {limpiezaTurno ? `Del ${limpiezaTurno.semana_inicio.split('-')[2]} al ${limpiezaTurno.semana_fin.split('-')[2]} de ${new Date(limpiezaTurno.semana_inicio).toLocaleString('es-ES', { month: 'long' })}` : 'Sin turno esta semana'}
                   </h3>
                 </div>
               </div>
 
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 text-xs font-semibold shadow-xs border border-amber-200 dark:border-amber-800/50">
-                <Clock className="w-3.5 h-3.5" />
-                En progreso (3 días restantes)
-              </span>
+              {limpiezaTurno && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 text-xs font-semibold shadow-xs border border-amber-200 dark:border-amber-800/50">
+                  <Clock className="w-3.5 h-3.5" />
+                  Turno Activo
+                </span>
+              )}
             </div>
 
             <div className="mb-4">
@@ -264,7 +264,9 @@ export default function VecinoDashboardPage() {
               </div>
 
               <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <span className="text-xs text-slate-400">1 Ticket en curso</span>
+                <span className="text-xs text-slate-400">
+                  {metricas.ticketsActivos === 1 ? '1 Ticket en curso' : `${metricas.ticketsActivos} Tickets en curso`}
+                </span>
                 <Link
                   href="/vecino/mesa-ayuda"
                   className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-xs font-semibold transition"
@@ -291,7 +293,9 @@ export default function VecinoDashboardPage() {
               </div>
 
               <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <span className="text-xs text-emerald-600 font-semibold">1 Votación Activa</span>
+                <span className="text-xs text-emerald-600 font-semibold">
+                  {metricas.votacionesActivas === 1 ? '1 Votación Activa' : `${metricas.votacionesActivas} Votaciones Activas`}
+                </span>
                 <Link
                   href="/vecino/votaciones"
                   className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-semibold transition"
