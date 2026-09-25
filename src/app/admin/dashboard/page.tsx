@@ -56,14 +56,7 @@ export default function AdminDashboardPage() {
   
   // Nuevo estado para tabs
   const [activeTab, setActiveTab] = useState<"movimientos" | "unidades">("movimientos");
-
-  // Mock de últimos movimientos
-  const [movimientos, setMovimientos] = useState([
-    { id: 1, periodo: "09/2026", detalle: "Cobro (U. 1° A)", monto: 45000, tipo: "PAGO" },
-    { id: 2, periodo: "09/2026", detalle: "Edenor [FONDO]", monto: 12500, tipo: "GASTO" },
-    { id: 3, periodo: "09/2026", detalle: "Reparación Caño (U. 2° B)", monto: 15000, tipo: "CARGO" },
-    { id: 4, periodo: "08/2026", detalle: "Aysa", monto: 8000, tipo: "GASTO" },
-  ]);
+  const [movimientos, setMovimientos] = useState<any[]>([]);
 
   const loadDashboard = async () => {
     try {
@@ -71,7 +64,7 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setMetricas({
-          saldoCaja: 1540200.50, // Mock de saldo real
+          saldoCaja: data.saldoCaja || 0,
           recaudacionMes: data.recaudacionMes,
           ufsAlDia: data.ufsAlDia,
           ufsMora: data.ufsMora,
@@ -79,6 +72,7 @@ export default function AdminDashboardPage() {
           ticketsActivos: data.ticketsActivos
         });
         setUnidades(data.unidades);
+        setMovimientos(data.movimientos || []);
       }
     } catch (err) {
       console.error("Error al cargar el dashboard real:", err);

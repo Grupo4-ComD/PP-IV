@@ -72,7 +72,47 @@ export async function GET() {
       };
     }));
 
+    // --- CÁLCULO DE SALDO DE CAJA Y MOVIMIENTOS ---
+    const gastosData = await prisma.gasto.findMany({
+      orderBy: { fechaGasto: 'desc' },
+      take: 20
+    });
+    
+    const pagosData = await prisma.pagoVecino.findMany({
+      where: { estado: 'aprobado' },
+      include: { unidad: true },
+      orderBy: { fechaPago: 'desc' },
+      take: 20
+    });
+
+    const movimientos = [
+      ...gastosData.map(g => ({
+        id: `g-${g.id}`,
+        periodo: `${(new Date(g.fechaGasto).getMonth() + 1).toString().padStart(2, '0')}/${new Date(g.fechaGasto).getFullYear()}`,
+        detalle: g.concepto,
+        monto: Number(g.monto),
+        tipo: 'GASTO',
+        fecha: g.fechaGasto.getTime()
+      })),
+      ...pagosData.map(p => ({
+        id: `p-${p.id}`,
+        periodo: `${p.periodoMes.toString().padStart(2, '0')}/${p.periodoAnio}`,
+        detalle: `Cobro (U. ${p.unidad.pisoDepto})`,
+        monto: Number(p.monto),
+        tipo: 'PAGO',
+        fecha: p.fechaPago.getTime()
+      }))
+    ].sort((a, b) => b.fecha - a.fecha).slice(0, 15);
+
+    const totalPagos = await prisma.pagoVecino.aggregate({ where: { estado: 'aprobado' }, _sum: { monto: true } });
+    const totalGastos = await prisma.gasto.aggregate({ _sum: { monto: true } });
+    
+    // Saldo base imaginario + Ingresos - Egresos
+    const saldoCaja = 1200000 + Number(totalPagos._sum.monto || 0) - Number(totalGastos._sum.monto || 0);
+
     return NextResponse.json({
+      saldoCaja,
+      movimientos,
       recaudacionMes,
       ufsAlDia,
       ufsMora,
