@@ -1,1 +1,56 @@
-﻿import { NextResponse } from 'next/server'; import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); export const dynamic = 'force-dynamic'; export async function GET(request: Request) { try { const ticketsConPresupuestos = await prisma.ticketReclamo.findMany({ where: { presupuestos: { some: {} } }, include: { presupuestos: { include: { votos: { include: { unidad: true } } } } } }); const temas = ticketsConPresupuestos.map(t => { const fechaCierre = new Date(t.fechaCreacion); fechaCierre.setDate(fechaCierre.getDate() + 15); const diasRestantes = Math.ceil((fechaCierre.getTime() - new Date().getTime()) / (1000 * 3600 * 24)); return { id: Number(t.id), ticket_code: \#TK-\\, titulo: t.titulo, descripcion: t.descripcion, fecha_cierre: fechaCierre.toLocaleDateString('es-AR'), dias_restantes: diasRestantes > 0 ? diasRestantes : 0, presupuestos: t.presupuestos.map(p => ({ id: Number(p.id), ticket_id: Number(t.id), ticket_titulo: t.titulo, proveedor_nombre: p.proveedorNombre, contacto: 'Datos en adjunto', monto_total: Number(p.montoTotal), detalle: p.detalle, tiempo_ejecucion: 'A convenir', garantia: 'No especificada', pdf_url: p.pdfUrl || '#', votos_favor: p.votosFavor, votos_ufs: p.votos.map(v => v.unidad.numeroUf), estado: p.estado })) }; }); return NextResponse.json(temas); } catch (err) { return NextResponse.json({ error: String(err) }, { status: 500 }); } }
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  try {
+    const ticketsConPresupuestos = await prisma.ticketReclamo.findMany({
+      where: { presupuestos: { some: {} } },
+      include: {
+        presupuestos: {
+          include: {
+            votos: {
+              include: { unidad: true }
+            }
+          }
+        }
+      }
+    });
+
+    const temas = ticketsConPresupuestos.map(t => {
+      const fechaCierre = new Date(t.fechaCreacion);
+      fechaCierre.setDate(fechaCierre.getDate() + 15);
+      const diasRestantes = Math.ceil((fechaCierre.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+
+      return {
+        id: Number(t.id),
+        ticket_code: `#TK-${t.id}`,
+        titulo: t.titulo,
+        descripcion: t.descripcion,
+        fecha_cierre: fechaCierre.toLocaleDateString('es-AR'),
+        dias_restantes: diasRestantes > 0 ? diasRestantes : 0,
+        presupuestos: t.presupuestos.map(p => ({
+          id: Number(p.id),
+          ticket_id: Number(t.id),
+          ticket_titulo: t.titulo,
+          proveedor_nombre: p.proveedorNombre,
+          contacto: 'Datos en adjunto',
+          monto_total: Number(p.montoTotal),
+          detalle: p.detalle,
+          tiempo_ejecucion: 'A convenir',
+          garantia: 'No especificada',
+          pdf_url: p.pdfUrl || '#',
+          votos_favor: p.votosFavor,
+          votos_ufs: p.votos.map(v => v.unidad.numeroUf),
+          estado: p.estado
+        }))
+      };
+    });
+
+    return NextResponse.json(temas);
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
