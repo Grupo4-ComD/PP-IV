@@ -33,7 +33,7 @@ export async function GET() {
 
     let ufsAlDia = 0;
     let ufsMora = 0;
-    let totalMoraPendiente = expensasPendientes.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+    const totalMoraPendiente = expensasPendientes.reduce((sum, e) => sum + Number(e.totalPagar), 0);
 
     const unidadesConEstado = unidades.map((u) => {
       // Filtrar las expensas impagas de esta unidad

@@ -115,7 +115,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
 
   // --- CÁLCULO ESTADO DE CAJA ---
   let saldoCajaActual = 0; 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const estadoCaja: any[] = []; 
 
   pagosMes.forEach(pago => {
