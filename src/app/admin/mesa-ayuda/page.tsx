@@ -73,26 +73,10 @@ export default function AdminMesaAyudaPage() {
     async function loadTickets() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("tickets_reclamos")
-          .select(`
-            id,
-            unidad_id,
-            titulo,
-            descripcion,
-            categoria,
-            estado,
-            fecha_creacion,
-            unidades (
-              numero_uf,
-              piso_depto,
-              propietario_nombre
-            )
-          `)
-          .order("id", { ascending: false });
-
-        if (data && !error) {
-          setTickets(data as any);
+        const res = await fetch("/api/tickets");
+        if (res.ok) {
+          const data = await res.json();
+          setTickets(data);
         }
       } catch (err) {
         console.warn("Error cargando tickets:", err);
