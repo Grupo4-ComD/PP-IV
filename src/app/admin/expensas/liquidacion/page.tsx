@@ -51,31 +51,10 @@ export default function LiquidacionExpensasPage() {
     async function loadExpensas() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("expensas")
-          .select(`
-            id,
-            unidad_id,
-            periodo_mes,
-            periodo_anio,
-            monto_ordinario,
-            recargo_mora,
-            total_pagar,
-            fecha_vencimiento,
-            estado,
-            fecha_pago,
-            unidades (
-              numero_uf,
-              piso_depto,
-              propietario_nombre
-            )
-          `)
-          .order("periodo_anio", { ascending: false })
-          .order("periodo_mes", { ascending: false })
-          .order("unidad_id", { ascending: true });
-
-        if (data && !error) {
-          setExpensas(data as any);
+        const res = await fetch("/api/expensas");
+        if (res.ok) {
+          const data = await res.json();
+          setExpensas(data);
         }
       } catch (err) {
         console.warn("Error cargando expensas:", err);
