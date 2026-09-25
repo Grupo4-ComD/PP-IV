@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useChat } from "ai/react";
 import {
   Bot,
   Sparkles,
@@ -13,26 +14,20 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-}
-
 export default function ChatbotReglamento() {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "¡Hola! Soy el **Asistente Virtual de Convivencia** del Consorcio Calle 425. ¿En qué puedo ayudarte hoy sobre el reglamento, ruidos molestos, tenencia de mascotas o espacios comunes?",
-      timestamp: "Ahora",
-    },
-  ]);
+  
+  const { messages, input, handleInputChange, handleSubmit, append, isLoading, error } = useChat({
+    api: "/api/chat-reglamento",
+    initialMessages: [
+      {
+        id: "1",
+        role: "assistant",
+        content:
+          "¡Hola! Soy el **Asistente Virtual** del Consorcio Calle 425 - Rodríguez Peña 1454. ¿En qué puedo ayudarte hoy sobre el reglamento de copropiedad, expensas, reparaciones o uso de espacios comunes?",
+      }
+    ]
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -44,78 +39,17 @@ export default function ChatbotReglamento() {
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isLoading]);
 
   const suggestedQuestions = [
-    "¿Puedo pasear a mi mascota sin correa?",
-    "¿Cuáles son los horarios de descanso y ruidos?",
-    "¿Cómo funciona la multa por no limpiar?",
-    "¿A qué hora se saca la basura?",
+    "¿Puedo dejar mi bicicleta en el pasillo?",
+    "¿Hasta qué día puedo pagar las expensas?",
+    "¿Qué pasa si me atraso con el pago?",
+    "¿Puedo poner una oficina en mi departamento?",
   ];
 
-  const handleSend = async (textToSend?: string) => {
-    const messageText = (textToSend || input).trim();
-    if (!messageText || loading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: messageText,
-      timestamp: new Date().toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/chat-reglamento", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: messageText,
-          conversationHistory: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      });
-
-      const data = await res.json();
-
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content:
-          data.response ||
-          "Para este caso particular le recomendamos abrir un ticket en la Mesa de Ayuda.",
-        timestamp: new Date().toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (err) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content:
-          "Lo siento, ocurrió un error de conexión al consultar el reglamento. Si es urgente, por favor abre un ticket en la **Mesa de Ayuda**.",
-        timestamp: new Date().toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
+  const handleSuggestedQuestion = (q: string) => {
+    append({ role: "user", content: q });
   };
 
   return (
@@ -191,15 +125,25 @@ export default function ChatbotReglamento() {
                       </div>
                     )}
                   </div>
+                  {/* Para mantener la estética sin guardar la fecha exacta de forma ruidosa */}
                   <span className="text-[10px] text-slate-400 mt-1 px-1">
-                    {msg.timestamp}
+                    {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : "Ahora"}
                   </span>
                 </div>
               );
             })}
 
+            {/* Error de Red */}
+            {error && (
+              <div className="flex flex-col items-start">
+                <div className="max-w-[85%] p-3.5 rounded-2xl leading-relaxed whitespace-pre-line shadow-xs bg-red-50 text-red-600 border border-red-200 rounded-bl-xs">
+                  Hubo un error al intentar conectarse al servidor. Por favor, intenta de nuevo o crea un ticket si el problema persiste.
+                </div>
+              </div>
+            )}
+
             {/* Indicador de Tipeo */}
-            {loading && (
+            {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex items-center gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-bl-xs w-24 text-slate-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
@@ -211,12 +155,12 @@ export default function ChatbotReglamento() {
           </div>
 
           {/* Sugerencias Rápidas */}
-          {messages.length <= 2 && !loading && (
+          {messages.length <= 2 && !isLoading && (
             <div className="px-3 py-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-1.5 overflow-x-auto no-scrollbar shrink-0">
               {suggestedQuestions.map((q, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleSend(q)}
+                  onClick={() => handleSuggestedQuestion(q)}
                   className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 transition cursor-pointer flex items-center gap-1"
                 >
                   <MessageSquareQuote className="w-2.5 h-2.5 text-indigo-500" />
@@ -228,22 +172,19 @@ export default function ChatbotReglamento() {
 
           {/* Formulario Input */}
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
+            onSubmit={handleSubmit}
             className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2 shrink-0"
           >
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Pregunta sobre ruidos, mascotas, basura..."
               className="flex-1 h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || isLoading}
               className="px-3 h-9 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow transition disabled:opacity-40 cursor-pointer flex items-center justify-center"
               aria-label="Enviar pregunta"
             >
