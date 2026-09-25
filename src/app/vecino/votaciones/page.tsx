@@ -47,117 +47,32 @@ export default function VotacionesPage() {
   const supabase = createClient();
 
   const miUnidad = {
-    id: 3,
-    numero_uf: 3,
-    piso_depto: "1° B",
-    propietario_nombre: "Martínez, Laura",
+    id: 7,
+    numero_uf: 7,
+    piso_depto: "3° B",
+    propietario_nombre: "Sciulli, Guillermo",
   };
 
   // Temas de votación activos
-  const [temas, setTemas] = useState<TemaVotacion[]>([
-    {
-      id: 1,
-      ticket_code: "#TK-104",
-      titulo: "Reparación y Reemplazo de Cerradura Electromagnética (Puerta Acceso PB)",
-      descripcion:
-        "Se somete a consenso de las 9 UFs la selección del proveedor para la reposición urgente del electroimán de 300kg en el ingreso peatonal principal.",
-      fecha_cierre: "25 de Septiembre 2026",
-      dias_restantes: 4,
-      presupuestos: [
-        {
-          id: 101,
-          ticket_id: 1,
-          ticket_titulo: "Falla cerradura electromagnética PB",
-          proveedor_nombre: "Cerrajería Integral San Martín",
-          contacto: "Tel: 11-4822-9090 • San Martín 420",
-          monto_total: 185000,
-          detalle:
-            "Reemplazo de electroimán de 300kg, fuente de alimentación con batería de respaldo 12V 7Ah y calibración de brazo hidráulico de cierre suave.",
-          tiempo_ejecucion: "24 a 48 hs hábiles",
-          garantia: "12 meses escrita",
-          pdf_url: "#",
-          votos_favor: 3,
-          votos_ufs: [1, 2, 4], // 3 votos = 33.3% -> Aprobado
-          estado: "aprobado",
-        },
-        {
-          id: 102,
-          ticket_id: 1,
-          ticket_titulo: "Falla cerradura electromagnética PB",
-          proveedor_nombre: "Blindajes & Cerrajería La Plata",
-          contacto: "Tel: 11-4555-1234 • Av. 7 N° 840",
-          monto_total: 220000,
-          detalle:
-            "Instalación de cerradura magnética de 600 libras reforzada, pulsador de salida antivandálico y entrega de 10 llaveros RFID de proximidad.",
-          tiempo_ejecucion: "4 días hábiles",
-          garantia: "6 meses",
-          pdf_url: "#",
-          votos_favor: 1,
-          votos_ufs: [5],
-          estado: "en_votacion",
-        },
-        {
-          id: 103,
-          ticket_id: 1,
-          ticket_titulo: "Falla cerradura electromagnética PB",
-          proveedor_nombre: "Automatizaciones Centro",
-          contacto: "Tel: 11-4300-8888 • Calle 12 N° 1200",
-          monto_total: 198000,
-          detalle:
-            "Recambio de bobina electromagnética y control de acceso con teclado numérico digital para residentes.",
-          tiempo_ejecucion: "3 días hábiles",
-          garantia: "12 meses",
-          pdf_url: "#",
-          votos_favor: 0,
-          votos_ufs: [],
-          estado: "en_votacion",
-        },
-      ],
-    },
-    {
-      id: 2,
-      ticket_code: "#TK-088",
-      titulo: "Pintura y Reparación de Medianera Exterior y Pozo de Aire",
-      descripcion:
-        "Presupuestos extraordinarios para hidrolavado, sellado de fisuras y aplicación de 3 manos de impermeabilizante con fondo extraordinario en 3 cuotas.",
-      fecha_cierre: "30 de Septiembre 2026",
-      dias_restantes: 9,
-      presupuestos: [
-        {
-          id: 201,
-          ticket_id: 2,
-          ticket_titulo: "Pintura exterior medianera",
-          proveedor_nombre: "Pinturas del Sur SRL",
-          contacto: "Tel: 11-4999-7777 • Matrícula SEC-884",
-          monto_total: 1800000,
-          detalle:
-            "Hidrolavado a presión, sellado con sellador elastomérico y pintura impermeabilizante premium Sherwin Williams (3 cuotas de $600.000 divididas entre 9 UFs).",
-          tiempo_ejecucion: "15 días de obra",
-          garantia: "5 años sobre filtraciones",
-          pdf_url: "#",
-          votos_favor: 2,
-          votos_ufs: [6, 7],
-          estado: "en_votacion",
-        },
-        {
-          id: 202,
-          ticket_id: 2,
-          ticket_titulo: "Pintura exterior medianera",
-          proveedor_nombre: "Construcciones & Obras Buenos Aires",
-          contacto: "Tel: 11-4111-3333 • Arq. Rossi",
-          monto_total: 2150000,
-          detalle:
-            "Picado de revoque suelto, malla de fibra de vidrio y pintura impermeabilizante con siloxano anti-hongos.",
-          tiempo_ejecucion: "20 días de obra",
-          garantia: "3 años",
-          pdf_url: "#",
-          votos_favor: 1,
-          votos_ufs: [8],
-          estado: "en_votacion",
-        },
-      ],
-    },
-  ]);
+  const [temas, setTemas] = useState<TemaVotacion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTemas() {
+      try {
+        const res = await fetch("/api/vecino/votaciones");
+        if (res.ok) {
+          const data = await res.json();
+          setTemas(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTemas();
+  }, []);
 
   const [feedbackVote, setFeedbackVote] = useState<{
     temaId: number;
@@ -167,14 +82,15 @@ export default function VotacionesPage() {
   // Manejador interactivo de voto
   const handleVotar = async (temaId: number, presupuestoId: number) => {
     try {
-      // 1. Registrar voto en Supabase
-      const { error } = await supabase.from("votos_vecinos").insert({
-        presupuesto_id: presupuestoId,
-        unidad_id: miUnidad.id,
+      // 1. Registrar voto en Prisma a traves de la API
+      const res = await fetch("/api/vecino/votaciones/votar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ presupuestoId, unidadId: miUnidad.id })
       });
 
-      if (error) {
-        console.warn("Supabase vote insert notice, actualizando estado local:", error);
+      if (!res.ok) {
+        console.warn("Error en la API al votar");
       }
 
       // 2. Actualización dinámica en el estado
@@ -277,7 +193,7 @@ export default function VotacionesPage() {
 
           <div className="flex items-center gap-3 text-xs">
             <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200">
-              ● 2 Votaciones Activas
+              ● {temas.length} Votaciones Activas
             </span>
           </div>
         </header>
@@ -300,7 +216,11 @@ export default function VotacionesPage() {
 
           {/* TEMAS DE VOTACIÓN */}
           <div className="space-y-10">
-            {temas.map((tema) => (
+            {loading ? (
+              <div className="text-center py-10 text-slate-500">Cargando votaciones...</div>
+            ) : temas.length === 0 ? (
+              <div className="text-center py-10 text-slate-500">No hay votaciones activas en este momento.</div>
+            ) : temas.map((tema) => (
               <section
                 key={tema.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-6"
