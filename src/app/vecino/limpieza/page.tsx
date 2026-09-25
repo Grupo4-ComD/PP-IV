@@ -26,7 +26,7 @@ interface TurnoLimpieza {
   numero_uf: number;
   piso_depto: string;
   residente: string;
-  estado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado";
+  estado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado" | "incumplido";
   insumos_verificados?: boolean;
   unidad_sustituta_uf?: number | null;
 }
