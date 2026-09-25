@@ -16,6 +16,7 @@ export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoM
   const [tipo, setTipo] = useState("A");
   const [usaFondo, setUsaFondo] = useState(false);
   const [noRestaCaja, setNoRestaCaja] = useState(false);
+  const [comprobante, setComprobante] = useState<File | null>(null);
 
   if (!isOpen) return null;
 
@@ -26,8 +27,8 @@ export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoM
     if (usaFondo) finalConcepto += " [FONDO]";
     if (noRestaCaja) finalConcepto += " _sd";
 
-    console.log({ periodo, concepto: finalConcepto, monto, tipo });
-    alert("Gasto registrado (mock)");
+    console.log({ periodo, concepto: finalConcepto, monto, tipo, comprobante });
+    alert("Gasto registrado (mock)" + (comprobante ? " con comprobante adjunto" : " sin comprobante"));
     onClose();
   };
 
@@ -95,6 +96,16 @@ export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoM
                   <option value="B">Extraordinario (B)</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Adjuntar Comprobante (Opcional)</label>
+              <input 
+                type="file" 
+                accept="image/*,.pdf" 
+                onChange={(e) => setComprobante(e.target.files ? e.target.files[0] : null)} 
+                className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-400 cursor-pointer" 
+              />
             </div>
 
             <button type="submit" className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-md transition mt-4">

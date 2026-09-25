@@ -405,38 +405,18 @@ export default function GenerarExpensasPage() {
                 ))}
               </div>
 
-              {/* Formulario rápido para añadir gasto */}
-              <form onSubmit={handleAgregarGasto} className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  + Agregar Nuevo Comprobante
-                </span>
-                <input
-                  type="text"
-                  placeholder="Concepto (ej. Mantenimiento portón)"
-                  value={nuevoConcepto}
-                  onChange={(e) => setNuevoConcepto(e.target.value)}
-                  className="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
-                />
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      placeholder="Monto"
-                      value={nuevoMonto}
-                      onChange={(e) => setNuevoMonto(e.target.value)}
-                      className="w-full h-9 pl-7 pr-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-3 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar</span>
-                  </button>
+              {/* CTA en lugar del formulario rápido para forzar Opción A */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <p className="text-indigo-800 dark:text-indigo-300 font-medium">
+                    <Info className="inline w-4 h-4 mr-1 mb-0.5" />
+                    Los comprobantes de gastos se administran desde el panel principal.
+                  </p>
+                  <Link href="/admin/dashboard" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-sm transition whitespace-nowrap">
+                    Ir al Dashboard
+                  </Link>
                 </div>
-              </form>
+              </div>
             </div>
 
             {/* Parámetros de Período y Vencimiento */}
