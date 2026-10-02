@@ -41,9 +41,9 @@ export async function POST(request: Request) {
       }
     });
 
-    const cargos = await prisma.cargo.findMany({
+    const cargos = await prisma.cargoParticular.findMany({
       where: {
-        fechaCargo: {
+        createdAt: {
           gte: startDate,
           lte: endDate,
         }
@@ -67,8 +67,8 @@ export async function POST(request: Request) {
       const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100));
       const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100));
       const cargosUf = cargos
-        .filter(c => c.unidadId === u.id)
-        .reduce((acc, c) => acc + Number(c.monto), 0);
+        .filter((c: any) => c.unidadId === u.id)
+        .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
       
       const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
 
