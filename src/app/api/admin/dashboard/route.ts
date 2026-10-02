@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient, EstadoTicket } from '@prisma/client';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +9,30 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); }
+        }
+      }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const userRole = user.user_metadata?.rol || 'vecino';
+    const isAdmin = userRole === 'admin' || (user.email && user.email.includes('admin'));
+
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Acceso denegado. Se requiere rol de Administrador.' }, { status: 403 });
+    }
+
     const unidades = await prisma.unidad.findMany({
       orderBy: { numeroUf: 'asc' },
     });

@@ -188,32 +188,15 @@ export default function GenerarExpensasPage() {
     setErrorMsg(null);
 
     try {
-      // Generar lote de expensas calculado por porcentual m2 exacto para cada una de las 9 UFs
-      const loteExpensas = unidades.map((u) => {
-        const montoUfOrd = Math.round(totalProrratearOrdinario * (u.porcentual_m2 / 100));
-        const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100));
-        const cargosUf = cargos.filter(c => Number(c.unidadId) === u.id).reduce((acc, c) => acc + Number(c.monto), 0);
-        const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
-
-        return {
-          unidad_id: u.id,
-          periodo_mes: periodoMes,
-          periodo_anio: periodoAnio,
-          monto_ordinario: montoUfOrd,
-          monto_extraordinario: montoUfExt,
-          monto_cargos: cargosUf,
-          recargo_mora: 0.00,
-          total_pagar: montoUfTotal,
-          fecha_vencimiento: fechaVencimiento,
-          estado: "pendiente",
-          created_at: new Date().toISOString(),
-        };
-      });
-
       const res = await fetch("/api/expensas/emitir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loteExpensas })
+        body: JSON.stringify({ 
+          periodoMes, 
+          periodoAnio, 
+          fechaVencimiento,
+          porcentajeFondoReserva 
+        })
       });
 
       if (!res.ok) {

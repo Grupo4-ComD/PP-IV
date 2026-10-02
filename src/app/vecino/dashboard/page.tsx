@@ -51,9 +51,8 @@ export default function VecinoDashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Temporalmente hardcodeamos unidadId=7 (Guillermo Sciulli) hasta que hagamos el Login Real (Fase 2.3)
-        // Luego leeremos esto directo de la sesión JWT
-        const res = await fetch("/api/vecino/dashboard?unidadId=7");
+        // La API ahora obtiene el usuario desde la cookie JWT (Fase 2 implementada)
+        const res = await fetch("/api/vecino/dashboard");
         if (res.ok) {
           const data = await res.json();
           setUnidad(data.unidad);

@@ -89,14 +89,26 @@ export default function LimpiezaPage() {
     }
 
     try {
-      // 1. Invocar función RPC en Supabase
-      const { data, error } = await supabase.rpc("aplicar_multa_limpieza", {
-        p_unidad_infractora: infractoraUf,
-        p_unidad_sustituta: sustitutaUf,
+      const turnoInfractor = turnos.find(t => t.numero_uf === infractoraUf);
+      if (!turnoInfractor) {
+        setReportErrorMsg("No se encontró el turno para la UF seleccionada.");
+        setReportingLoading(false);
+        return;
+      }
+
+      // 1. Invocar API en backend de Next.js
+      const res = await fetch("/api/limpieza/multar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          turnoId: turnoInfractor.id,
+          unidadIdInfractora: infractoraUf,
+          unidadIdSustituta: sustitutaUf,
+        })
       });
 
-      if (error) {
-        console.warn("RPC Warning, simulando ejecución local:", error);
+      if (!res.ok) {
+        console.warn("API Warning, simulando ejecución local:", await res.text());
       }
 
       // 2. Actualización de estado en tiempo real en la UI

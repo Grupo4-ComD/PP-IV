@@ -56,9 +56,6 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    const isDemoAdmin = emailToUse.includes("admin") || emailToUse === "admin@calle425.com";
-    const isDemoVecino = emailToUse.includes("vecino") || emailToUse.includes("calle425.com");
-
     try {
       // 1. Autenticación con Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -67,40 +64,31 @@ export default function LoginPage() {
       });
 
       if (error) {
-        // Si el usuario no existe en auth.users de Supabase, intentar auto-crearlo
-        if (isDemoAdmin || isDemoVecino) {
-          try {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email: emailToUse,
-              password: passToUse,
-            });
-
-            if (!signUpError && signUpData.user) {
-              setSuccessMsg(`¡Bienvenido! Iniciando sesión como ${isDemoAdmin ? "Administradora" : "Vecino"}...`);
-              setTimeout(() => {
-                router.push(isDemoAdmin ? "/admin/dashboard" : "/vecino/dashboard");
-              }, 600);
-              return;
+        // Intento de auto-creación para cuentas demo (sólo si no existe)
+        if (error.message.includes("Invalid login credentials") && (emailToUse.includes("admin") || emailToUse.includes("vecino"))) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: emailToUse,
+            password: passToUse,
+            options: {
+              data: {
+                rol: emailToUse.includes("admin") ? "admin" : "vecino"
+              }
             }
-          } catch {
-            // Continuar con fallback
-          }
+          });
 
-          // Fallback seguro de desarrollo/demostración
-          setSuccessMsg(`¡Acceso concedido como ${isDemoAdmin ? "Administradora" : "Vecino"}! Redirigiendo...`);
-          setTimeout(() => {
-            router.push(isDemoAdmin ? "/admin/dashboard" : "/vecino/dashboard");
-          }, 600);
-          return;
+          if (!signUpError && signUpData.user) {
+            setSuccessMsg("Cuenta creada exitosamente. Iniciando sesión...");
+            setTimeout(() => {
+              window.location.href = emailToUse.includes("admin") ? "/admin/dashboard" : "/vecino/dashboard";
+            }, 600);
+            return;
+          }
         }
 
-        // Mapeo amigable de errores de autenticación para cuentas estándar
         if (error.message.toLowerCase().includes("invalid login credentials")) {
           setErrorMsg("Credenciales inválidas. Verifique su correo y contraseña.");
         } else if (error.message.toLowerCase().includes("email not confirmed")) {
           setErrorMsg("Cuenta no activada. Por favor confirme su correo electrónico.");
-        } else if (error.status === 429) {
-          setErrorMsg("Demasiados intentos fallidos. Intente nuevamente en unos minutos.");
         } else {
           setErrorMsg(error.message || "Error al autenticar con el servidor.");
         }
@@ -108,32 +96,21 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Consulta de Rol en la tabla de 'unidades'
+      // 2. Consulta de Rol
       if (data?.user) {
-        const { data: unidadData } = await supabase
-          .from("unidades")
-          .select("rol_user, numero_uf")
-          .or(`user_id.eq.${data.user.id},email.eq.${data.user.email}`)
-          .maybeSingle();
-
-        const isAdmin = unidadData?.rol_user === "admin" || emailToUse.includes("admin");
-        setSuccessMsg(`¡Acceso Concedido! Iniciando sesión como ${isAdmin ? "Administradora" : "Vecino"}...`);
-
+        const userRole = data.user.user_metadata?.rol || (emailToUse.includes("admin") ? "admin" : "vecino");
+        const isAdmin = userRole === "admin";
+        
+        setSuccessMsg(`¡Acceso Concedido! Redirigiendo al panel...`);
+        
+        // Usamos window.location.href para forzar la recarga y que el middleware intercepte correctamente las cookies
         setTimeout(() => {
-          router.push(isAdmin ? "/admin/dashboard" : "/vecino/dashboard");
+          window.location.href = isAdmin ? "/admin/dashboard" : "/vecino/dashboard";
         }, 600);
       }
     } catch (err: any) {
-      if (isDemoAdmin) {
-        setSuccessMsg("¡Acceso concedido como Administradora! Redirigiendo...");
-        setTimeout(() => router.push("/admin/dashboard"), 600);
-      } else if (isDemoVecino) {
-        setSuccessMsg("¡Acceso concedido como Vecino! Redirigiendo...");
-        setTimeout(() => router.push("/vecino/dashboard"), 600);
-      } else {
-        setErrorMsg("Ocurrió un error inesperado al conectar con el servidor.");
-        setLoading(false);
-      }
+      setErrorMsg("Ocurrió un error inesperado al conectar con el servidor.");
+      setLoading(false);
     }
   };
 

@@ -1,22 +1,44 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const unidadId = searchParams.get('unidadId');
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          }
+        }
+      }
+    );
 
-    if (!unidadId) {
-      return NextResponse.json({ error: 'Falta unidadId' }, { status: 400 });
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const unidad = await prisma.unidad.findUnique({
-      where: { id: BigInt(unidadId) }
+      where: { email: user.email }
     });
 
+    if (!unidad) {
+      // Fallback a UF 3 para demostraciones si no coincide el email
+      const fallback = await prisma.unidad.findUnique({ where: { numeroUf: 3 } });
+      if (!fallback) return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
+      Object.assign(unidad || {}, fallback);
+    }
+    
+    // Si unidad sigue siendo null (caso extremo), retornamos error
     if (!unidad) {
       return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
     }
