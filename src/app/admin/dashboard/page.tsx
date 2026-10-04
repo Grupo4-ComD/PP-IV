@@ -354,9 +354,9 @@ export default function AdminDashboardPage() {
           unidades={unidades}
           onCobroExitoso={loadDashboard}
         />
-        <RegistrarGastoModal isOpen={isGastoModalOpen} onClose={() => setIsGastoModalOpen(false)} />
-        <CargoVecinoModal isOpen={isCargoModalOpen} onClose={() => setIsCargoModalOpen(false)} unidades={unidades} />
-        <CuotaExtraModal isOpen={isCuotaModalOpen} onClose={() => setIsCuotaModalOpen(false)} />
+        <RegistrarGastoModal isOpen={isGastoModalOpen} onClose={() => setIsGastoModalOpen(false)} onGastoExitoso={loadDashboard} />
+        <CargoVecinoModal isOpen={isCargoModalOpen} onClose={() => setIsCargoModalOpen(false)} unidades={unidades} onCargoExitoso={loadDashboard} />
+        <CuotaExtraModal isOpen={isCuotaModalOpen} onClose={() => setIsCuotaModalOpen(false)} onCuotaExitosa={loadDashboard} />
         <AjusteCajaModal isOpen={isAjusteModalOpen} onClose={() => setIsAjusteModalOpen(false)} onAjusteExitoso={loadDashboard} />
       </main>
     </div>

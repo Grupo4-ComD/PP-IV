@@ -4,9 +4,10 @@ import { X, Users } from "lucide-react";
 interface CuotaExtraModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCuotaExitosa?: () => void;
 }
 
-export default function CuotaExtraModal({ isOpen, onClose }: CuotaExtraModalProps) {
+export default function CuotaExtraModal({ isOpen, onClose, onCuotaExitosa }: CuotaExtraModalProps) {
   const [periodo, setPeriodo] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -16,11 +17,34 @@ export default function CuotaExtraModal({ isOpen, onClose }: CuotaExtraModalProp
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ periodo, concepto, montoTotal });
-    alert("Cuota extraordinaria distribuida (mock)");
-    onClose();
+    if (!montoTotal || !concepto) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/cuota-extra", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ periodo, concepto, montoTotal })
+      });
+      
+      if (res.ok) {
+        if (onCuotaExitosa) onCuotaExitosa();
+        onClose();
+        setConcepto("");
+        setMontoTotal("");
+      } else {
+        alert("Error al distribuir cuota");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de red");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,8 +82,8 @@ export default function CuotaExtraModal({ isOpen, onClose }: CuotaExtraModalProp
               <input type="number" step="0.01" min="0" placeholder="0.00" value={montoTotal} onChange={(e) => setMontoTotal(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-mono" />
             </div>
 
-            <button type="submit" className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md transition mt-4">
-              Distribuir por %
+            <button type="submit" disabled={loading} className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md transition mt-4 disabled:opacity-50">
+              {loading ? "Distribuyendo..." : "Distribuir por %"}
             </button>
           </form>
         </div>

@@ -4,9 +4,10 @@ import { X, TrendingDown } from "lucide-react";
 interface RegistrarGastoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onGastoExitoso?: () => void;
 }
 
-export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoModalProps) {
+export default function RegistrarGastoModal({ isOpen, onClose, onGastoExitoso }: RegistrarGastoModalProps) {
   const [periodo, setPeriodo] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -20,16 +21,42 @@ export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoM
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect with API
+    if (!monto || !concepto) return;
+    
     let finalConcepto = concepto;
     if (usaFondo) finalConcepto += " [FONDO]";
     if (noRestaCaja) finalConcepto += " _sd";
 
-    console.log({ periodo, concepto: finalConcepto, monto, tipo, comprobante });
-    alert("Gasto registrado (mock)" + (comprobante ? " con comprobante adjunto" : " sin comprobante"));
-    onClose();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/gastos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          concepto: finalConcepto,
+          monto,
+          categoria: tipo === "A" ? "ordinario" : "extraordinario"
+        })
+      });
+      
+      if (res.ok) {
+        if (onGastoExitoso) onGastoExitoso();
+        onClose();
+        setConcepto("");
+        setMonto("");
+      } else {
+        alert("Error al registrar gasto");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de red");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const gastosFijos = ["Edenor", "Aysa", "Seguro", "Internet", "Impuestos Caja"];
@@ -108,8 +135,8 @@ export default function RegistrarGastoModal({ isOpen, onClose }: RegistrarGastoM
               />
             </div>
 
-            <button type="submit" className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-md transition mt-4">
-              Registrar Gasto
+            <button type="submit" disabled={loading} className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-md transition mt-4 disabled:opacity-50">
+              {loading ? "Registrando..." : "Registrar Gasto"}
             </button>
           </form>
         </div>

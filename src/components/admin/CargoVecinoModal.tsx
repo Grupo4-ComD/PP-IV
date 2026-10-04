@@ -9,11 +9,11 @@ interface Unidad {
 
 interface CargoVecinoModalProps {
   isOpen: boolean;
-  onClose: () => void;
   unidades: Unidad[];
+  onCargoExitoso?: () => void;
 }
 
-export default function CargoVecinoModal({ isOpen, onClose, unidades }: CargoVecinoModalProps) {
+export default function CargoVecinoModal({ isOpen, onClose, unidades, onCargoExitoso }: CargoVecinoModalProps) {
   const [periodo, setPeriodo] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -24,11 +24,35 @@ export default function CargoVecinoModal({ isOpen, onClose, unidades }: CargoVec
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ periodo, unidadId, concepto, monto });
-    alert("Cargo individual aplicado (mock)");
-    onClose();
+    if (!unidadId || !concepto || !monto) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cargos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ periodo, unidadId, concepto, monto })
+      });
+      
+      if (res.ok) {
+        if (onCargoExitoso) onCargoExitoso();
+        onClose();
+        setUnidadId("");
+        setConcepto("");
+        setMonto("");
+      } else {
+        alert("Error al aplicar cargo");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de red");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,8 +98,8 @@ export default function CargoVecinoModal({ isOpen, onClose, unidades }: CargoVec
               <input type="number" step="0.01" min="0" placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-mono" />
             </div>
 
-            <button type="submit" className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-md transition mt-4">
-              Aplicar Cargo
+            <button type="submit" disabled={loading} className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-md transition mt-4 disabled:opacity-50">
+              {loading ? "Aplicando..." : "Aplicar Cargo"}
             </button>
           </form>
         </div>
