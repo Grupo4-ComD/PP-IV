@@ -22,10 +22,9 @@ export default function CargoVecinoModal({ isOpen, onClose, unidades, onCargoExi
   const [unidadId, setUnidadId] = useState("");
   const [concepto, setConcepto] = useState("");
   const [monto, setMonto] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
-
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

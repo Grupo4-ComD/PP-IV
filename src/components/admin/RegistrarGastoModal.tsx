@@ -18,10 +18,9 @@ export default function RegistrarGastoModal({ isOpen, onClose, onGastoExitoso }:
   const [usaFondo, setUsaFondo] = useState(false);
   const [noRestaCaja, setNoRestaCaja] = useState(false);
   const [comprobante, setComprobante] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
-
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

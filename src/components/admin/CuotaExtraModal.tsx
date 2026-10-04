@@ -14,10 +14,9 @@ export default function CuotaExtraModal({ isOpen, onClose, onCuotaExitosa }: Cuo
   });
   const [concepto, setConcepto] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
-
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
