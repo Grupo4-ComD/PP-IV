@@ -357,7 +357,7 @@ export default function AdminDashboardPage() {
         <RegistrarGastoModal isOpen={isGastoModalOpen} onClose={() => setIsGastoModalOpen(false)} />
         <CargoVecinoModal isOpen={isCargoModalOpen} onClose={() => setIsCargoModalOpen(false)} unidades={unidades} />
         <CuotaExtraModal isOpen={isCuotaModalOpen} onClose={() => setIsCuotaModalOpen(false)} />
-        <AjusteCajaModal isOpen={isAjusteModalOpen} onClose={() => setIsAjusteModalOpen(false)} />
+        <AjusteCajaModal isOpen={isAjusteModalOpen} onClose={() => setIsAjusteModalOpen(false)} onAjusteExitoso={loadDashboard} />
       </main>
     </div>
   );

@@ -4,9 +4,10 @@ import { X, ArrowRightLeft } from "lucide-react";
 interface AjusteCajaModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAjusteExitoso?: () => void;
 }
 
-export default function AjusteCajaModal({ isOpen, onClose }: AjusteCajaModalProps) {
+export default function AjusteCajaModal({ isOpen, onClose, onAjusteExitoso }: AjusteCajaModalProps) {
   const [periodo, setPeriodo] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -17,11 +18,34 @@ export default function AjusteCajaModal({ isOpen, onClose }: AjusteCajaModalProp
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ periodo, motivo, monto, accion });
-    alert("Caja ajustada manualmente (mock)");
-    onClose();
+    if (!monto || !motivo) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/ajuste-caja", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ periodo, motivo, monto, accion })
+      });
+      
+      if (res.ok) {
+        if (onAjusteExitoso) onAjusteExitoso();
+        onClose();
+        setMotivo("");
+        setMonto("");
+      } else {
+        alert("Error al aplicar el ajuste");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,8 +89,8 @@ export default function AjusteCajaModal({ isOpen, onClose }: AjusteCajaModalProp
               <input type="number" step="0.01" min="0" placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-mono" />
             </div>
 
-            <button type="submit" className={`w-full py-3 text-white font-bold rounded-xl shadow-md transition mt-4 ${accion === 'ingreso' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
-              Aplicar {accion === 'ingreso' ? 'Ingreso' : 'Descuento'}
+            <button type="submit" disabled={loading} className={`w-full py-3 text-white font-bold rounded-xl shadow-md transition mt-4 ${accion === 'ingreso' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'} disabled:opacity-50`}>
+              {loading ? "Aplicando..." : `Aplicar ${accion === 'ingreso' ? 'Ingreso' : 'Descuento'}`}
             </button>
           </form>
         </div>

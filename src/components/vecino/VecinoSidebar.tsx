@@ -70,9 +70,28 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
     },
   ];
 
-  const ufNumero = unidad?.numero_uf ? String(unidad.numero_uf).padStart(2, "0") : "03";
-  const depto = unidad?.piso_depto || "1° B";
-  const nombre = unidad?.propietario_nombre || "Gómez, Sofía";
+  const [localUnidad, setLocalUnidad] = useState(unidad);
+
+  useEffect(() => {
+    if (unidad) {
+      setLocalUnidad(unidad);
+      return;
+    }
+    async function load() {
+      try {
+        const res = await fetch("/api/vecino/dashboard");
+        if (res.ok) {
+          const d = await res.json();
+          if (d.unidad) setLocalUnidad(d.unidad);
+        }
+      } catch (e) {}
+    }
+    load();
+  }, [unidad]);
+
+  const ufNumero = localUnidad?.numero_uf ? String(localUnidad.numero_uf).padStart(2, "0") : "--";
+  const depto = localUnidad?.piso_depto || "--";
+  const nombre = localUnidad?.propietario_nombre || "Cargando...";
 
   return (
     <>
