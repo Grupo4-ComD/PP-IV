@@ -229,7 +229,7 @@ export default function LoginPage() {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="vecino.uf3@calle425.com"
+                  placeholder="laura.martinez@calle425.com"
                   className="w-full h-11 pl-10 pr-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -338,7 +338,7 @@ export default function LoginPage() {
               {/* Demo Admin */}
               <button
                 type="button"
-                onClick={() => handleFillDemo("admin@calle425.com", "admin123", "Administración General")}
+                onClick={() => handleFillDemo("paula.admin@calle425.com", "admin123", "Administración General")}
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
@@ -365,7 +365,7 @@ export default function LoginPage() {
               {/* Demo Vecino */}
               <button
                 type="button"
-                onClick={() => handleFillDemo("vecino.uf3@calle425.com", "vecino123", "UF 03 - 1° B")}
+                onClick={() => handleFillDemo("laura.martinez@calle425.com", "vecino123", "UF 03 - 1° B")}
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">

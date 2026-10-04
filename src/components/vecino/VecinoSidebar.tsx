@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Sparkles,
@@ -28,7 +29,14 @@ interface VecinoSidebarProps {
 
 export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   // Cerrar el menú automáticamente si se navega a otra ruta en móvil
   useEffect(() => {
@@ -217,13 +225,13 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
             <span className="text-[11px] font-medium text-slate-400">
               v2.4 • Consorcio
             </span>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition"
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
             >
               <LogOut className="w-3.5 h-3.5 stroke-[2]" />
               <span>Salir</span>
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

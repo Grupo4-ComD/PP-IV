@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Receipt,
@@ -20,7 +21,14 @@ import {
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   // Cerrar el menú automáticamente si se navega a otra ruta en móvil
   useEffect(() => {
@@ -144,16 +152,16 @@ export default function AdminSidebar() {
               <p className="font-semibold text-white">Paula Admin</p>
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             </div>
-            <p className="text-[11px] text-slate-500 truncate">admin@calle425.com</p>
+            <p className="text-[11px] text-slate-500 truncate">paula.admin@calle425.com</p>
           </div>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-400 font-medium transition cursor-pointer p-1.5 rounded-lg hover:bg-slate-900"
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-400 font-medium transition cursor-pointer p-1.5 rounded-lg hover:bg-slate-900 bg-transparent border-none"
             title="Cerrar Sesión"
           >
             <LogOut className="w-3.5 h-3.5 stroke-[2]" />
             <span>Salir</span>
-          </Link>
+          </button>
         </div>
       </aside>
     </>
