@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const cargosPromesas = unidades.map((u) => {
       // El porcentual viene como Decimal, lo convertimos a Number.
       // Suponiendo que suma 100. (Ej. 10.50 => 10.5%)
-      const porc = Number(u.porcentualCopropiedad) / 100;
+      const porc = Number(u.coeficienteProrrateo) / 100;
       const montoProporcional = monto * porc;
 
       return prisma.cargoParticular.create({

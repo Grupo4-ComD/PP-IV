@@ -29,7 +29,10 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, ajuste });
+    return NextResponse.json({ 
+      success: true, 
+      ajuste: { ...ajuste, id: ajuste.id.toString() } 
+    });
   } catch (error) {
     console.error("Error al registrar ajuste de caja:", error);
     return NextResponse.json({ success: false, error: "Error interno" }, { status: 500 });

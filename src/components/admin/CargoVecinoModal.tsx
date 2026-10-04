@@ -9,6 +9,7 @@ interface Unidad {
 
 interface CargoVecinoModalProps {
   isOpen: boolean;
+  onClose: () => void;
   unidades: Unidad[];
   onCargoExitoso?: () => void;
 }
