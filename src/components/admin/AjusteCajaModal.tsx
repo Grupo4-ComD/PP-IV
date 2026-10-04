@@ -13,6 +13,7 @@ export default function AjusteCajaModal({ isOpen, onClose, onAjusteExitoso }: Aj
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const [motivo, setMotivo] = useState("");
+  const [monto, setMonto] = useState("");
   const [accion, setAccion] = useState("ingreso");
   const [loading, setLoading] = useState(false);
 
