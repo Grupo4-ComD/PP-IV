@@ -38,6 +38,7 @@ export default function VecinoDashboardPage() {
   const [expensa, setExpensa] = useState<ExpensaData | null>(null);
   const [metricas, setMetricas] = useState({ ticketsActivos: 0, votacionesActivas: 0 });
   const [limpiezaTurno, setLimpiezaTurno] = useState<{ id: string, semana_inicio: string, semana_fin: string, estado: string } | null>(null);
+  const [limpiezaProxima, setLimpiezaProxima] = useState<{ semana_inicio: string, semana_fin: string } | null>(null);
   const [completandoLimpieza, setCompletandoLimpieza] = useState(false);
   const [mantenimientos, setMantenimientos] = useState<{tipo: string, fecha_ultimo: string, frecuencia_meses: number}[]>([]);
 
@@ -66,6 +67,7 @@ export default function VecinoDashboardPage() {
           setExpensa(data.expensa);
           if (data.metricas) setMetricas(data.metricas);
           if (data.limpiezaTurno) setLimpiezaTurno(data.limpiezaTurno);
+          if (data.limpiezaProxima) setLimpiezaProxima(data.limpiezaProxima);
           if (data.mantenimientos) setMantenimientos(data.mantenimientos);
         }
       } catch (err) {
@@ -229,75 +231,96 @@ export default function VecinoDashboardPage() {
               )}
             </div>
 
-            <div className="mb-4">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>Checklist interactivo de guardia</span>
-                <span className="text-[11px] text-slate-400 font-normal">
-                  (Reglamento Interno Art. 9)
-                </span>
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Marque las tareas a medida que las complete para registrar su cumplimiento ante el consorcio.
-              </p>
-            </div>
+            {limpiezaTurno ? (
+              <>
+                <div className="mb-4">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Checklist interactivo de guardia</span>
+                    <span className="text-[11px] text-slate-400 font-normal">
+                      (Reglamento Interno Art. 9)
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Marque las tareas a medida que las complete para registrar su cumplimiento ante el consorcio.
+                  </p>
+                </div>
 
-            <div className="space-y-2.5 mb-6">
-              {checklist.map((item) => (
-                <label
-                  key={item.id}
-                  onClick={() => toggleTask(item.id)}
-                  className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer select-none ${
-                    item.done
-                      ? "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 opacity-80"
-                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => {}}
-                    className="mt-0.5 w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer"
-                  />
-                  <div className="flex flex-col min-w-0">
-                    <span
-                      className={`text-xs font-semibold ${
+                <div className="space-y-2.5 mb-6">
+                  {checklist.map((item) => (
+                    <label
+                      key={item.id}
+                      onClick={() => toggleTask(item.id)}
+                      className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer select-none ${
                         item.done
-                          ? "line-through text-slate-400 dark:text-slate-500"
-                          : "text-slate-800 dark:text-slate-200"
+                          ? "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 opacity-80"
+                          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700"
                       }`}
                     >
-                      {item.text}
-                    </span>
-                    <span className="text-[11px] text-slate-400 mt-0.5">
-                      {item.time ? `✓ ${item.time}` : item.detail}
-                    </span>
-                  </div>
-                </label>
-              ))}
-            </div>
+                      <input
+                        type="checkbox"
+                        checked={item.done}
+                        onChange={() => {}}
+                        className="mt-0.5 w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer"
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span
+                          className={`text-xs font-semibold ${
+                            item.done
+                              ? "line-through text-slate-400 dark:text-slate-500"
+                              : "text-slate-800 dark:text-slate-200"
+                          }`}
+                        >
+                          {item.text}
+                        </span>
+                        <span className="text-[11px] text-slate-400 mt-0.5">
+                          {item.time ? `✓ ${item.time}` : item.detail}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
 
-            {limpiezaTurno && limpiezaTurno.estado === 'programado' && (
-              <button 
-                onClick={marcarLimpiezaCumplida}
-                disabled={completandoLimpieza}
-                className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 transition flex items-center justify-center gap-2"
-              >
-                {completandoLimpieza ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Enviar Reporte de Limpieza
-              </button>
-            )}
-            
-            {limpiezaTurno && limpiezaTurno.estado === 'en_verificacion' && (
-              <div className="w-full mt-2 py-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4" />
-                Reporte Enviado (Esperando Admin)
-              </div>
-            )}
-            {limpiezaTurno && limpiezaTurno.estado === 'cumplido' && (
-              <div className="w-full mt-2 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                Limpieza Aprobada por Administración
+                {limpiezaTurno.estado === 'programado' && (
+                  <button 
+                    onClick={marcarLimpiezaCumplida}
+                    disabled={completandoLimpieza}
+                    className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 transition flex items-center justify-center gap-2"
+                  >
+                    {completandoLimpieza ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Enviar Reporte de Limpieza
+                  </button>
+                )}
+                
+                {limpiezaTurno.estado === 'en_verificacion' && (
+                  <div className="w-full mt-2 py-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Reporte Enviado (Esperando Admin)
+                  </div>
+                )}
+                {limpiezaTurno.estado === 'cumplido' && (
+                  <div className="w-full mt-2 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Limpieza Aprobada por Administración
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+                  <CalendarCheck className="w-6 h-6" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  Esta semana no es tu guardia
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[250px]">
+                  {limpiezaProxima 
+                    ? `Te toca prepararte para la semana del ${new Date(limpiezaProxima.semana_inicio).toLocaleDateString('es-AR')} al ${new Date(limpiezaProxima.semana_fin).toLocaleDateString('es-AR')}.`
+                    : 'No tienes turnos programados a futuro.'}
+                </p>
+                <Link href="/vecino/limpieza" className="mt-4 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                  Ver cronograma general
+                </Link>
               </div>
             )}
 

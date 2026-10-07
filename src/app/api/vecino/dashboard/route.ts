@@ -99,6 +99,17 @@ export async function GET(request: Request) {
       }
     });
 
+    let limpiezaProxima = null;
+    if (!limpieza) {
+      limpiezaProxima = await prisma.limpiezaRotativa.findFirst({
+        where: {
+          unidadIdAsignada: unidad.id,
+          semanaInicio: { gt: hoy }
+        },
+        orderBy: { semanaInicio: 'asc' }
+      });
+    }
+
     // Obtener mantenimientos (Tanque, Matafuegos)
     const mantenimientos = await prisma.mantenimiento.findMany();
 
@@ -127,6 +138,10 @@ export async function GET(request: Request) {
         semana_inicio: limpieza.semanaInicio.toISOString().split('T')[0],
         semana_fin: limpieza.semanaFin.toISOString().split('T')[0],
         estado: limpieza.estado
+      } : null,
+      limpiezaProxima: limpiezaProxima ? {
+        semana_inicio: limpiezaProxima.semanaInicio.toISOString().split('T')[0],
+        semana_fin: limpiezaProxima.semanaFin.toISOString().split('T')[0]
       } : null,
       mantenimientos: mantenimientos.map(m => ({
         tipo: m.tipo,
