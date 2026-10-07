@@ -273,7 +273,7 @@ export default function VecinoDashboardPage() {
                           {item.text}
                         </span>
                         <span className="text-[11px] text-slate-400 mt-0.5">
-                          {item.time ? `✓ ${item.time}` : item.detail}
+                          {item.done ? `✓ Completado` : item.detail}
                         </span>
                       </div>
                     </label>
