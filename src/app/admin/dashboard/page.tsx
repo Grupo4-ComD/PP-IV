@@ -76,7 +76,11 @@ export default function AdminDashboardPage() {
         });
         setUnidades(data.unidades);
         setMovimientos(data.movimientos || []);
-        if (data.limpiezasEnVerificacion) setLimpiezasPendientes(data.limpiezasEnVerificacion);
+        const todasLasLimpiezas = [
+          ...(data.limpiezasEnVerificacion || []),
+          ...(data.limpiezasVencidas || [])
+        ];
+        setLimpiezasPendientes(todasLasLimpiezas);
       }
       
       const resMant = await fetch("/api/admin/mantenimiento");
@@ -166,37 +170,40 @@ export default function AdminDashboardPage() {
         {/* Limpiezas Pendientes de Aprobación */}
         {limpiezasPendientes.length > 0 && (
           <div className="mb-6 space-y-3 animate-fade-in">
-            {limpiezasPendientes.map((limpieza) => (
-              <div key={limpieza.id} className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                <div className="flex items-start sm:items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-5 h-5" />
+            {limpiezasPendientes.map((limpieza) => {
+              const esVencida = limpieza.tipo === 'vencida';
+              return (
+                <div key={limpieza.id} className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border ${esVencida ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50' : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50'}`}>
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${esVencida ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400'}`}>
+                      {esVencida ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm font-bold ${esVencida ? 'text-rose-900 dark:text-rose-200' : 'text-amber-900 dark:text-amber-200'}`}>
+                        {esVencida ? `UF 0${limpieza.numero_uf} no reportó su Limpieza a tiempo` : `UF 0${limpieza.numero_uf} envió reporte de Limpieza`}
+                      </h3>
+                      <p className={`text-xs mt-1 ${esVencida ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                        {esVencida ? `La semana de ${limpieza.residente} venció sin reportes. Puedes multar o perdonar.` : `El vecino ${limpieza.residente} reportó haber completado sus tareas.`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                      UF 0{limpieza.numero_uf} envió reporte de Limpieza
-                    </h3>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                      El vecino {limpieza.residente} reportó haber completado sus tareas.
-                    </p>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button 
+                      onClick={() => handleAprobarLimpieza(limpieza.id, 'aprobar')}
+                      className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-xl transition shadow-sm text-center ${esVencida ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                    >
+                      {esVencida ? 'Aprobar Igual' : 'Aprobar'}
+                    </button>
+                    <button 
+                      onClick={() => handleAprobarLimpieza(limpieza.id, 'rechazar')}
+                      className={`flex-1 sm:flex-none px-4 py-2 border text-xs font-bold rounded-xl transition text-center ${esVencida ? 'border-rose-600 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white' : 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50'}`}
+                    >
+                      {esVencida ? 'Aplicar Multa' : 'Rechazar'}
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button 
-                    onClick={() => handleAprobarLimpieza(limpieza.id, 'aprobar')}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-sm text-center"
-                  >
-                    Aprobar
-                  </button>
-                  <button 
-                    onClick={() => handleAprobarLimpieza(limpieza.id, 'rechazar')}
-                    className="flex-1 sm:flex-none px-4 py-2 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-bold rounded-xl transition text-center"
-                  >
-                    Rechazar
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

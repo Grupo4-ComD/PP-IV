@@ -128,6 +128,14 @@ export async function GET() {
       include: { unidadAsignada: true }
     });
 
+    const limpiezasVencidas = await prisma.limpiezaRotativa.findMany({
+      where: { 
+        estado: 'programado',
+        semanaFin: { lt: new Date() }
+      },
+      include: { unidadAsignada: true }
+    });
+
     return NextResponse.json({
       saldoCaja,
       movimientos,
@@ -142,7 +150,16 @@ export async function GET() {
         numero_uf: l.unidadAsignada.numeroUf,
         piso_depto: l.unidadAsignada.pisoDepto,
         residente: l.unidadAsignada.propietarioNombre,
-        semana_inicio: l.semanaInicio.toISOString().split('T')[0]
+        semana_inicio: l.semanaInicio.toISOString().split('T')[0],
+        tipo: 'verificacion'
+      })),
+      limpiezasVencidas: limpiezasVencidas.map(l => ({
+        id: l.id.toString(),
+        numero_uf: l.unidadAsignada.numeroUf,
+        piso_depto: l.unidadAsignada.pisoDepto,
+        residente: l.unidadAsignada.propietarioNombre,
+        semana_inicio: l.semanaInicio.toISOString().split('T')[0],
+        tipo: 'vencida'
       }))
     });
   } catch (error) {
