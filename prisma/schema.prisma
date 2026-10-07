@@ -9,6 +9,7 @@ generator client {
 }
 
 enum RolUsuario {
+  vecino
   propietario
   inquilino
   admin
