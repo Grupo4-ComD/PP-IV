@@ -94,9 +94,18 @@ export async function PATCH(request: Request) {
       if (!listError && users) {
         const authUser = users.find(u => u.email === targetEmail);
         if (authUser) {
-          await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
             password: newPassword
           });
+          if (updateError) console.error("Error actualizando auth:", updateError);
+        } else {
+          // Si el usuario no existe en Supabase Auth, lo creamos
+          const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email: targetEmail,
+            password: newPassword,
+            email_confirm: true
+          });
+          if (createError) console.error("Error creando auth:", createError);
         }
       }
     }
