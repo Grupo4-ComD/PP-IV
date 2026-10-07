@@ -20,6 +20,8 @@ import {
   Bot,
   BookOpen,
   FileCode,
+  Users,
+  Key,
 } from "lucide-react";
 
 interface ConfigData {
@@ -41,7 +43,7 @@ const DEFAULT_CONFIG: ConfigData = {
 export default function AdminConfiguracionPage() {
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<"parametros" | "ia_reglamento">("parametros");
+  const [activeTab, setActiveTab] = useState<"parametros" | "ia_reglamento" | "usuarios">("parametros");
   const [config, setConfig] = useState<ConfigData>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -196,6 +198,19 @@ export default function AdminConfiguracionPage() {
           >
             <Bot className="w-4 h-4 text-emerald-400" />
             <span>Reglamento & Prompts de IA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("usuarios")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === "usuarios"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Gestión de Accesos & Claves</span>
           </button>
         </div>
 
@@ -597,6 +612,31 @@ export default function AdminConfiguracionPage() {
                 <p className="text-slate-600 dark:text-slate-300">
                   Las mudanzas deben coordinarse con 48 hs de anticipación. Para cualquier incidente no tipificado, la IA instruye al vecino abrir un ticket en la Mesa de Ayuda ITIL.
                 </p>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "usuarios" ? (
+          <div className="space-y-6 animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Administración de Claves y Roles</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Gestiona accesos para Administrador, Propietarios e Inquilinos.</p>
+                </div>
+              </div>
+              <div className="mt-6 p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center">
+                <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Módulo en Desarrollo (Fase 2)</h3>
+                <p className="text-xs text-slate-500 max-w-md mt-2">
+                  Próximamente podrás gestionar y resetear las claves de los usuarios, además de generar credenciales separadas para inquilinos y propietarios para restringir su votación en gastos extraordinarios.
+                </p>
+                <button className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Habilitar Módulo
+                </button>
               </div>
             </div>
           </div>
