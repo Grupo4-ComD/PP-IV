@@ -22,6 +22,7 @@ import {
   FileCode,
   Users,
   Key,
+  Droplets,
 } from "lucide-react";
 
 interface ConfigData {
@@ -43,7 +44,7 @@ const DEFAULT_CONFIG: ConfigData = {
 export default function AdminConfiguracionPage() {
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<"parametros" | "ia_reglamento" | "usuarios">("parametros");
+  const [activeTab, setActiveTab] = useState<"parametros" | "ia_reglamento" | "usuarios" | "mantenimientos">("parametros");
   const [config, setConfig] = useState<ConfigData>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +66,9 @@ export default function AdminConfiguracionPage() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserRole, setNewUserRole] = useState("inquilino");
   const [newUserUnidadId, setNewUserUnidadId] = useState("1");
+
+  const [mantenimientos, setMantenimientos] = useState<{tipo: string, fechaUltimo: string, frecuenciaMeses: number}[]>([]);
+  const [loadingMantenimientos, setLoadingMantenimientos] = useState(false);
 
   // Cargar configuración de Supabase
   useEffect(() => {
@@ -161,7 +165,47 @@ export default function AdminConfiguracionPage() {
     if (activeTab === "usuarios" && users.length === 0) {
       fetchUsers();
     }
+    if (activeTab === "mantenimientos" && mantenimientos.length === 0) {
+      fetchMantenimientos();
+    }
   }, [activeTab]);
+
+  const fetchMantenimientos = async () => {
+    setLoadingMantenimientos(true);
+    try {
+      const res = await fetch('/api/admin/mantenimiento');
+      if (res.ok) {
+        const data = await res.json();
+        setMantenimientos(data.mantenimientos);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMantenimientos(false);
+    }
+  };
+
+  const handleUpdateMantenimiento = async (tipo: string, fechaUltimo: string, frecuenciaMeses: number) => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/mantenimiento', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, fechaUltimo, frecuenciaMeses })
+      });
+      if (res.ok) {
+        setSuccessMsg("Mantenimiento actualizado correctamente.");
+        fetchMantenimientos();
+      } else {
+        setErrorMsg("Error al actualizar mantenimiento.");
+      }
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (e) {
+      setErrorMsg("Error de red.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleUpdateUser = async (id: string) => {
     setSaving(true);
@@ -868,6 +912,69 @@ export default function AdminConfiguracionPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        ) : activeTab === "mantenimientos" ? (
+          <div className="space-y-6 animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Mantenimiento Preventivo</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Controla fechas y frecuencias de mantenimientos obligatorios anuales.</p>
+                </div>
+              </div>
+              
+              {loadingMantenimientos ? (
+                <div className="p-8 text-center text-slate-500 text-sm">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-500" />
+                  Cargando mantenimientos...
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Tanque de Agua */}
+                  <div className="p-5 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-950/50">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Droplets className="w-4 h-4 text-sky-500" />
+                        Limpieza de Tanque de Agua
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">Registra la última fecha en que se realizó la limpieza.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="date" 
+                        className="p-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                        defaultValue={mantenimientos.find(m => m.tipo === 'tanque_agua')?.fechaUltimo.split('T')[0] || ''}
+                        onChange={(e) => handleUpdateMantenimiento('tanque_agua', e.target.value, 6)}
+                      />
+                      <span className="text-xs text-slate-400 font-medium bg-slate-200 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg">Frecuencia: Semestral (6m)</span>
+                    </div>
+                  </div>
+
+                  {/* Matafuegos */}
+                  <div className="p-5 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-950/50">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-500" />
+                        Recarga de Matafuegos
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">Registra la última fecha de recarga de extintores del edificio.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="date" 
+                        className="p-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                        defaultValue={mantenimientos.find(m => m.tipo === 'matafuegos')?.fechaUltimo.split('T')[0] || ''}
+                        onChange={(e) => handleUpdateMantenimiento('matafuegos', e.target.value, 12)}
+                      />
+                      <span className="text-xs text-slate-400 font-medium bg-slate-200 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg">Frecuencia: Anual (12m)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : null}

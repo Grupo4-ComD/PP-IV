@@ -36,6 +36,7 @@ export default function VecinoDashboardPage() {
   const [expensa, setExpensa] = useState<ExpensaData | null>(null);
   const [metricas, setMetricas] = useState({ ticketsActivos: 0, votacionesActivas: 0 });
   const [limpiezaTurno, setLimpiezaTurno] = useState<{ semana_inicio: string, semana_fin: string } | null>(null);
+  const [mantenimientos, setMantenimientos] = useState<{tipo: string, fecha_ultimo: string, frecuencia_meses: number}[]>([]);
 
   // Checklist interactivo de limpieza
   const [checklist, setChecklist] = useState([
@@ -62,6 +63,7 @@ export default function VecinoDashboardPage() {
           setExpensa(data.expensa);
           if (data.metricas) setMetricas(data.metricas);
           if (data.limpiezaTurno) setLimpiezaTurno(data.limpiezaTurno);
+          if (data.mantenimientos) setMantenimientos(data.mantenimientos);
         }
       } catch (err) {
         console.warn("Error cargando panel del vecino:", err);
@@ -137,9 +139,32 @@ export default function VecinoDashboardPage() {
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300 shadow-xs self-start sm:self-auto">
-              <Droplets className="w-3.5 h-3.5 text-sky-500" />
-              <span>Tanque de Agua: <strong>Limpio (12/08)</strong></span>
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap justify-end">
+              {mantenimientos.map(m => {
+                const isTanque = m.tipo === "tanque_agua";
+                const isMatafuego = m.tipo === "matafuegos";
+                const icon = isTanque ? <Droplets className="w-3.5 h-3.5 text-sky-500" /> : 
+                             isMatafuego ? <AlertCircle className="w-3.5 h-3.5 text-rose-500" /> : null;
+                
+                const fecha = new Date(m.fecha_ultimo);
+                const vencimiento = new Date(fecha);
+                vencimiento.setMonth(vencimiento.getMonth() + m.frecuencia_meses);
+                const estaVencido = new Date() > vencimiento;
+                
+                const formatFecha = `${fecha.getDate()}/${fecha.getMonth() + 1}`;
+                
+                return (
+                  <div key={m.tipo} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300 shadow-xs">
+                    {icon}
+                    <span>
+                      {isTanque && "Tanque de Agua:"} {isMatafuego && "Matafuegos:"} 
+                      <strong className={estaVencido ? "text-rose-600 ml-1" : "ml-1"}>
+                        {estaVencido ? "Vencido" : (isTanque ? `Limpio (${formatFecha})` : `Recargado (${formatFecha})`)}
+                      </strong>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

@@ -99,6 +99,9 @@ export async function GET(request: Request) {
       }
     });
 
+    // Obtener mantenimientos (Tanque, Matafuegos)
+    const mantenimientos = await prisma.mantenimiento.findMany();
+
     return NextResponse.json({
       usuario: {
         nombre: usuario?.nombreCompleto || unidad.propietarioNombre,
@@ -122,7 +125,12 @@ export async function GET(request: Request) {
       limpiezaTurno: limpieza ? {
         semana_inicio: limpieza.semanaInicio.toISOString().split('T')[0],
         semana_fin: limpieza.semanaFin.toISOString().split('T')[0],
-      } : null
+      } : null,
+      mantenimientos: mantenimientos.map(m => ({
+        tipo: m.tipo,
+        fecha_ultimo: m.fechaUltimo.toISOString().split('T')[0],
+        frecuencia_meses: m.frecuenciaMeses
+      }))
     });
 
   } catch (error) {
