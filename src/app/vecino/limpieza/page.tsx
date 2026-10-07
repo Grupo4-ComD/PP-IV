@@ -35,6 +35,7 @@ export default function LimpiezaPage() {
   const supabase = createClient();
 
   const [turnos, setTurnos] = useState<TurnoLimpieza[]>([]);
+  const [miNumeroUf, setMiNumeroUf] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [vista, setVista] = useState<"historial" | "actual" | "proximos">("actual");
 
@@ -44,7 +45,10 @@ export default function LimpiezaPage() {
         const res = await fetch("/api/vecino/limpieza");
         if (res.ok) {
           const data = await res.json();
-          setTurnos(data);
+          setTurnos(data.turnos || []);
+          if (data.miNumeroUf) {
+            setMiNumeroUf(data.miNumeroUf);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -147,7 +151,7 @@ export default function LimpiezaPage() {
 
   const handleConfirmarPermuta = (ufDestino: number) => {
     setTurnos((prev) => {
-      const idxOrigen = prev.findIndex((t) => t.numero_uf === 3);
+      const idxOrigen = prev.findIndex((t) => t.numero_uf === miNumeroUf);
       const idxDestino = prev.findIndex((t) => t.numero_uf === ufDestino);
       if (idxOrigen === -1 || idxDestino === -1) return prev;
 
@@ -342,7 +346,7 @@ export default function LimpiezaPage() {
               ) : turnosAMostrar.length === 0 ? (
                 <div className="col-span-3 text-center py-10 text-slate-500">No hay turnos para esta vista.</div>
               ) : turnosAMostrar.map((t) => {
-                const esMiTurno = t.numero_uf === 7;
+                const esMiTurno = t.numero_uf === miNumeroUf;
                 const esActual = t.estado === "en_curso";
                 const esMultado = t.estado === "multado";
                 const esCumplido = t.estado === "cumplido";
@@ -421,7 +425,7 @@ export default function LimpiezaPage() {
                     <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
                       {esMultado ? (
                         <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
-                          Cubierto por suplente: UF 0{t.unidad_sustituta_uf || 3}
+                          {t.unidad_sustituta_uf ? `Cubierto por suplente: UF 0${t.unidad_sustituta_uf}` : 'Incumplimiento (Sancionado)'}
                         </span>
                       ) : esCumplido ? (
                         <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
