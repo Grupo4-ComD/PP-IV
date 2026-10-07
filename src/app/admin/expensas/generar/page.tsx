@@ -60,6 +60,7 @@ export default function GenerarExpensasPage() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
 
   // Cargar las UFs de Supabase
   useEffect(() => {
@@ -181,11 +182,12 @@ export default function GenerarExpensasPage() {
   ];
 
   // Emisión en Supabase
-  const handleEmitirExpensas = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEmitirExpensas = async (e?: React.FormEvent, forceOverride: boolean = false) => {
+    if (e) e.preventDefault();
     setSubmitting(true);
     setSuccessMsg(null);
     setErrorMsg(null);
+    setShowOverrideModal(false);
 
     try {
       const res = await fetch("/api/expensas/emitir", {
@@ -195,9 +197,16 @@ export default function GenerarExpensasPage() {
           periodoMes, 
           periodoAnio, 
           fechaVencimiento,
-          porcentajeFondoReserva 
+          porcentajeFondoReserva,
+          forceOverride
         })
       });
+
+      if (res.status === 409) {
+        setShowOverrideModal(true);
+        setSubmitting(false);
+        return;
+      }
 
       if (!res.ok) {
         throw new Error("Error en la API al emitir.");
@@ -209,7 +218,9 @@ export default function GenerarExpensasPage() {
     } catch (err: any) {
       setErrorMsg("Ocurrió un error al emitir la liquidación.");
     } finally {
-      setSubmitting(false);
+      if (!showOverrideModal) {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -593,6 +604,48 @@ export default function GenerarExpensasPage() {
           </div>
         </div>
       </main>
+
+      {/* MODAL DE ADVERTENCIA SOBREESCRITURA */}
+      {showOverrideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-red-100 dark:border-red-900/30">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Período ya finalizado
+                </h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Ya se han emitido expensas para el mes de {mesesNombres[periodoMes - 1]} {periodoAnio}. Si continúas, los saldos adeudados y los cupones de todos los vecinos se recalcularán y sobrescribirán.
+                </p>
+                <p className="mt-2 text-sm font-semibold text-red-600 dark:text-red-400">
+                  ¿Estás seguro de que deseas forzar la re-emisión?
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowOverrideModal(false)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleEmitirExpensas(undefined, true)}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-lg shadow-red-600/20 transition flex items-center justify-center gap-2"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertCircle className="w-4 h-4" />}
+                Sí, Forzar Re-emisión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

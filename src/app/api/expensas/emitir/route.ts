@@ -23,7 +23,25 @@ export async function POST(request: Request) {
     if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
 
     // 2. Obtener parámetros
-    const { periodoMes, periodoAnio, fechaVencimiento, porcentajeFondoReserva = 5.0 } = await request.json();
+    const { periodoMes, periodoAnio, fechaVencimiento, porcentajeFondoReserva = 5.0, forceOverride = false } = await request.json();
+
+    // 2.1 Verificar Bloqueo (Advertencia de cierre)
+    if (!forceOverride) {
+      const existingExpensa = await prisma.expensa.findFirst({
+        where: {
+          periodoMes,
+          periodoAnio
+        }
+      });
+
+      if (existingExpensa) {
+        return NextResponse.json(
+          { error: 'Período ya emitido. Se requiere confirmación para sobrescribir.', requiresOverride: true },
+          { status: 409 }
+        );
+      }
+    }
+
     
     // 3. Consultar datos de la Base de Datos
     const unidades = await prisma.unidad.findMany();
