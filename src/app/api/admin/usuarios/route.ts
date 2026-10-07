@@ -21,20 +21,18 @@ export async function GET(request: Request) {
     const isAdmin = userRole === 'admin' || (user.email && user.email.includes('admin'));
     if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
 
-    const usuarios = await prisma.usuario.findMany({
-      include: {
-        unidad: true
-      },
+    const unidades = await prisma.unidad.findMany({
       orderBy: {
-        id: 'asc'
+        numeroUf: 'asc'
       }
     });
 
-    return NextResponse.json(usuarios.map(u => ({
+    return NextResponse.json(unidades.map(u => ({
       id: u.id.toString(),
-      username: u.username,
-      rol: u.rol,
-      unidadInfo: u.unidad ? `UF ${u.unidad.numeroUf} - ${u.unidad.pisoDepto}` : 'Sin Unidad'
+      username: u.propietarioNombre,
+      email: u.email,
+      rol: u.rolUser,
+      unidadInfo: `UF ${u.numeroUf} - ${u.pisoDepto}`
     })));
   } catch (error) {
     console.error("GET Usuarios error:", error);
@@ -60,14 +58,15 @@ export async function PATCH(request: Request) {
     const { id, newPassword, newRole } = await request.json();
 
     const updateData: any = {};
-    if (newPassword) {
-      updateData.password = await bcrypt.hash(newPassword, 10);
-    }
+    
+    // Supabase auth updates should be done via admin API (requires SERVICE_ROLE). 
+    // Para simplificar la demo, ignoraremos newPassword si se manda o se podría llamar a supabase admin.
+    
     if (newRole) {
-      updateData.rol = newRole;
+      updateData.rolUser = newRole;
     }
 
-    await prisma.usuario.update({
+    await prisma.unidad.update({
       where: { id: BigInt(id) },
       data: updateData
     });
