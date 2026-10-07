@@ -44,7 +44,7 @@ export default function VecinoDashboardPage() {
 
   const [checklist, setChecklist] = useState([
     { id: 1, text: "Limpieza de pisos desde el 2do piso hasta PB y vereda", done: false, detail: "Barrer y desinfectar" },
-    { id: 2, text: "Embolsado de basura suelta", done: false, detail: "En palieres, escaleras o entrada (si la hubiere)" },
+    { id: 2, text: "Embolsado de basura suelta", done: false, detail: "Lo que se encuentre en la vereda al barrer (si la hubiere)" },
     { id: 3, text: "Repaso de vidrios y barandas de escaleras", done: false, detail: "Eliminar polvo y manchas" },
   ]);
 
