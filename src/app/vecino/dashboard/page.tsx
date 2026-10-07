@@ -24,11 +24,11 @@ export default function VecinoDashboardPage() {
   const supabase = createClient();
 
   const [unidad, setUnidad] = useState<UnidadData>({
-    id: 3,
-    numero_uf: 3,
-    piso_depto: "1° B",
-    propietario_nombre: "Martínez, Laura",
-    email: "laura.martinez@calle425.com",
+    id: 0,
+    numero_uf: 0,
+    piso_depto: "...",
+    propietario_nombre: "Cargando...",
+    email: "...",
   });
   
   const [usuario, setUsuario] = useState<{nombre: string, rol: string, email: string} | null>(null);
