@@ -9,7 +9,11 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const mantenimientos = await prisma.mantenimiento.findMany();
-    return NextResponse.json({ success: true, mantenimientos });
+    const mantenimientosFormatted = mantenimientos.map(m => ({
+      ...m,
+      id: m.id.toString()
+    }));
+    return NextResponse.json({ success: true, mantenimientos: mantenimientosFormatted });
   } catch (error) {
     return NextResponse.json({ error: 'Error al obtener mantenimientos' }, { status: 500 });
   }
@@ -46,7 +50,13 @@ export async function PATCH(request: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, mantenimiento: result });
+    return NextResponse.json({ 
+      success: true, 
+      mantenimiento: {
+        ...result,
+        id: result.id.toString()
+      } 
+    });
   } catch (error) {
     console.error("Mantenimiento error:", error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
