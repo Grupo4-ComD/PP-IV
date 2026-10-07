@@ -123,8 +123,10 @@ export async function GET(request: Request) {
         votacionesActivas
       },
       limpiezaTurno: limpieza ? {
+        id: limpieza.id.toString(),
         semana_inicio: limpieza.semanaInicio.toISOString().split('T')[0],
         semana_fin: limpieza.semanaFin.toISOString().split('T')[0],
+        estado: limpieza.estado
       } : null,
       mantenimientos: mantenimientos.map(m => ({
         tipo: m.tipo,

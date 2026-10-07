@@ -9,7 +9,13 @@ export async function GET(request: Request) {
     const unidades = await prisma.unidad.findMany({ orderBy: { numeroUf: 'asc' } });
     if (unidades.length === 0) return NextResponse.json({ error: 'No hay unidades' }, { status: 400 });
     
-    const fechaBase = new Date('2026-01-12T00:00:00Z'); // Lunes semana 1
+    const currentYear = new Date().getFullYear();
+    const fechaBase = new Date(`${currentYear}-01-01T00:00:00Z`);
+    // Ajustar al primer lunes del año
+    while (fechaBase.getDay() !== 1) {
+      fechaBase.setDate(fechaBase.getDate() + 1);
+    }
+    
     const asignaciones: any[] = [];
     
     for (let i = 0; i < 52; i++) {
@@ -23,7 +29,7 @@ export async function GET(request: Request) {
         unidadIdAsignada: unidadAsignada.id,
         semanaInicio: inicio,
         semanaFin: fin,
-        estado: 'cumplido' // por defecto, el cronJob lo evaluara. Para UI demo es programado/cumplido
+        estado: 'programado' // Las tareas futuras nacen programadas, no cumplidas
       });
     }
     

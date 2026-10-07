@@ -16,6 +16,7 @@ import {
   Clock,
   ListTodo,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import EstadoCuentaCard, { ExpensaData, UnidadData } from "@/components/vecino/EstadoCuentaCard";
@@ -36,7 +37,8 @@ export default function VecinoDashboardPage() {
 
   const [expensa, setExpensa] = useState<ExpensaData | null>(null);
   const [metricas, setMetricas] = useState({ ticketsActivos: 0, votacionesActivas: 0 });
-  const [limpiezaTurno, setLimpiezaTurno] = useState<{ semana_inicio: string, semana_fin: string } | null>(null);
+  const [limpiezaTurno, setLimpiezaTurno] = useState<{ id: string, semana_inicio: string, semana_fin: string, estado: string } | null>(null);
+  const [completandoLimpieza, setCompletandoLimpieza] = useState(false);
   const [mantenimientos, setMantenimientos] = useState<{tipo: string, fecha_ultimo: string, frecuencia_meses: number}[]>([]);
 
   // Checklist interactivo de limpieza
@@ -72,6 +74,25 @@ export default function VecinoDashboardPage() {
     }
     loadData();
   }, []);
+
+  const marcarLimpiezaCumplida = async () => {
+    if (!limpiezaTurno) return;
+    setCompletandoLimpieza(true);
+    try {
+      const res = await fetch('/api/vecino/limpieza/completar', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limpiezaId: limpiezaTurno.id })
+      });
+      if (res.ok) {
+        setLimpiezaTurno({ ...limpiezaTurno, estado: 'en_verificacion' });
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCompletandoLimpieza(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
@@ -255,6 +276,30 @@ export default function VecinoDashboardPage() {
                 </label>
               ))}
             </div>
+
+            {limpiezaTurno && limpiezaTurno.estado === 'programado' && (
+              <button 
+                onClick={marcarLimpiezaCumplida}
+                disabled={completandoLimpieza}
+                className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 transition flex items-center justify-center gap-2"
+              >
+                {completandoLimpieza ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Enviar Reporte de Limpieza
+              </button>
+            )}
+            
+            {limpiezaTurno && limpiezaTurno.estado === 'en_verificacion' && (
+              <div className="w-full mt-2 py-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4" />
+                Reporte Enviado (Esperando Admin)
+              </div>
+            )}
+            {limpiezaTurno && limpiezaTurno.estado === 'cumplido' && (
+              <div className="w-full mt-2 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Limpieza Aprobada por Administración
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Link

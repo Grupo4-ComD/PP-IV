@@ -51,6 +51,8 @@ enum CategoriaGasto {
 }
 
 enum EstadoLimpieza {
+  programado
+  en_verificacion
   cumplido
   incumplido
   multado
@@ -184,7 +186,7 @@ model LimpiezaRotativa {
   unidadIdAsignada  BigInt         @map("unidad_id_asignada")
   semanaInicio      DateTime       @map("semana_inicio") @db.Date
   semanaFin         DateTime       @map("semana_fin") @db.Date
-  estado            EstadoLimpieza @default(cumplido)
+  estado            EstadoLimpieza @default(programado)
   unidadIdSustituta BigInt?        @map("unidad_id_sustituta")
   observaciones     String?
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz()
