@@ -53,8 +53,11 @@ export default function AdminConfiguracionPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("");
+  
+  const [editUserName, setEditUserName] = useState("");
+  const [editUserEmail, setEditUserEmail] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editUnidadId, setEditUnidadId] = useState("");
 
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserName, setNewUserName] = useState("");
@@ -167,12 +170,17 @@ export default function AdminConfiguracionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           id, 
-          newRole: newRole || undefined 
+          email: editUserEmail || undefined,
+          nombreCompleto: editUserName || undefined,
+          rol: editRole || undefined,
+          unidadId: editUnidadId || undefined,
+          newPassword: newPassword || undefined
         })
       });
       if (res.ok) {
         setSuccessMsg("Usuario actualizado correctamente.");
         setEditingUserId(null);
+        setNewPassword("");
         fetchUsers();
       } else {
         setErrorMsg("Error al actualizar el usuario.");
@@ -739,8 +747,8 @@ export default function AdminConfiguracionPage() {
                     {isCreatingUser && (
                       <tr className="bg-indigo-50/50 dark:bg-indigo-900/10">
                         <td className="p-4 space-y-2">
-                          <input type="text" placeholder="Nombre Completo" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserName} onChange={e => setNewUserName(e.target.value)} />
-                          <input type="email" placeholder="Correo (Login)" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} />
+                          <input type="text" placeholder="Nombre Completo" autoComplete="off" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserName} onChange={e => setNewUserName(e.target.value)} />
+                          <input type="email" placeholder="Correo (Login)" autoComplete="off" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} />
                         </td>
                         <td className="p-4 align-top">
                           <select className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserRole} onChange={e => setNewUserRole(e.target.value)}>
@@ -752,6 +760,7 @@ export default function AdminConfiguracionPage() {
                         </td>
                         <td className="p-4 align-top">
                           <select className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserUnidadId} onChange={e => setNewUserUnidadId(e.target.value)}>
+                            <option value="0">Sin Unidad (Admin)</option>
                             {[1,2,3,4,5,6,7,8,9].map(num => (
                               <option key={num} value={num}>UF {num}</option>
                             ))}
@@ -777,15 +786,24 @@ export default function AdminConfiguracionPage() {
                     ) : users.map(u => (
                       <tr key={u.id} className="text-sm bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                         <td className="p-4 font-medium text-slate-900 dark:text-white">
-                          {u.username}
-                          <div className="text-xs text-slate-400 font-normal mt-0.5">{u.email}</div>
+                          {editingUserId === u.id ? (
+                            <div className="space-y-2">
+                              <input type="text" className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={editUserName} onChange={e => setEditUserName(e.target.value)} />
+                              <input type="email" className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={editUserEmail} onChange={e => setEditUserEmail(e.target.value)} />
+                            </div>
+                          ) : (
+                            <>
+                              {u.username}
+                              <div className="text-xs text-slate-400 font-normal mt-0.5">{u.email}</div>
+                            </>
+                          )}
                         </td>
                         <td className="p-4">
                           {editingUserId === u.id ? (
                             <select 
                               className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                              value={newRole}
-                              onChange={(e) => setNewRole(e.target.value)}
+                              value={editRole}
+                              onChange={(e) => setEditRole(e.target.value)}
                             >
                               <option value="vecino">Vecino (Heredado)</option>
                               <option value="propietario">Propietario</option>
@@ -803,10 +821,27 @@ export default function AdminConfiguracionPage() {
                             </span>
                           )}
                         </td>
-                        <td className="p-4 text-slate-500 dark:text-slate-400">{u.unidadInfo}</td>
+                        <td className="p-4 text-slate-500 dark:text-slate-400">
+                          {editingUserId === u.id ? (
+                            <select className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={editUnidadId} onChange={e => setEditUnidadId(e.target.value)}>
+                              <option value="0">Sin Unidad</option>
+                              {[1,2,3,4,5,6,7,8,9].map(num => (
+                                <option key={num} value={num}>UF {num}</option>
+                              ))}
+                            </select>
+                          ) : u.unidadInfo}
+                        </td>
                         <td className="p-4 text-right space-x-2">
                           {editingUserId === u.id ? (
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-2 mt-2">
+                              <input 
+                                type="password" 
+                                placeholder="Nueva clave (Opcional)"
+                                autoComplete="new-password"
+                                className="w-32 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                              />
                               <button onClick={() => handleUpdateUser(u.id)} disabled={saving} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center">
                                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />} Guardar
                               </button>
@@ -815,7 +850,13 @@ export default function AdminConfiguracionPage() {
                               </button>
                             </div>
                           ) : (
-                            <button onClick={() => { setEditingUserId(u.id); setNewRole(u.rol); }} className="px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition flex items-center ml-auto">
+                            <button onClick={() => { 
+                              setEditingUserId(u.id); 
+                              setEditUserName(u.username);
+                              setEditUserEmail(u.email);
+                              setEditRole(u.rol);
+                              setEditUnidadId(u.unidadInfo === 'Sin Unidad' ? '0' : u.unidadInfo.match(/\d+/)?.[0] || '1');
+                            }} className="px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition flex items-center ml-auto">
                               <Settings className="w-3 h-3 mr-1.5 text-indigo-500" />
                               Gestionar
                             </button>
