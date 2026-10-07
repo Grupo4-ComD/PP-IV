@@ -57,6 +57,7 @@ export default function AdminDashboardPage() {
   // Nuevo estado para tabs
   const [activeTab, setActiveTab] = useState<"movimientos" | "unidades">("movimientos");
   const [movimientos, setMovimientos] = useState<any[]>([]);
+  const [alertasMantenimiento, setAlertasMantenimiento] = useState<{tipo: string, fechaUltimo: string, vencido: boolean}[]>([]);
 
   const loadDashboard = async () => {
     try {
@@ -73,6 +74,22 @@ export default function AdminDashboardPage() {
         });
         setUnidades(data.unidades);
         setMovimientos(data.movimientos || []);
+      }
+      
+      const resMant = await fetch("/api/admin/mantenimiento");
+      if (resMant.ok) {
+        const dataMant = await resMant.json();
+        const alertas = dataMant.mantenimientos.map((m: any) => {
+          const fecha = new Date(m.fechaUltimo);
+          const vencimiento = new Date(fecha);
+          vencimiento.setMonth(vencimiento.getMonth() + m.frecuenciaMeses);
+          return {
+            tipo: m.tipo,
+            fechaUltimo: m.fechaUltimo,
+            vencido: new Date() > vencimiento
+          };
+        }).filter((a: any) => a.vencido);
+        setAlertasMantenimiento(alertas);
       }
     } catch (err) {
       console.error("Error al cargar el dashboard real:", err);
@@ -100,6 +117,31 @@ export default function AdminDashboardPage() {
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               Cargando panel financiero en vivo...
             </span>
+          </div>
+        )}
+
+        {/* Alertas de Mantenimiento Preventivo */}
+        {alertasMantenimiento.length > 0 && (
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-rose-800 dark:text-rose-300">
+                  Mantenimiento Preventivo Vencido
+                </h3>
+                <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">
+                  Hay {alertasMantenimiento.length} {alertasMantenimiento.length === 1 ? "servicio que requiere" : "servicios que requieren"} atención: {alertasMantenimiento.map(a => a.tipo === 'tanque_agua' ? 'Tanque de Agua' : 'Matafuegos').join(', ')}.
+                </p>
+              </div>
+            </div>
+            <Link 
+              href="/admin/configuracion" 
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition shadow-sm text-center whitespace-nowrap"
+            >
+              Actualizar Fechas
+            </Link>
           </div>
         )}
 
