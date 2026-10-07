@@ -549,7 +549,7 @@ export default function AdminConfiguracionPage() {
               </button>
             </div>
           </form>
-        ) : (
+        ) : activeTab === "ia_reglamento" ? (
           /* Pestaña: Base de Conocimiento IA y Reglamento */
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
@@ -640,7 +640,7 @@ export default function AdminConfiguracionPage() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </main>
     </div>
   );

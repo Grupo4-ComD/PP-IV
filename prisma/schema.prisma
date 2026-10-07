@@ -9,7 +9,8 @@ generator client {
 }
 
 enum RolUsuario {
-  vecino
+  propietario
+  inquilino
   admin
 
   @@map("rol_usuario_enum")
@@ -89,7 +90,7 @@ model Unidad {
   propietarioNombre    String     @map("propietario_nombre") @db.VarChar(150)
   email                String     @unique @db.VarChar(255)
   telefono             String?    @db.VarChar(50)
-  rolUser              RolUsuario @default(vecino) @map("rol_user")
+  rolUser              RolUsuario @default(propietario) @map("rol_user")
   coeficienteProrrateo Decimal    @default(0.00) @map("coeficiente_prorrateo") @db.Decimal(5, 2)
   saldoAnteriorInicial Decimal    @default(0.00) @map("saldo_anterior_inicial") @db.Decimal(12, 2)
   createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz()
@@ -259,7 +260,7 @@ model Usuario {
   id        BigInt   @id @default(autoincrement())
   username  String   @unique @db.VarChar(100)
   password  String   @db.VarChar(255)
-  rol       String   @default("vecino") @db.VarChar(50)
+  rol       String   @default("propietario") @db.VarChar(50)
   unidadId  BigInt?  @map("unidad_id")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
