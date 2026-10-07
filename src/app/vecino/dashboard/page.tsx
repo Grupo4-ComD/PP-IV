@@ -30,6 +30,8 @@ export default function VecinoDashboardPage() {
     propietario_nombre: "Martínez, Laura",
     email: "laura.martinez@calle425.com",
   });
+  
+  const [usuario, setUsuario] = useState<{nombre: string, rol: string, email: string} | null>(null);
 
   const [expensa, setExpensa] = useState<ExpensaData | null>(null);
   const [metricas, setMetricas] = useState({ ticketsActivos: 0, votacionesActivas: 0 });
@@ -56,6 +58,7 @@ export default function VecinoDashboardPage() {
         if (res.ok) {
           const data = await res.json();
           setUnidad(data.unidad);
+          setUsuario(data.usuario);
           setExpensa(data.expensa);
           if (data.metricas) setMetricas(data.metricas);
           if (data.limpiezaTurno) setLimpiezaTurno(data.limpiezaTurno);
@@ -70,7 +73,7 @@ export default function VecinoDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
       {/* SIDEBAR REUTILIZABLE CON ICONOS MODERNOS */}
-      <VecinoSidebar unidad={unidad} />
+      <VecinoSidebar unidad={unidad} usuario={usuario} />
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -108,14 +111,14 @@ export default function VecinoDashboardPage() {
             <div className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 text-xs">
               <div className="text-right hidden md:block">
                 <span className="font-semibold text-slate-800 dark:text-slate-200 block">
-                  {unidad.propietario_nombre}
+                  {usuario?.nombre || unidad.propietario_nombre}
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  UF 0{unidad.numero_uf}
+                <span className="text-[11px] text-slate-400 uppercase">
+                  {usuario?.rol || 'Vecino'} • UF 0{unidad.numero_uf}
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
-                {unidad.propietario_nombre.charAt(0)}
+              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs uppercase">
+                {(usuario?.nombre || unidad.propietario_nombre).charAt(0)}
               </div>
             </div>
           </div>
@@ -127,7 +130,7 @@ export default function VecinoDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Hola, {unidad.propietario_nombre.split(",")[0]}
+                Hola, {(usuario?.nombre || unidad.propietario_nombre).split(",")[0].split(" ")[0]}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Bienvenido al panel del Consorcio Calle 425. Aquí tiene el control integral de su unidad.

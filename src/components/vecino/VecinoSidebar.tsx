@@ -25,9 +25,14 @@ interface VecinoSidebarProps {
     piso_depto?: string;
     propietario_nombre?: string;
   };
+  usuario?: {
+    nombre?: string;
+    rol?: string;
+    email?: string;
+  } | null;
 }
 
-export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
+export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +47,28 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  const [localUnidad, setLocalUnidad] = useState(unidad);
+  const [localUsuario, setLocalUsuario] = useState(usuario);
+
+  useEffect(() => {
+    if (unidad) setLocalUnidad(unidad);
+    if (usuario) setLocalUsuario(usuario);
+    
+    if (!unidad || !usuario) {
+      async function load() {
+        try {
+          const res = await fetch("/api/vecino/dashboard");
+          if (res.ok) {
+            const d = await res.json();
+            if (d.unidad) setLocalUnidad(d.unidad);
+            if (d.usuario) setLocalUsuario(d.usuario);
+          }
+        } catch (e) {}
+      }
+      load();
+    }
+  }, [unidad, usuario]);
 
   const navItems = [
     {
@@ -62,36 +89,18 @@ export default function VecinoSidebar({ unidad }: VecinoSidebarProps) {
       icon: LifeBuoy,
       description: "Reclamos e incidentes",
     },
-    {
+    // Votaciones sólo para propietarios
+    ...(localUsuario?.rol === "propietario" || localUsuario?.rol === "admin" ? [{
       href: "/vecino/votaciones",
       label: "Votaciones y Asambleas",
       icon: Vote,
       description: "Presupuestos de proveedores",
-    },
+    }] : []),
   ];
-
-  const [localUnidad, setLocalUnidad] = useState(unidad);
-
-  useEffect(() => {
-    if (unidad) {
-      setLocalUnidad(unidad);
-      return;
-    }
-    async function load() {
-      try {
-        const res = await fetch("/api/vecino/dashboard");
-        if (res.ok) {
-          const d = await res.json();
-          if (d.unidad) setLocalUnidad(d.unidad);
-        }
-      } catch (e) {}
-    }
-    load();
-  }, [unidad]);
 
   const ufNumero = localUnidad?.numero_uf ? String(localUnidad.numero_uf).padStart(2, "0") : "--";
   const depto = localUnidad?.piso_depto || "--";
-  const nombre = localUnidad?.propietario_nombre || "Cargando...";
+  const nombre = localUsuario?.nombre || localUnidad?.propietario_nombre || "Cargando...";
 
   return (
     <>

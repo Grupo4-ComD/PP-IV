@@ -100,6 +100,11 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
+      usuario: {
+        nombre: usuario?.nombreCompleto || unidad.propietarioNombre,
+        email: usuario?.email || unidad.email,
+        rol: usuario?.rol || 'vecino'
+      },
       unidad: {
         id: unidad.id.toString(),
         numero_uf: unidad.numeroUf,

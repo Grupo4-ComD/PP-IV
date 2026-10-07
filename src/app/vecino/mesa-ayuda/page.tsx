@@ -30,12 +30,13 @@ import VecinoSidebar from "@/components/vecino/VecinoSidebar";
 export default function MesaAyudaPage() {
   const supabase = createClient();
 
-  const [unidad] = useState({
+  const [unidad, setUnidad] = useState({
     id: 3,
     numero_uf: 3,
     piso_depto: "1° B",
-    propietario_nombre: "Martínez, Laura",
+    propietario_nombre: "Cargando...",
   });
+  const [usuario, setUsuario] = useState<{nombre: string, rol: string, email: string} | null>(null);
 
   // Lista de Tickets
   const [tickets, setTickets] = useState<TicketItem[]>([
@@ -174,7 +175,20 @@ export default function MesaAyudaPage() {
         console.warn("Usando datos locales para mesa de ayuda:", err);
       }
     }
+    
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/vecino/dashboard");
+        if (res.ok) {
+          const d = await res.json();
+          if (d.unidad) setUnidad(d.unidad);
+          if (d.usuario) setUsuario(d.usuario);
+        }
+      } catch (err) {}
+    }
+
     loadTickets();
+    loadUser();
   }, []);
 
   const handleTicketCreated = (newTicket: TicketItem) => {
@@ -189,8 +203,8 @@ export default function MesaAyudaPage() {
             ...(t.comentarios || []),
             {
               id: Date.now(),
-              autor: `${unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
-              rol: "vecino" as const,
+              autor: `${usuario?.nombre || unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
+              rol: (usuario?.rol || "vecino") as any,
               texto: nuevoComentario,
               fecha: "Recién",
             },
@@ -210,8 +224,8 @@ export default function MesaAyudaPage() {
                 ...(prev.comentarios || []),
                 {
                   id: Date.now(),
-                  autor: `${unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
-                  rol: "vecino",
+                  autor: `${usuario?.nombre || unidad.propietario_nombre} (UF 0${unidad.numero_uf})`,
+                  rol: (usuario?.rol || "vecino") as any,
                   texto: nuevoComentario,
                   fecha: "Recién",
                 },
@@ -246,7 +260,7 @@ export default function MesaAyudaPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
       {/* SIDEBAR REUTILIZABLE CON ICONOS MODERNOS */}
-      <VecinoSidebar unidad={unidad} />
+      <VecinoSidebar unidad={unidad as any} usuario={usuario} />
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
