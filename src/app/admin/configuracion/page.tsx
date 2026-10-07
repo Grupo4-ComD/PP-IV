@@ -358,6 +358,19 @@ export default function AdminConfiguracionPage() {
             <Users className="w-4 h-4" />
             <span>Gestión de Accesos & Claves</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("mantenimientos")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === "mantenimientos"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span>Mantenimiento Preventivo</span>
+          </button>
         </div>
 
         {/* Notificaciones */}
