@@ -59,6 +59,8 @@ export default function AdminDashboardPage() {
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [alertasMantenimiento, setAlertasMantenimiento] = useState<{tipo: string, fechaUltimo: string, vencido: boolean}[]>([]);
 
+  const [limpiezasPendientes, setLimpiezasPendientes] = useState<any[]>([]);
+
   const loadDashboard = async () => {
     try {
       const res = await fetch("/api/admin/dashboard");
@@ -74,6 +76,7 @@ export default function AdminDashboardPage() {
         });
         setUnidades(data.unidades);
         setMovimientos(data.movimientos || []);
+        if (data.limpiezasEnVerificacion) setLimpiezasPendientes(data.limpiezasEnVerificacion);
       }
       
       const resMant = await fetch("/api/admin/mantenimiento");
@@ -101,6 +104,21 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  const handleAprobarLimpieza = async (id: string, accion: 'aprobar' | 'rechazar') => {
+    try {
+      const res = await fetch("/api/admin/limpieza/aprobar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limpiezaId: id, accion })
+      });
+      if (res.ok) {
+        setLimpiezasPendientes(prev => prev.filter(l => l.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex">
@@ -142,6 +160,43 @@ export default function AdminDashboardPage() {
             >
               Actualizar Fechas
             </Link>
+          </div>
+        )}
+
+        {/* Limpiezas Pendientes de Aprobación */}
+        {limpiezasPendientes.length > 0 && (
+          <div className="mb-6 space-y-3 animate-fade-in">
+            {limpiezasPendientes.map((limpieza) => (
+              <div key={limpieza.id} className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      UF 0{limpieza.numero_uf} envió reporte de Limpieza
+                    </h3>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                      El vecino {limpieza.residente} reportó haber completado sus tareas.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => handleAprobarLimpieza(limpieza.id, 'aprobar')}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-sm text-center"
+                  >
+                    Aprobar
+                  </button>
+                  <button 
+                    onClick={() => handleAprobarLimpieza(limpieza.id, 'rechazar')}
+                    className="flex-1 sm:flex-none px-4 py-2 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-bold rounded-xl transition text-center"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

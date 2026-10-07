@@ -123,6 +123,11 @@ export async function GET() {
     // Saldo real de Caja Bancaria (Total cobrado histórico - Total gastado histórico)
     const saldoCaja = Number(totalPagos._sum.monto || 0) - Number(totalGastos._sum.monto || 0);
 
+    const limpiezasEnVerificacion = await prisma.limpiezaRotativa.findMany({
+      where: { estado: 'en_verificacion' },
+      include: { unidadAsignada: true }
+    });
+
     return NextResponse.json({
       saldoCaja,
       movimientos,
@@ -131,7 +136,14 @@ export async function GET() {
       ufsMora,
       totalMoraPendiente,
       ticketsActivos: tickets,
-      unidades: unidadesConEstado
+      unidades: unidadesConEstado,
+      limpiezasEnVerificacion: limpiezasEnVerificacion.map(l => ({
+        id: l.id.toString(),
+        numero_uf: l.unidadAsignada.numeroUf,
+        piso_depto: l.unidadAsignada.pisoDepto,
+        residente: l.unidadAsignada.propietarioNombre,
+        semana_inicio: l.semanaInicio.toISOString().split('T')[0]
+      }))
     });
   } catch (error) {
     console.error('Error fetching dashboard:', error);
