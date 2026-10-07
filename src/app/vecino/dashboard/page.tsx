@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Clock,
   ListTodo,
+  AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import EstadoCuentaCard, { ExpensaData, UnidadData } from "@/components/vecino/EstadoCuentaCard";
