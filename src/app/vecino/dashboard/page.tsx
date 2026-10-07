@@ -42,11 +42,10 @@ export default function VecinoDashboardPage() {
   const [completandoLimpieza, setCompletandoLimpieza] = useState(false);
   const [mantenimientos, setMantenimientos] = useState<{tipo: string, fecha_ultimo: string, frecuencia_meses: number}[]>([]);
 
-  // Checklist interactivo de limpieza
   const [checklist, setChecklist] = useState([
-    { id: 1, text: "Barrer palier y tramo de escalera del piso", done: true, time: "Ayer 18:20 hs" },
-    { id: 2, text: "Mopa con desinfectante y secado de pisos", done: false, detail: "Insumos en el armario de PB" },
-    { id: 3, text: "Verificar luminarias LED de emergencia", done: false, detail: "Probar botón de test lumínico" },
+    { id: 1, text: "Limpieza de pisos desde el 2do piso hasta PB y vereda", done: false, detail: "Barrer y desinfectar" },
+    { id: 2, text: "Embolsado de basura suelta", done: false, detail: "En palieres, escaleras o entrada (si la hubiere)" },
+    { id: 3, text: "Repaso de vidrios y barandas de escaleras", done: false, detail: "Eliminar polvo y manchas" },
   ]);
 
   const toggleTask = (id: number) => {

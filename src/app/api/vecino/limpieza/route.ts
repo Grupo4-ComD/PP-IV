@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
     const hoy = new Date();
     const allTurnos = await prisma.limpiezaRotativa.findMany({
-      include: { unidadAsignada: true, unidadSustituta: true },
+      include: { unidadAsignada: true, unidadSustituta: true, unidadPermuta: true },
       orderBy: { semanaInicio: 'asc' }
     });
 
@@ -54,7 +54,9 @@ export async function GET(request: Request) {
         piso_depto: t.unidadAsignada.pisoDepto,
         residente: t.unidadAsignada.propietarioNombre,
         estado: estadoCalculado,
-        unidad_sustituta_uf: t.unidadSustituta ? t.unidadSustituta.numeroUf : null
+        unidad_sustituta_uf: t.unidadSustituta ? t.unidadSustituta.numeroUf : null,
+        solicitud_permuta_uf: t.unidadPermuta ? t.unidadPermuta.numeroUf : null,
+        estado_permuta: t.estadoPermuta
       };
     });
     return NextResponse.json({ turnos: turnosResult, miNumeroUf });

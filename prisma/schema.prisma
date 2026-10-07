@@ -104,6 +104,7 @@ model Unidad {
   cargosParticulares CargoParticular[]
   limpiezasAsignadas LimpiezaRotativa[] @relation("LimpiezaAsignada")
   limpiezasSustituta LimpiezaRotativa[] @relation("LimpiezaSustituta")
+  limpiezasPermuta   LimpiezaRotativa[] @relation("LimpiezaPermuta")
   multasInfractor    Multa[]            @relation("MultasInfractor")
   multasAcreditadas  Multa[]            @relation("MultasAcreditadas")
   tickets            TicketReclamo[]
@@ -187,12 +188,15 @@ model LimpiezaRotativa {
   semanaInicio      DateTime       @map("semana_inicio") @db.Date
   semanaFin         DateTime       @map("semana_fin") @db.Date
   estado            EstadoLimpieza @default(programado)
-  unidadIdSustituta BigInt?        @map("unidad_id_sustituta")
-  observaciones     String?
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  unidadIdSustituta       BigInt?  @map("unidad_id_sustituta")
+  solicitudPermutaAUnidadId BigInt? @map("solicitud_permuta_a_unidad_id")
+  estadoPermuta           String?  @default("ninguna") @map("estado_permuta") // ninguna, pendiente
+  observaciones           String?
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
   unidadAsignada  Unidad  @relation("LimpiezaAsignada", fields: [unidadIdAsignada], references: [id], onDelete: Restrict)
   unidadSustituta Unidad? @relation("LimpiezaSustituta", fields: [unidadIdSustituta], references: [id], onDelete: SetNull)
+  unidadPermuta   Unidad? @relation("LimpiezaPermuta", fields: [solicitudPermutaAUnidadId], references: [id], onDelete: SetNull)
 
   @@map("limpieza_rotativa")
 }

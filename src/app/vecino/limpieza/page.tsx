@@ -29,6 +29,8 @@ interface TurnoLimpieza {
   estado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado" | "incumplido";
   insumos_verificados?: boolean;
   unidad_sustituta_uf?: number | null;
+  solicitud_permuta_uf?: number | null;
+  estado_permuta?: string | null;
 }
 
 export default function LimpiezaPage() {
@@ -149,29 +151,56 @@ export default function LimpiezaPage() {
     }
   };
 
-  const handleConfirmarPermuta = (ufDestino: number) => {
-    setTurnos((prev) => {
-      const idxOrigen = prev.findIndex((t) => t.numero_uf === miNumeroUf);
-      const idxDestino = prev.findIndex((t) => t.numero_uf === ufDestino);
-      if (idxOrigen === -1 || idxDestino === -1) return prev;
+  const handleConfirmarPermuta = async (ufDestino: number) => {
+    const turnoOrigen = turnos.find((t) => t.numero_uf === miNumeroUf && t.estado === 'programado');
+    if (!turnoOrigen) {
+      alert("No tienes turnos programados futuros para permutar");
+      return;
+    }
 
-      const newTurnos = [...prev];
-      const tempUf = newTurnos[idxOrigen].numero_uf;
-      const tempPiso = newTurnos[idxOrigen].piso_depto;
-      const tempRes = newTurnos[idxOrigen].residente;
+    try {
+      const res = await fetch("/api/vecino/limpieza/permutar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turnoId: turnoOrigen.id, ufDestino, accion: 'solicitar' })
+      });
 
-      newTurnos[idxOrigen].numero_uf = newTurnos[idxDestino].numero_uf;
-      newTurnos[idxOrigen].piso_depto = newTurnos[idxDestino].piso_depto;
-      newTurnos[idxOrigen].residente = newTurnos[idxDestino].residente;
-
-      newTurnos[idxDestino].numero_uf = tempUf;
-      newTurnos[idxDestino].piso_depto = tempPiso;
-      newTurnos[idxDestino].residente = tempRes;
-
-      return newTurnos;
-    });
+      if (res.ok) {
+        // Actualizar UI
+        setTurnos(prev => prev.map(t => {
+          if (t.id === turnoOrigen.id) {
+            return { ...t, solicitud_permuta_uf: ufDestino, estado_permuta: 'pendiente' };
+          }
+          return t;
+        }));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Error al solicitar permuta");
+      }
+    } catch (err) {
+      console.error(err);
+    }
 
     setShowPermutaModal(false);
+  };
+
+  const handleResponderPermuta = async (turnoId: number, accion: 'aceptar' | 'rechazar') => {
+    try {
+      const res = await fetch("/api/vecino/limpieza/permutar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turnoId, accion })
+      });
+      if (res.ok) {
+        // Recargar datos
+        window.location.reload();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Error al responder permuta");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Turno activo de la semana
@@ -270,7 +299,7 @@ export default function LimpiezaPage() {
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
-                    Inspección Viernes
+                    Inspección Domingo
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -431,6 +460,16 @@ export default function LimpiezaPage() {
                         <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                           <span>Insumos y check verificado</span>
+                        </span>
+                      ) : t.solicitud_permuta_uf === miNumeroUf && t.estado_permuta === 'pendiente' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-amber-600">¿Aceptar permuta?</span>
+                          <button onClick={() => handleResponderPermuta(t.id, 'aceptar')} className="px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold">Aceptar</button>
+                          <button onClick={() => handleResponderPermuta(t.id, 'rechazar')} className="px-2 py-1 bg-rose-600 text-white rounded text-[10px] font-bold">Rechazar</button>
+                        </div>
+                      ) : esMiTurno && t.estado_permuta === 'pendiente' ? (
+                        <span className="text-[11px] font-bold text-amber-600 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Esperando respuesta de UF 0{t.solicitud_permuta_uf}
                         </span>
                       ) : esMiTurno ? (
                         <button
