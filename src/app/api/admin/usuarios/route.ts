@@ -21,18 +21,21 @@ export async function GET(request: Request) {
     const isAdmin = userRole === 'admin' || (user.email && user.email.includes('admin'));
     if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
 
-    const unidades = await prisma.unidad.findMany({
+    const usuarios = await prisma.usuario.findMany({
+      include: {
+        unidad: true
+      },
       orderBy: {
-        numeroUf: 'asc'
+        unidad: { numeroUf: 'asc' }
       }
     });
 
-    return NextResponse.json(unidades.map(u => ({
+    return NextResponse.json(usuarios.map(u => ({
       id: u.id.toString(),
-      username: u.propietarioNombre,
+      username: u.nombreCompleto,
       email: u.email,
-      rol: u.rolUser,
-      unidadInfo: `UF ${u.numeroUf} - ${u.pisoDepto}`
+      rol: u.rol,
+      unidadInfo: u.unidad ? `UF ${u.unidad.numeroUf} - ${u.unidad.pisoDepto}` : 'Sin Unidad'
     })));
   } catch (error) {
     console.error("GET Usuarios error:", error);
@@ -59,14 +62,11 @@ export async function PATCH(request: Request) {
 
     const updateData: any = {};
     
-    // Supabase auth updates should be done via admin API (requires SERVICE_ROLE). 
-    // Para simplificar la demo, ignoraremos newPassword si se manda o se podría llamar a supabase admin.
-    
     if (newRole) {
-      updateData.rolUser = newRole;
+      updateData.rol = newRole;
     }
 
-    await prisma.unidad.update({
+    await prisma.usuario.update({
       where: { id: BigInt(id) },
       data: updateData
     });
@@ -74,6 +74,39 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("PATCH Usuarios error:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      { cookies: { getAll() { return cookieStore.getAll(); } } }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const userRole = user.user_metadata?.rol || 'propietario';
+    const isAdmin = userRole === 'admin' || (user.email && user.email.includes('admin'));
+    if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+
+    const { email, nombreCompleto, rol, unidadId } = await request.json();
+
+    const nuevoUsuario = await prisma.usuario.create({
+      data: {
+        email,
+        nombreCompleto,
+        rol,
+        unidadId: unidadId ? BigInt(unidadId) : null
+      }
+    });
+
+    return NextResponse.json({ success: true, id: nuevoUsuario.id.toString() });
+  } catch (error) {
+    console.error("POST Usuarios error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

@@ -258,12 +258,13 @@ model VotoVecino {
 }
 
 model Usuario {
-  id        BigInt   @id @default(autoincrement())
-  username  String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(255)
-  rol       String   @default("propietario") @db.VarChar(50)
-  unidadId  BigInt?  @map("unidad_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  id             BigInt   @id @default(autoincrement())
+  nombreCompleto String   @map("nombre_completo") @db.VarChar(150)
+  email          String   @unique @db.VarChar(255)
+  password       String?  @db.VarChar(255)
+  rol            RolUsuario @default(propietario)
+  unidadId       BigInt?  @map("unidad_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
   unidad    Unidad?  @relation(fields: [unidadId], references: [id], onDelete: SetNull)
 

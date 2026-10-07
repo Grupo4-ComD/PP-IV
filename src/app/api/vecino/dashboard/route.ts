@@ -27,15 +27,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const unidad = await prisma.unidad.findUnique({
-      where: { email: user.email }
+    const usuario = await prisma.usuario.findUnique({
+      where: { email: user.email },
+      include: { unidad: true }
     });
+
+    let unidad = usuario?.unidad;
 
     if (!unidad) {
       // Fallback a UF 3 para demostraciones si no coincide el email
-      const fallback = await prisma.unidad.findUnique({ where: { numeroUf: 3 } });
-      if (!fallback) return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
-      Object.assign(unidad || {}, fallback);
+      const fallbackUsuario = await prisma.usuario.findFirst({ where: { unidadId: 3 }, include: { unidad: true } });
+      if (!fallbackUsuario || !fallbackUsuario.unidad) return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
+      unidad = fallbackUsuario.unidad;
     }
     
     // Si unidad sigue siendo null (caso extremo), retornamos error

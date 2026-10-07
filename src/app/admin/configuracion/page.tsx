@@ -56,6 +56,12 @@ export default function AdminConfiguracionPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("");
 
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserRole, setNewUserRole] = useState("inquilino");
+  const [newUserUnidadId, setNewUserUnidadId] = useState("1");
+
   // Cargar configuración de Supabase
   useEffect(() => {
     async function loadConfig() {
@@ -161,14 +167,12 @@ export default function AdminConfiguracionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           id, 
-          newPassword: newPassword || undefined, 
           newRole: newRole || undefined 
         })
       });
       if (res.ok) {
         setSuccessMsg("Usuario actualizado correctamente.");
         setEditingUserId(null);
-        setNewPassword("");
         fetchUsers();
       } else {
         setErrorMsg("Error al actualizar el usuario.");
@@ -176,6 +180,40 @@ export default function AdminConfiguracionPage() {
       setTimeout(() => setSuccessMsg(null), 5000);
     } catch (e) {
       setErrorMsg("Error de red al actualizar usuario.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserName || !newUserEmail) {
+      setErrorMsg("Nombre y correo son obligatorios.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/usuarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nombreCompleto: newUserName,
+          email: newUserEmail,
+          rol: newUserRole,
+          unidadId: newUserUnidadId
+        })
+      });
+      if (res.ok) {
+        setSuccessMsg("Usuario creado correctamente.");
+        setIsCreatingUser(false);
+        setNewUserName("");
+        setNewUserEmail("");
+        fetchUsers();
+      } else {
+        setErrorMsg("Error al crear el usuario.");
+      }
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (e) {
+      setErrorMsg("Error de red al crear usuario.");
     } finally {
       setSaving(false);
     }
@@ -673,14 +711,19 @@ export default function AdminConfiguracionPage() {
         ) : activeTab === "usuarios" ? (
           <div className="space-y-6 animate-fade-in">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <Key className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <Key className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Administración de Claves y Roles</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Gestiona accesos para Administrador, Propietarios e Inquilinos.</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Administración de Claves y Roles</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Gestiona accesos para Administrador, Propietarios e Inquilinos.</p>
-                </div>
+                <button onClick={() => setIsCreatingUser(!isCreatingUser)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center shadow-sm">
+                  <span className="text-lg mr-1 leading-none">+</span> Agregar Usuario
+                </button>
               </div>
               <div className="mt-6 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
                 <table className="w-full text-left border-collapse">
@@ -693,6 +736,37 @@ export default function AdminConfiguracionPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {isCreatingUser && (
+                      <tr className="bg-indigo-50/50 dark:bg-indigo-900/10">
+                        <td className="p-4 space-y-2">
+                          <input type="text" placeholder="Nombre Completo" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserName} onChange={e => setNewUserName(e.target.value)} />
+                          <input type="email" placeholder="Correo (Login)" className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} />
+                        </td>
+                        <td className="p-4 align-top">
+                          <select className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserRole} onChange={e => setNewUserRole(e.target.value)}>
+                            <option value="propietario">Propietario</option>
+                            <option value="inquilino">Inquilino</option>
+                            <option value="vecino">Vecino</option>
+                            <option value="admin">Administrador</option>
+                          </select>
+                        </td>
+                        <td className="p-4 align-top">
+                          <select className="w-full p-2 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500" value={newUserUnidadId} onChange={e => setNewUserUnidadId(e.target.value)}>
+                            {[1,2,3,4,5,6,7,8,9].map(num => (
+                              <option key={num} value={num}>UF {num}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-4 align-top text-right space-x-2">
+                          <button onClick={handleCreateUser} disabled={saving} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold transition">
+                            {saving ? "..." : "Crear"}
+                          </button>
+                          <button onClick={() => setIsCreatingUser(false)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition">
+                            Cancelar
+                          </button>
+                        </td>
+                      </tr>
+                    )}
                     {loadingUsers ? (
                       <tr>
                         <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
@@ -702,7 +776,10 @@ export default function AdminConfiguracionPage() {
                       </tr>
                     ) : users.map(u => (
                       <tr key={u.id} className="text-sm bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                        <td className="p-4 font-medium text-slate-900 dark:text-white">{u.username}</td>
+                        <td className="p-4 font-medium text-slate-900 dark:text-white">
+                          {u.username}
+                          <div className="text-xs text-slate-400 font-normal mt-0.5">{u.email}</div>
+                        </td>
                         <td className="p-4">
                           {editingUserId === u.id ? (
                             <select 
@@ -730,13 +807,6 @@ export default function AdminConfiguracionPage() {
                         <td className="p-4 text-right space-x-2">
                           {editingUserId === u.id ? (
                             <div className="flex items-center justify-end gap-2">
-                              <input 
-                                type="password" 
-                                placeholder="Nueva clave (opcional)"
-                                className="w-32 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                              />
                               <button onClick={() => handleUpdateUser(u.id)} disabled={saving} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center">
                                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />} Guardar
                               </button>
@@ -745,7 +815,7 @@ export default function AdminConfiguracionPage() {
                               </button>
                             </div>
                           ) : (
-                            <button onClick={() => { setEditingUserId(u.id); setNewRole(u.rol); setNewPassword(""); }} className="px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition flex items-center ml-auto">
+                            <button onClick={() => { setEditingUserId(u.id); setNewRole(u.rol); }} className="px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition flex items-center ml-auto">
                               <Settings className="w-3 h-3 mr-1.5 text-indigo-500" />
                               Gestionar
                             </button>
