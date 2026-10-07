@@ -50,6 +50,12 @@ export default function AdminConfiguracionPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("");
+
   // Cargar configuración de Supabase
   useEffect(() => {
     async function loadConfig() {
@@ -124,6 +130,55 @@ export default function AdminConfiguracionPage() {
   const handleReset = () => {
     setConfig(DEFAULT_CONFIG);
     setSuccessMsg("Valores restablecidos a los valores por defecto. Guarde para confirmar.");
+  };
+
+  // Fetch Usuarios
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await fetch('/api/admin/usuarios');
+      if (res.ok) {
+        setUsers(await res.json());
+      }
+    } catch (e) {
+      console.error("Error fetching users", e);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "usuarios" && users.length === 0) {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const handleUpdateUser = async (id: string) => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/usuarios', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id, 
+          newPassword: newPassword || undefined, 
+          newRole: newRole || undefined 
+        })
+      });
+      if (res.ok) {
+        setSuccessMsg("Usuario actualizado correctamente.");
+        setEditingUserId(null);
+        setNewPassword("");
+        fetchUsers();
+      } else {
+        setErrorMsg("Error al actualizar el usuario.");
+      }
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (e) {
+      setErrorMsg("Error de red al actualizar usuario.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Cálculos dinámicos de simulación
@@ -627,16 +682,79 @@ export default function AdminConfiguracionPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Gestiona accesos para Administrador, Propietarios e Inquilinos.</p>
                 </div>
               </div>
-              <div className="mt-6 p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center">
-                <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Módulo en Desarrollo (Fase 2)</h3>
-                <p className="text-xs text-slate-500 max-w-md mt-2">
-                  Próximamente podrás gestionar y resetear las claves de los usuarios, además de generar credenciales separadas para inquilinos y propietarios para restringir su votación en gastos extraordinarios.
-                </p>
-                <button className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Habilitar Módulo
-                </button>
+              <div className="mt-6 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
+                      <th className="p-4 font-bold">Usuario</th>
+                      <th className="p-4 font-bold">Rol</th>
+                      <th className="p-4 font-bold">Unidad</th>
+                      <th className="p-4 font-bold text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {loadingUsers ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
+                          Cargando usuarios...
+                        </td>
+                      </tr>
+                    ) : users.map(u => (
+                      <tr key={u.id} className="text-sm bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                        <td className="p-4 font-medium text-slate-900 dark:text-white">{u.username}</td>
+                        <td className="p-4">
+                          {editingUserId === u.id ? (
+                            <select 
+                              className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              value={newRole}
+                              onChange={(e) => setNewRole(e.target.value)}
+                            >
+                              <option value="vecino">Vecino (Heredado)</option>
+                              <option value="propietario">Propietario</option>
+                              <option value="inquilino">Inquilino</option>
+                              <option value="admin">Administrador</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                              u.rol === 'admin' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                              u.rol === 'propietario' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                              u.rol === 'inquilino' ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400' :
+                              'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                            }`}>
+                              {u.rol.toUpperCase()}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-slate-500 dark:text-slate-400">{u.unidadInfo}</td>
+                        <td className="p-4 text-right space-x-2">
+                          {editingUserId === u.id ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <input 
+                                type="password" 
+                                placeholder="Nueva clave (opcional)"
+                                className="w-32 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                              />
+                              <button onClick={() => handleUpdateUser(u.id)} disabled={saving} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center">
+                                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />} Guardar
+                              </button>
+                              <button onClick={() => setEditingUserId(null)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition">
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setEditingUserId(u.id); setNewRole(u.rol); setNewPassword(""); }} className="px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition flex items-center ml-auto">
+                              <Settings className="w-3 h-3 mr-1.5 text-indigo-500" />
+                              Gestionar
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
