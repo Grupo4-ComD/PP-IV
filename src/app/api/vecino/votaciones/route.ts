@@ -1,11 +1,37 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      { cookies: { getAll() { return cookieStore.getAll(); } } }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let miUnidad = null;
+    if (user && user.email) {
+      const usuario = await prisma.usuario.findUnique({
+        where: { email: user.email },
+        include: { unidad: true }
+      });
+      if (usuario && usuario.unidad) {
+        miUnidad = {
+          id: Number(usuario.unidad.id),
+          numero_uf: usuario.unidad.numeroUf,
+          piso_depto: usuario.unidad.pisoDepto,
+          propietario_nombre: usuario.nombreCompleto || usuario.unidad.propietarioNombre
+        };
+      }
+    }
+
     const ticketsConPresupuestos = await prisma.ticketReclamo.findMany({
       where: { presupuestos: { some: {} } },
       include: {
@@ -49,7 +75,7 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(temas);
+    return NextResponse.json({ temas, miUnidad });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

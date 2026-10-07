@@ -46,12 +46,7 @@ interface TemaVotacion {
 export default function VotacionesPage() {
   const supabase = createClient();
 
-  const miUnidad = {
-    id: 7,
-    numero_uf: 7,
-    piso_depto: "3° B",
-    propietario_nombre: "Sciulli, Guillermo",
-  };
+  const [miUnidad, setMiUnidad] = useState<{ id: number, numero_uf: number, piso_depto: string, propietario_nombre: string } | null>(null);
 
   // Temas de votación activos
   const [temas, setTemas] = useState<TemaVotacion[]>([]);
@@ -63,7 +58,10 @@ export default function VotacionesPage() {
         const res = await fetch("/api/vecino/votaciones");
         if (res.ok) {
           const data = await res.json();
-          setTemas(data);
+          setTemas(data.temas || []);
+          if (data.miUnidad) {
+            setMiUnidad(data.miUnidad);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -81,6 +79,7 @@ export default function VotacionesPage() {
 
   // Manejador interactivo de voto
   const handleVotar = async (temaId: number, presupuestoId: number) => {
+    if (!miUnidad) return;
     try {
       // 1. Registrar voto en Prisma a traves de la API
       const res = await fetch("/api/vecino/votaciones/votar", {
@@ -165,7 +164,7 @@ export default function VotacionesPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-300">
       {/* SIDEBAR REUTILIZABLE CON ICONOS MODERNOS */}
-      <VecinoSidebar unidad={miUnidad} />
+      <VecinoSidebar unidad={miUnidad || undefined} />
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -261,7 +260,7 @@ export default function VotacionesPage() {
                 {/* Grid Comparativo de Presupuestos */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {tema.presupuestos.map((p) => {
-                    const votoEmitidoAca = p.votos_ufs.includes(miUnidad.numero_uf);
+                    const votoEmitidoAca = miUnidad ? p.votos_ufs.includes(miUnidad.numero_uf) : false;
                     const esAprobado = p.votos_favor >= 3 || p.estado === "aprobado";
 
                     return (
