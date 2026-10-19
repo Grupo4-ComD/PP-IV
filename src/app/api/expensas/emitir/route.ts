@@ -25,13 +25,33 @@ export async function POST(request: Request) {
     // 2. Obtener parámetros
     const { periodoMes, periodoAnio, fechaVencimiento, porcentajeFondoReserva = 5.0, forceOverride = false } = await request.json();
 
-    // 2.1 Verificar Bloqueo (Advertencia de cierre)
+    // 2.1 Verificar si el período fue cerrado/bloqueado por seguridad contable (RF-08)
+    const periodoExistente = await prisma.periodoFinalizado.findUnique({
+      where: {
+        uq_periodo_cierre: {
+          periodoMes: Number(periodoMes),
+          periodoAnio: Number(periodoAnio),
+        },
+      },
+    });
+
+    if (periodoExistente && periodoExistente.estado === 'cerrado_bloqueado') {
+      return NextResponse.json(
+        {
+          error:
+            'Este período mensual se encuentra cerrado y bloqueado por seguridad contable (RF-08). No se pueden emitir ni modificar expensas de un ciclo finalizado.',
+        },
+        { status: 423 }
+      );
+    }
+
+    // 2.2 Advertencia de sobreescritura si ya se habían generado expensas
     if (!forceOverride) {
       const existingExpensa = await prisma.expensa.findFirst({
         where: {
-          periodoMes,
-          periodoAnio
-        }
+          periodoMes: Number(periodoMes),
+          periodoAnio: Number(periodoAnio),
+        },
       });
 
       if (existingExpensa) {
@@ -42,7 +62,6 @@ export async function POST(request: Request) {
       }
     }
 
-    
     // 3. Consultar datos de la Base de Datos
     const unidades = await prisma.unidad.findMany();
     
@@ -55,8 +74,8 @@ export async function POST(request: Request) {
         fechaGasto: {
           gte: startDate,
           lte: endDate,
-        }
-      }
+        },
+      },
     });
 
     const cargos = await prisma.cargoParticular.findMany({
@@ -64,59 +83,104 @@ export async function POST(request: Request) {
         createdAt: {
           gte: startDate,
           lte: endDate,
-        }
-      }
+        },
+      },
     });
 
     // 4. Cálculos del Motor de Prorrateo
     const totalGastosOrdinarios = gastos
-      .filter(g => g.categoria === "ordinario")
+      .filter((g) => g.categoria === "ordinario")
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const totalGastosExtraordinarios = gastos
-      .filter(g => g.categoria === "extraordinario" || g.categoria === "fondo_comun")
+      .filter((g) => g.categoria === "extraordinario" || g.categoria === "fondo_comun")
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
     const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
 
-    // 5. Generar lote de expensas
+    // 5. Crear o actualizar el registro oficial de PeriodoFinalizado (RF-08)
+    const periodoFinalizado = await prisma.periodoFinalizado.upsert({
+      where: {
+        uq_periodo_cierre: {
+          periodoMes: Number(periodoMes),
+          periodoAnio: Number(periodoAnio),
+        },
+      },
+      update: {
+        totalOrdinarias: totalGastosOrdinarios,
+        totalExtraordinarias: totalGastosExtraordinarios,
+        totalFondoReserva: montoFondoReserva,
+      },
+      create: {
+        periodoMes: Number(periodoMes),
+        periodoAnio: Number(periodoAnio),
+        totalOrdinarias: totalGastosOrdinarios,
+        totalExtraordinarias: totalGastosExtraordinarios,
+        totalFondoReserva: montoFondoReserva,
+        estado: 'abierto',
+      },
+    });
+
+    // 6. Generar lote de expensas con cálculo automático de mora previa (7%)
+    const mesAnterior = Number(periodoMes) === 1 ? 12 : Number(periodoMes) - 1;
+    const anioAnterior = Number(periodoMes) === 1 ? Number(periodoAnio) - 1 : Number(periodoAnio);
+
     for (const u of unidades) {
       const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100));
       const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100));
       const cargosUf = cargos
         .filter((c: any) => c.unidadId === u.id)
         .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
-      
-      const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
+
+      // Regla de Negocio 3: Recargo por mora del 7% sobre saldos deudores del período previo vencido
+      const expensaAnterior = await prisma.expensa.findFirst({
+        where: {
+          unidadId: u.id,
+          periodoMes: mesAnterior,
+          periodoAnio: anioAnterior,
+          estado: { not: 'pagado' },
+        },
+      });
+
+      let moraUf = 0;
+      if (expensaAnterior) {
+        const saldoDeuda = Number(expensaAnterior.totalPagar) || Number(expensaAnterior.montoOrdinario);
+        moraUf = Math.round(saldoDeuda * 0.07);
+      }
+
+      const montoUfTotal = montoUfOrd + montoUfExt + cargosUf + moraUf;
 
       await prisma.expensa.upsert({
         where: {
           uq_unidad_periodo: {
             unidadId: u.id,
-            periodoMes,
-            periodoAnio,
-          }
+            periodoMes: Number(periodoMes),
+            periodoAnio: Number(periodoAnio),
+          },
         },
         update: {
+          periodoFinalizadoId: periodoFinalizado.id,
           montoOrdinario: montoUfOrd,
           montoExtraordinario: montoUfExt,
           montoCargos: cargosUf,
+          recargoMora: moraUf,
           totalPagar: montoUfTotal,
           fechaVencimiento: new Date(fechaVencimiento),
         },
         create: {
           unidadId: u.id,
-          periodoMes,
-          periodoAnio,
+          periodoFinalizadoId: periodoFinalizado.id,
+          periodoMes: Number(periodoMes),
+          periodoAnio: Number(periodoAnio),
           montoOrdinario: montoUfOrd,
           montoExtraordinario: montoUfExt,
           montoCargos: cargosUf,
-          recargoMora: 0,
+          recargoMora: moraUf,
           totalPagar: montoUfTotal,
           fechaVencimiento: new Date(fechaVencimiento),
-          estado: 'pendiente'
-        }
+          estado: 'pendiente',
+        },
       });
     }
 

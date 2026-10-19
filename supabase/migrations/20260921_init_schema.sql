@@ -142,26 +142,22 @@ CREATE INDEX IF NOT EXISTS idx_votos_presupuesto ON public.votos_vecinos(presupu
 -- 4.1. FUNCIÓN Y TRIGGER: CALCULAR MORA AUTOMÁTICA EN EXPENSAS (7% sobre saldo impago)
 CREATE OR REPLACE FUNCTION public.calcular_mora_expensas()
 RETURNS TRIGGER AS $$
-DECLARE
-    v_ultimo_dia_mes DATE;
 BEGIN
-    -- Si el estado no está pagado
-    IF NEW.estado != 'pagado' THEN
-        -- Calcular el último día del mes del período vencido
-        v_ultimo_dia_mes := (MAKE_DATE(NEW.periodo_anio, NEW.periodo_mes, 1) + INTERVAL '1 month - 1 day')::DATE;
+    -- Asegurar valores no nulos
+    NEW.monto_ordinario := COALESCE(NEW.monto_ordinario, 0.00);
+    NEW.monto_extraordinario := COALESCE(NEW.monto_extraordinario, 0.00);
+    NEW.monto_cargos := COALESCE(NEW.monto_cargos, 0.00);
+    NEW.recargo_mora := COALESCE(NEW.recargo_mora, 0.00);
 
-        -- Si la fecha actual supera el último día del mes del período vencido
-        IF CURRENT_DATE > v_ultimo_dia_mes THEN
-            -- Aplica recargo del 7% sobre el monto ordinario
-            NEW.recargo_mora := ROUND(NEW.monto_ordinario * 0.07, 2);
-            NEW.total_pagar := NEW.monto_ordinario + NEW.recargo_mora;
-        ELSE
-            NEW.recargo_mora := 0.00;
-            NEW.total_pagar := NEW.monto_ordinario;
-        END IF;
+    -- Regla de Negocio 3: Si no se informó mora explícita y la expensa está vencida
+    IF NEW.estado != 'pagado' AND CURRENT_DATE > NEW.fecha_vencimiento AND NEW.recargo_mora = 0 THEN
+        NEW.recargo_mora := ROUND(NEW.monto_ordinario * 0.07, 2);
     END IF;
 
+    -- Fórmula Integral: Total a pagar = Ordinarias + Extraordinarias + Cargos/Multas + Recargo Mora
+    NEW.total_pagar := NEW.monto_ordinario + NEW.monto_extraordinario + NEW.monto_cargos + NEW.recargo_mora;
     NEW.updated_at := NOW();
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

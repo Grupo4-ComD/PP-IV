@@ -19,6 +19,9 @@ import {
   ShieldCheck,
   Eye,
   FileText,
+  Lock,
+  Unlock,
+  ShieldAlert,
 } from "lucide-react";
 import LiquidacionConsolidadaModal from "@/components/admin/LiquidacionConsolidadaModal";
 import ConciliarPagoModal, { ConciliarExpensaData } from "@/components/admin/ConciliarPagoModal";
@@ -55,6 +58,28 @@ export default function LiquidacionExpensasPage() {
   const [selectedExpensaConciliar, setSelectedExpensaConciliar] = useState<ConciliarExpensaData | null>(null);
   const [isConciliarModalOpen, setIsConciliarModalOpen] = useState(false);
 
+  // Estado de bloqueo de período contable (RF-08)
+  const [periodoActivo, setPeriodoActivo] = useState<{ mes: number; anio: number }>({ mes: 10, anio: 2026 });
+  const [periodoEstado, setPeriodoEstado] = useState<"abierto" | "cerrado_bloqueado">("abierto");
+  const [bloqueando, setBloqueando] = useState(false);
+  const [mensajePeriodo, setMensajePeriodo] = useState<string | null>(null);
+
+  const loadPeriodoStatus = async (mes: number, anio: number) => {
+    try {
+      const res = await fetch(`/api/periodos/cerrar?periodoMes=${mes}&periodoAnio=${anio}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.estado) {
+          setPeriodoEstado(data.estado);
+        } else {
+          setPeriodoEstado("abierto");
+        }
+      }
+    } catch (err) {
+      console.warn("Error consultando estado del período:", err);
+    }
+  };
+
   const loadExpensas = async () => {
     setLoading(true);
     try {
@@ -62,11 +87,47 @@ export default function LiquidacionExpensasPage() {
       if (res.ok) {
         const data = await res.json();
         setExpensas(data);
+        if (data.length > 0) {
+          const primerPeriodo = { mes: data[0].periodo_mes, anio: data[0].periodo_anio };
+          setPeriodoActivo(primerPeriodo);
+          await loadPeriodoStatus(primerPeriodo.mes, primerPeriodo.anio);
+        } else {
+          await loadPeriodoStatus(10, 2026);
+        }
       }
     } catch (err) {
       console.warn("Error cargando expensas:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleBloqueoPeriodo = async () => {
+    const accion = periodoEstado === "cerrado_bloqueado" ? "abrir" : "cerrar";
+    setBloqueando(true);
+    setMensajePeriodo(null);
+    try {
+      const res = await fetch("/api/periodos/cerrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodoMes: periodoActivo.mes,
+          periodoAnio: periodoActivo.anio,
+          accion,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Error al procesar el cierre del período");
+        return;
+      }
+      setPeriodoEstado(data.periodo.estado);
+      setMensajePeriodo(data.message);
+      setTimeout(() => setMensajePeriodo(null), 5000);
+    } catch (err: any) {
+      alert("Error de conexión al actualizar el período");
+    } finally {
+      setBloqueando(false);
     }
   };
 
@@ -100,16 +161,54 @@ export default function LiquidacionExpensasPage() {
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">
               <Receipt className="w-4 h-4" />
               <span>Consorcio Calle 425 • 9 UFs</span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              {periodoEstado === "cerrado_bloqueado" ? (
+                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+                  <Lock className="w-3.5 h-3.5" />
+                  Período {periodoActivo.mes}/{periodoActivo.anio} Bloqueado (RF-08)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <Unlock className="w-3.5 h-3.5" />
+                  Período {periodoActivo.mes}/{periodoActivo.anio} Abierto
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Liquidación de Expensas
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Control de emisión, recaudación, estados de mora y comprobantes de pago.
+              Control de emisión, recaudación, recargo por mora (7%) y comprobantes contables.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={toggleBloqueoPeriodo}
+              disabled={bloqueando}
+              title={
+                periodoEstado === "cerrado_bloqueado"
+                  ? "Reabrir período contable"
+                  : "Cerrar y bloquear período contable (RF-08)"
+              }
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer border ${
+                periodoEstado === "cerrado_bloqueado"
+                  ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                  : "bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700"
+              }`}
+            >
+              {bloqueando ? (
+                <Clock className="w-4 h-4 animate-spin text-amber-400" />
+              ) : periodoEstado === "cerrado_bloqueado" ? (
+                <Unlock className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Lock className="w-4 h-4 text-amber-400" />
+              )}
+              <span>
+                {periodoEstado === "cerrado_bloqueado" ? "Reabrir Período" : "Cerrar y Bloquear (RF-08)"}
+              </span>
+            </button>
+
             <button
               onClick={() => setIsLiquidacionModalOpen(true)}
               className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-md transition flex items-center gap-2 cursor-pointer"
@@ -127,6 +226,27 @@ export default function LiquidacionExpensasPage() {
             </Link>
           </div>
         </header>
+
+        {mensajePeriodo && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-3 text-emerald-800 dark:text-emerald-200 text-xs font-semibold shadow-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{mensajePeriodo}</span>
+          </div>
+        )}
+
+        {periodoEstado === "cerrado_bloqueado" && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3 text-amber-800 dark:text-amber-200 text-xs shadow-sm">
+            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-900 dark:text-amber-100">
+                Período Contable {periodoActivo.mes}/{periodoActivo.anio} Bloqueado (RF-08)
+              </p>
+              <p className="mt-0.5 text-amber-700 dark:text-amber-300">
+                Este ciclo ha sido formalmente cerrado. Las liquidaciones y cargos están protegidos contra modificaciones posteriores para garantizar la integridad contable auditada.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
