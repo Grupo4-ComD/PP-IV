@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   UploadCloud,
   FileText,
@@ -38,8 +37,6 @@ export default function UploadComprobanteModal({
   periodoTexto,
   onSuccess,
 }: UploadModalProps) {
-  const supabase = createClient();
-
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [numeroOperacion, setNumeroOperacion] = useState("");
@@ -101,30 +98,24 @@ export default function UploadComprobanteModal({
     setSuccessMsg(null);
 
     try {
-      // 1. Nombre único para el archivo en Supabase Storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `expensa_${expensaId}_${Date.now()}.${fileExt}`;
-      const filePath = `transferencias/${fileName}`;
+      // 1. Subida segura al servidor (/api/upload-comprobante -> Supabase Storage bucket 'comprobantes')
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("expensaId", String(expensaId));
 
-      let publicUrl = "";
+      const uploadRes = await fetch("/api/upload-comprobante", {
+        method: "POST",
+        body: uploadFormData,
+      });
 
-      // 2. Subida al bucket 'comprobantes' de Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from("comprobantes")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: true,
-        });
+      if (!uploadRes.ok) {
+        const uploadErr = await uploadRes.json().catch(() => ({}));
+        throw new Error(uploadErr.error || "Error al subir el comprobante al servidor.");
+      }
 
-      if (uploadError) {
-        // Fallback para entornos donde el bucket aún no se inicializó en storage
-        console.warn("Storage upload warning, usando previsualización:", uploadError);
-        publicUrl = previewUrl || `https://placehold.co/600x400?text=Comprobante+${fileName}`;
-      } else {
-        const { data: urlData } = supabase.storage
-          .from("comprobantes")
-          .getPublicUrl(filePath);
-        publicUrl = urlData.publicUrl;
+      const { url: publicUrl } = await uploadRes.json();
+      if (!publicUrl) {
+        throw new Error("No se obtuvo la URL pública del comprobante.");
       }
 
       // 3. Conexión a la API /api/pagos para persistencia contable y conciliación (Card BP)

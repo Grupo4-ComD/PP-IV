@@ -50,6 +50,7 @@ export default function ConciliarPagoModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pagoId, setPagoId] = useState<string | null>(null);
   const [reciboDigital, setReciboDigital] = useState<any | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   // Buscar si existe un pago registrado en tabla pagos_vecinos
   useEffect(() => {
@@ -57,8 +58,10 @@ export default function ConciliarPagoModal({
       setReciboDigital(null);
       setErrorMsg(null);
       setPagoId(null);
+      setImgError(false);
       return;
     }
+    setImgError(false);
 
     const currentExpensa = expensa;
 
@@ -374,29 +377,45 @@ export default function ConciliarPagoModal({
                 Comprobante Adjuntado por el Vecino:
               </label>
               {expensa.comprobante_url ? (
-                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50 dark:bg-slate-950 flex flex-col items-center gap-3">
-                  {expensa.comprobante_url.endsWith(".pdf") ? (
-                    <div className="flex items-center gap-2 p-4 text-xs font-semibold text-indigo-600">
-                      <FileText className="w-8 h-8" />
-                      <span>Documento PDF de transferencia</span>
-                    </div>
-                  ) : (
-                    <img
-                      src={expensa.comprobante_url}
-                      alt="Comprobante"
-                      className="max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
-                    />
-                  )}
-                  <a
-                    href={expensa.comprobante_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"
-                  >
-                    <span>Abrir comprobante en nueva pestaña</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+                expensa.comprobante_url.startsWith("blob:") ? (
+                  <div className="border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 bg-amber-50/50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs flex flex-col items-center gap-2 text-center">
+                    <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    <p className="font-semibold">Comprobante temporal local no sincronizado</p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 max-w-sm">
+                      Este pago se subió previamente con un identificador de sesión local temporal (blob). Ahora que el almacenamiento en la nube está activo, el vecino puede volver a adjuntarlo desde su panel, o bien puedes conciliarlo directamente si ya constataste la transferencia.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50 dark:bg-slate-950 flex flex-col items-center gap-3">
+                    {expensa.comprobante_url.toLowerCase().includes(".pdf") ? (
+                      <div className="flex items-center gap-2 p-4 text-xs font-semibold text-indigo-600">
+                        <FileText className="w-8 h-8" />
+                        <span>Documento PDF de transferencia</span>
+                      </div>
+                    ) : imgError ? (
+                      <div className="flex flex-col items-center gap-1.5 p-4 text-xs text-slate-500">
+                        <FileText className="w-8 h-8 text-slate-400" />
+                        <span>No se pudo previsualizar la imagen</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={expensa.comprobante_url}
+                        alt="Comprobante"
+                        onError={() => setImgError(true)}
+                        className="max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                      />
+                    )}
+                    <a
+                      href={expensa.comprobante_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <span>Abrir comprobante en nueva pestaña</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )
               ) : (
                 <div className="p-4 border border-dashed border-amber-300 dark:border-amber-800 rounded-2xl bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs text-center">
                   El vecino aún no ha adjuntado un archivo digital para esta liquidación.
