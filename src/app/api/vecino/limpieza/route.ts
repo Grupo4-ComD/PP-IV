@@ -50,6 +50,8 @@ export async function GET(request: Request) {
         id: Number(t.id),
         semana_numero: numeroSemana,
         rango_fechas: `${startStr} al ${endStr}`,
+        fecha_inicio: tInicio.toISOString().split('T')[0],
+        fecha_fin: tFin.toISOString().split('T')[0],
         numero_uf: t.unidadAsignada.numeroUf,
         piso_depto: t.unidadAsignada.pisoDepto,
         residente: t.unidadAsignada.propietarioNombre,

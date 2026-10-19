@@ -15,14 +15,19 @@ import {
   X,
   Loader2,
   ArrowRight,
+  Calendar as CalendarIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import VecinoSidebar from "@/components/vecino/VecinoSidebar";
+import CalendarioLimpieza from "@/components/vecino/CalendarioLimpieza";
 
 interface TurnoLimpieza {
   id: number;
   semana_numero: number;
   rango_fechas: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
   numero_uf: number;
   piso_depto: string;
   residente: string;
@@ -40,6 +45,7 @@ export default function LimpiezaPage() {
   const [miNumeroUf, setMiNumeroUf] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [vista, setVista] = useState<"historial" | "actual" | "proximos">("actual");
+  const [modoVisualizacion, setModoVisualizacion] = useState<"calendario" | "lista">("calendario");
 
   useEffect(() => {
     async function loadTurnos() {
@@ -327,46 +333,95 @@ export default function LimpiezaPage() {
           </section>
           )}
 
-          {/* 2. CALENDARIO SECUENCIAL DE 9 UNIDADES */}
+          {/* 2. CRONOGRAMA: CALENDARIO MENSUAL O SECUENCIA DE TARJETAS */}
           <section className="space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Secuencia de Guardias Rotativas 2026
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Secuencia de Guardias Rotativas 2026</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50">
+                    9 Semanas
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Rotación periódica continua asignada entre las 9 Unidades Funcionales
                 </p>
               </div>
 
-              {/* Controles de Vista */}
-              <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl w-fit">
-                <button
-                  onClick={() => setVista("historial")}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                    vista === "historial" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
-                >
-                  Historial
-                </button>
-                <button
-                  onClick={() => setVista("actual")}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                    vista === "actual" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
-                >
-                  Ciclo Actual
-                </button>
-                <button
-                  onClick={() => setVista("proximos")}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                    vista === "proximos" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
-                >
-                  Próximos (Anual)
-                </button>
+              {/* Selector de Modo: Calendario vs Tarjetas */}
+              <div className="flex items-center gap-2">
+                <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+                  <button
+                    onClick={() => setModoVisualizacion("calendario")}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      modoVisualizacion === "calendario"
+                        ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    <span>Vista Calendario</span>
+                  </button>
+                  <button
+                    onClick={() => setModoVisualizacion("lista")}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      modoVisualizacion === "lista"
+                        ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>Vista Tarjetas</span>
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* VISTA 1: CALENDARIO INTERACTIVO MENSUAL */}
+            {modoVisualizacion === "calendario" ? (
+              <CalendarioLimpieza
+                turnos={turnos}
+                miNumeroUf={miNumeroUf}
+                onPedirPermuta={(t) => {
+                  setPermutaSeleccionada(t.numero_uf);
+                  setShowPermutaModal(true);
+                }}
+                onReportarIncumplimiento={(t) => {
+                  setInfractoraUf(t.numero_uf);
+                  setShowIncumplimientoModal(true);
+                }}
+              />
+            ) : (
+              /* VISTA 2: LISTA DE TARJETAS POR CICLO */
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl w-fit">
+                    <button
+                      onClick={() => setVista("historial")}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        vista === "historial" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      Historial
+                    </button>
+                    <button
+                      onClick={() => setVista("actual")}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        vista === "actual" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      Ciclo Actual
+                    </button>
+                    <button
+                      onClick={() => setVista("proximos")}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        vista === "proximos" ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      Próximos (Anual)
+                    </button>
+                  </div>
+                </div>
 
             {/* Grid de tarjetas de turnos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -489,7 +544,9 @@ export default function LimpiezaPage() {
                 );
               })}
             </div>
-          </section>
+          </div>
+        )}
+      </section>
 
           {/* 3. RESUMEN DEL FONDO ESPECIAL DE SANCIONES */}
           {multasHistorial.length > 0 && (
