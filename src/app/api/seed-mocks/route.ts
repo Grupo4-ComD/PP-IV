@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, EstadoPago, CategoriaGasto, EstadoTicket, CategoriaTicket, EstadoLimpieza } from '@prisma/client';
+import { PrismaClient, EstadoPago, CategoriaGasto, EstadoTicketITIL, CategoriaTicket, EstadoLimpieza } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
@@ -43,8 +43,8 @@ export async function GET() {
     // 3. TICKETS DE RECLAMOS
     await prisma.ticketReclamo.createMany({
       data: [
-        { unidadId: BigInt(3), titulo: 'Humedad en techo baño', descripcion: 'Mancha que crece desde el piso de arriba', categoria: CategoriaTicket.plomeria, estado: EstadoTicket.abierto },
-        { unidadId: BigInt(7), titulo: 'Luz quemada palier 2do piso', descripcion: 'Foco parpadea y se apaga', categoria: CategoriaTicket.electricidad, estado: EstadoTicket.en_revision },
+        { unidadId: BigInt(3), titulo: 'Humedad en techo baño', descripcion: 'Mancha que crece desde el piso de arriba', categoria: CategoriaTicket.plomeria, estado: EstadoTicketITIL.abierto },
+        { unidadId: BigInt(7), titulo: 'Luz quemada palier 2do piso', descripcion: 'Foco parpadea y se apaga', categoria: CategoriaTicket.electricidad, estado: EstadoTicketITIL.asignado },
       ]
     });
 

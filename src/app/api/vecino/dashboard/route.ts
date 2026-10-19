@@ -81,7 +81,7 @@ export async function GET(request: Request) {
 
     // Calcular tickets activos del vecino
     const ticketsActivos = await prisma.ticketReclamo.count({
-      where: { unidadId: unidad.id, estado: { in: ['abierto', 'en_revision'] } }
+      where: { unidadId: unidad.id, estado: { notIn: ['resuelto', 'cerrado'] } }
     });
 
     // Calcular votaciones activas en todo el consorcio

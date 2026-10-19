@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, EstadoTicket } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -49,7 +49,7 @@ export async function GET() {
     const recaudacionMes = pagos.reduce((sum, p) => sum + Number(p.monto), 0);
 
     const tickets = await prisma.ticketReclamo.count({
-      where: { estado: { in: ['abierto', 'en_revision'] } }
+      where: { estado: { notIn: ['resuelto', 'cerrado'] } }
     });
 
     // Calcular mora y estados desde la tabla real de Expensas
