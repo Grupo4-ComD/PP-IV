@@ -10,12 +10,18 @@ import {
   CreditCard,
   X,
   Loader2,
+  Percent,
+  Building2,
+  ArrowRight,
 } from "lucide-react";
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   expensaId: number | string;
+  unidadId?: number | string;
+  periodoMes?: number;
+  periodoAnio?: number;
   totalPagar: number;
   periodoTexto: string;
   onSuccess: (comprobanteUrl: string) => void;
@@ -25,6 +31,9 @@ export default function UploadComprobanteModal({
   isOpen,
   onClose,
   expensaId,
+  unidadId,
+  periodoMes,
+  periodoAnio,
   totalPagar,
   periodoTexto,
   onSuccess,
@@ -36,9 +45,14 @@ export default function UploadComprobanteModal({
   const [numeroOperacion, setNumeroOperacion] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   if (!isOpen) return null;
+
+  // Regla de Negocio: Deducción 0,6% Mercado Pago
+  const comisionMp = Number((totalPagar * 0.006).toFixed(2));
+  const netoAcreditado = Number((totalPagar - comisionMp).toFixed(2));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -84,6 +98,7 @@ export default function UploadComprobanteModal({
 
     setLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
 
     try {
       // 1. Nombre único para el archivo en Supabase Storage
@@ -94,7 +109,7 @@ export default function UploadComprobanteModal({
       let publicUrl = "";
 
       // 2. Subida al bucket 'comprobantes' de Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("comprobantes")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -102,9 +117,9 @@ export default function UploadComprobanteModal({
         });
 
       if (uploadError) {
-        // Modo fallback para desarrollo local si el bucket de storage no está creado aún
-        console.warn("Storage upload warning, using local preview url:", uploadError);
-        publicUrl = previewUrl || "https://placehold.co/600x400?text=Comprobante+Transferencia";
+        // Fallback para entornos donde el bucket aún no se inicializó en storage
+        console.warn("Storage upload warning, usando previsualización:", uploadError);
+        publicUrl = previewUrl || `https://placehold.co/600x400?text=Comprobante+${fileName}`;
       } else {
         const { data: urlData } = supabase.storage
           .from("comprobantes")
@@ -112,24 +127,36 @@ export default function UploadComprobanteModal({
         publicUrl = urlData.publicUrl;
       }
 
-      // 3. Actualizar el registro de la expensa en la base de datos
-      const { error: updateError } = await supabase
-        .from("expensas")
-        .update({
-          estado: "en_verificacion",
-          comprobante_url: publicUrl,
-          fecha_pago: new Date().toISOString(),
-        })
-        .eq("id", expensaId);
+      // 3. Conexión a la API /api/pagos para persistencia contable y conciliación (Card BP)
+      const res = await fetch("/api/pagos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unidadId,
+          expensaId,
+          monto: totalPagar,
+          montoBruto: totalPagar,
+          periodoMes,
+          periodoAnio,
+          comprobanteUrl: publicUrl,
+          origen: "vecino",
+        }),
+      });
 
-      if (updateError) {
-        console.warn("DB update warning:", updateError);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "No se pudo registrar el pago en la base de datos");
       }
 
+      setSuccessMsg("¡Comprobante recibido con éxito! La administración lo conciliará a la brevedad.");
       onSuccess(publicUrl);
-      onClose();
+
+      setTimeout(() => {
+        onClose();
+      }, 1800);
     } catch (err: any) {
-      setErrorMsg("Ocurrió un inconveniente al cargar el comprobante. Intente nuevamente.");
+      console.error("Error al enviar comprobante:", err);
+      setErrorMsg(err.message || "Ocurrió un inconveniente al cargar el comprobante. Intente nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -137,10 +164,11 @@ export default function UploadComprobanteModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative">
         {/* Botón Cerrar */}
         <button
           onClick={onClose}
+          disabled={loading}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition"
           aria-label="Cerrar modal"
         >
@@ -149,12 +177,12 @@ export default function UploadComprobanteModal({
 
         {/* Encabezado */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold border border-indigo-100 dark:border-indigo-800/40">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold border border-indigo-100 dark:border-indigo-800/40">
             <CreditCard className="w-5 h-5 stroke-[2]" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Informar Pago de Expensa
+              Carga Digital de Comprobante
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Período {periodoTexto} • Total: ${totalPagar.toLocaleString("es-AR")}
@@ -162,12 +190,42 @@ export default function UploadComprobanteModal({
           </div>
         </div>
 
+        {/* Alerta de Feedback */}
         {errorMsg && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
+
+        {successMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 font-semibold">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* Tarjeta Informativa: Alias y Deducción 0,6% MP */}
+        <div className="mb-4 p-3.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Alias bancario oficial:</span>
+            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-900">
+              consorciorpena1454
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800">
+            <span>Deducción Mercado Pago (0,6%):</span>
+            <span className="font-mono text-amber-600 dark:text-amber-400">
+              -${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 font-semibold">
+            <span>Neto a conciliar en consorcio:</span>
+            <span className="font-mono text-emerald-600 dark:text-emerald-400">
+              ${netoAcreditado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Zona Drag & Drop */}
@@ -191,6 +249,7 @@ export default function UploadComprobanteModal({
               id="fileInput"
               accept=".jpg,.jpeg,.png,.pdf"
               onChange={handleFileChange}
+              disabled={loading || Boolean(successMsg)}
               className="hidden"
             />
             <label htmlFor="fileInput" className="cursor-pointer block">
@@ -199,7 +258,7 @@ export default function UploadComprobanteModal({
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="max-h-32 object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                    className="max-h-28 object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
                   />
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -230,7 +289,7 @@ export default function UploadComprobanteModal({
                     Arrastre su comprobante aquí o haga clic para buscar
                   </p>
                   <p className="text-[11px] text-slate-400">
-                    Soporta capturas de Mercado Pago, transferencias bancarias (PNG, JPG, PDF) hasta 10MB
+                    Capturas de Mercado Pago o transferencias bancarias (PNG, JPG, PDF)
                   </p>
                 </div>
               )}
@@ -240,12 +299,13 @@ export default function UploadComprobanteModal({
           {/* Nro de Transacción Opcional */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              N° de Operación / Código de Transferencia (Opcional)
+              N° de Operación / Referencia de Transferencia (Opcional)
             </label>
             <input
               type="text"
               value={numeroOperacion}
               onChange={(e) => setNumeroOperacion(e.target.value)}
+              disabled={loading || Boolean(successMsg)}
               placeholder="Ej: MP-984210452 o CBU 0140..."
               className="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -256,19 +316,20 @@ export default function UploadComprobanteModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={loading}
               className="w-1/2 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              Cancelar
+              Cerrar
             </button>
             <button
               type="submit"
-              disabled={loading || !file}
+              disabled={loading || !file || Boolean(successMsg)}
               className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Subiendo...</span>
+                  <span>Enviando a API...</span>
                 </>
               ) : (
                 <>

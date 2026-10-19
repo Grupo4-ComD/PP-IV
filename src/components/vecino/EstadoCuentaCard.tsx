@@ -227,6 +227,9 @@ export default function EstadoCuentaCard({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         expensaId={expensa.id}
+        unidadId={expensa.unidad_id || unidad.id}
+        periodoMes={expensa.periodo_mes}
+        periodoAnio={expensa.periodo_anio}
         totalPagar={expensa.total_pagar}
         periodoTexto={`${nombreMes} ${expensa.periodo_anio}`}
         onSuccess={handleUploadSuccess}

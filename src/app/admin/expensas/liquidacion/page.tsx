@@ -16,11 +16,14 @@ import {
   Building2,
   Search,
   Layers,
+  ShieldCheck,
+  Eye,
+  FileText,
 } from "lucide-react";
 import LiquidacionConsolidadaModal from "@/components/admin/LiquidacionConsolidadaModal";
+import ConciliarPagoModal, { ConciliarExpensaData } from "@/components/admin/ConciliarPagoModal";
 
 interface ExpensaRecord {
-
   id: number;
   unidad_id: number;
   periodo_mes: number;
@@ -30,6 +33,7 @@ interface ExpensaRecord {
   total_pagar: number;
   fecha_vencimiento: string;
   estado: "pendiente" | "en_verificacion" | "pagado";
+  comprobante_url?: string | null;
   fecha_pago: string | null;
   unidades?: {
     numero_uf: number;
@@ -47,22 +51,26 @@ export default function LiquidacionExpensasPage() {
   const [busqueda, setBusqueda] = useState<string>("");
   const [isLiquidacionModalOpen, setIsLiquidacionModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function loadExpensas() {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/expensas");
-        if (res.ok) {
-          const data = await res.json();
-          setExpensas(data);
-        }
-      } catch (err) {
-        console.warn("Error cargando expensas:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // Modal para conciliación de comprobantes
+  const [selectedExpensaConciliar, setSelectedExpensaConciliar] = useState<ConciliarExpensaData | null>(null);
+  const [isConciliarModalOpen, setIsConciliarModalOpen] = useState(false);
 
+  const loadExpensas = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/expensas");
+      if (res.ok) {
+        const data = await res.json();
+        setExpensas(data);
+      }
+    } catch (err) {
+      console.warn("Error cargando expensas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadExpensas();
   }, [supabase]);
 
@@ -161,6 +169,7 @@ export default function LiquidacionExpensasPage() {
                   <th className="px-4 py-3">Mora (7%)</th>
                   <th className="px-4 py-3 text-right">Total a Pagar</th>
                   <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3 text-center">Comprobante / Conciliación</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -196,6 +205,11 @@ export default function LiquidacionExpensasPage() {
                             <CheckCircle2 className="w-3 h-3" />
                             <span>Al día</span>
                           </span>
+                        ) : e.estado === "en_verificacion" ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800">
+                            <Clock className="w-3 h-3" />
+                            <span>En verificación</span>
+                          </span>
                         ) : tieneMora ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800">
                             <AlertCircle className="w-3 h-3" />
@@ -206,6 +220,44 @@ export default function LiquidacionExpensasPage() {
                             <Clock className="w-3 h-3" />
                             <span>Pendiente</span>
                           </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {e.estado === "en_verificacion" ? (
+                          <button
+                            onClick={() => {
+                              setSelectedExpensaConciliar(e);
+                              setIsConciliarModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold shadow-xs cursor-pointer transition"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>Conciliar Pago</span>
+                          </button>
+                        ) : e.estado === "pagado" ? (
+                          <button
+                            onClick={() => {
+                              setSelectedExpensaConciliar(e);
+                              setIsConciliarModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] font-semibold cursor-pointer"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Ver Recibo</span>
+                          </button>
+                        ) : e.comprobante_url ? (
+                          <button
+                            onClick={() => {
+                              setSelectedExpensaConciliar(e);
+                              setIsConciliarModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 text-[11px] font-medium cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Comprobante</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">Sin archivo</span>
                         )}
                       </td>
                     </tr>
@@ -220,6 +272,16 @@ export default function LiquidacionExpensasPage() {
         <LiquidacionConsolidadaModal
           isOpen={isLiquidacionModalOpen}
           onClose={() => setIsLiquidacionModalOpen(false)}
+        />
+
+        {/* Modal de Conciliación de Pagos y Recibos Digitales */}
+        <ConciliarPagoModal
+          isOpen={isConciliarModalOpen}
+          onClose={() => setIsConciliarModalOpen(false)}
+          expensa={selectedExpensaConciliar}
+          onConciliado={() => {
+            loadExpensas();
+          }}
         />
       </main>
     </div>
