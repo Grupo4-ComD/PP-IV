@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { createClient } from "@/lib/supabase/client";
+import PasswordSecurityIndicator from "@/components/common/PasswordSecurityIndicator";
+import { validatePasswordSecurity } from "@/lib/validators/password";
 import {
   Settings,
   Percent,
@@ -263,6 +265,16 @@ export default function AdminConfiguracionPage() {
   };
 
   const handleUpdateUser = async (id: string) => {
+    if (newPassword) {
+      const validation = validatePasswordSecurity(newPassword);
+      if (!validation.isValid) {
+        setErrorMsg(
+          "La contraseña no cumple los requisitos: " + validation.errors.join(", ")
+        );
+        setTimeout(() => setErrorMsg(null), 6000);
+        return;
+      }
+    }
     setSaving(true);
     try {
       const res = await fetch('/api/admin/usuarios', {
@@ -959,21 +971,31 @@ export default function AdminConfiguracionPage() {
                         </td>
                         <td className="p-4 text-right space-x-2">
                           {editingUserId === u.id ? (
-                            <div className="flex items-center justify-end gap-2 mt-2">
-                              <input 
-                                type="password" 
-                                placeholder="Nueva clave (Opcional)"
-                                autoComplete="new-password"
-                                className="w-32 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                              />
-                              <button onClick={() => handleUpdateUser(u.id)} disabled={saving} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center">
-                                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />} Guardar
-                              </button>
-                              <button onClick={() => setEditingUserId(null)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition">
-                                Cancelar
-                              </button>
+                            <div className="flex flex-col items-end gap-2 mt-2 min-w-[260px] text-left">
+                              <div className="w-full">
+                                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                                  Restablecer Clave (Opcional)
+                                </label>
+                                <input 
+                                  type="password" 
+                                  placeholder="Ej: Pass@2026"
+                                  autoComplete="new-password"
+                                  className="w-full p-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                  value={newPassword}
+                                  onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                                {newPassword && (
+                                  <PasswordSecurityIndicator password={newPassword} />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <button onClick={() => handleUpdateUser(u.id)} disabled={saving} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center cursor-pointer shadow-sm">
+                                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />} Guardar
+                                </button>
+                                <button onClick={() => { setEditingUserId(null); setNewPassword(""); }} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition cursor-pointer">
+                                  Cancelar
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <button onClick={() => { 

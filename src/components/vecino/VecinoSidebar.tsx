@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import CambiarPasswordModal from "@/components/common/CambiarPasswordModal";
 import {
   LayoutDashboard,
   Sparkles,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  KeyRound,
 } from "lucide-react";
 
 interface VecinoSidebarProps {
@@ -36,6 +38,7 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const supabase = createClient();
 
   const handleLogout = async () => {
@@ -250,9 +253,14 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
           </div>
 
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <span className="text-[11px] font-medium text-slate-400">
-              v2.4 • Consorcio
-            </span>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
+              title="Cambiar Mi Contraseña"
+            >
+              <KeyRound className="w-3.5 h-3.5 stroke-[2]" />
+              <span>Clave</span>
+            </button>
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
@@ -263,6 +271,11 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
           </div>
         </div>
       </aside>
+
+      <CambiarPasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </>
   );
 }

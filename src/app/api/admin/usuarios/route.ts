@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcrypt';
+import { validatePasswordSecurity } from '@/lib/validators/password';
 
 const prisma = new PrismaClient();
 
@@ -60,6 +61,22 @@ export async function PATCH(request: Request) {
     if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
 
     const { id, email, nombreCompleto, rol, unidadId, newPassword } = await request.json();
+
+    if (newPassword) {
+      const validation = validatePasswordSecurity(newPassword);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          {
+            error:
+              'La contraseña debe tener mínimo 6 caracteres e incluir mayúsculas, minúsculas, números y caracteres especiales (' +
+              validation.errors.join(', ') +
+              ').',
+            detalles: validation.errors,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     const updateData: any = {};
     
