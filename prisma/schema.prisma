@@ -8,6 +8,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ==========================================
+// 1. ENUMS Y TIPOS DE DATOS
+// ==========================================
+
 enum RolUsuario {
   vecino
   propietario
@@ -33,14 +37,6 @@ enum EstadoPago {
   @@map("estado_pago_enum")
 }
 
-enum TipoProrrateo {
-  ordinario
-  extraordinario
-  no_prorrateable
-
-  @@map("tipo_prorrateo_enum")
-}
-
 enum CategoriaGasto {
   ordinario
   extraordinario
@@ -60,21 +56,48 @@ enum EstadoLimpieza {
   @@map("estado_limpieza_enum")
 }
 
+// --- ENUMS ITIL 4 PARA MESA DE AYUDA ---
+
+enum TipoTicketITIL {
+  incidente           // Rotura, falla o interrupción imprevista de servicio
+  solicitud_servicio  // Petición estándar (llaves, mudanza, autorizaciones)
+  problema            // Causa raíz de incidentes recurrentes
+
+  @@map("tipo_ticket_itil_enum")
+}
+
+enum PrioridadITIL {
+  critica   // Emergencia edilicia / seguridad (SLA 4hs)
+  alta      // Afecta servicios comunes esenciales (SLA 12hs)
+  media     // Falla estándar no bloqueante (SLA 48hs)
+  baja      // Mantenimiento planificable (SLA 96hs)
+
+  @@map("prioridad_itil_enum")
+}
+
 enum CategoriaTicket {
   plomeria
   electricidad
   cerrajeria
+  gas_calefaccion
+  ascensor
+  espacios_comunes
   varios
 
   @@map("categoria_ticket_enum")
 }
 
-enum EstadoTicket {
+enum EstadoTicketITIL {
   abierto
-  en_revision
+  asignado
+  en_diagnostico
+  esperando_presupuesto
+  en_votacion_consorcio
+  en_ejecucion
   resuelto
+  cerrado
 
-  @@map("estado_ticket_enum")
+  @@map("estado_ticket_itil_enum")
 }
 
 enum EstadoPresupuesto {
@@ -84,6 +107,17 @@ enum EstadoPresupuesto {
 
   @@map("estado_presupuesto_enum")
 }
+
+enum EstadoPeriodo {
+  abierto
+  cerrado_bloqueado
+
+  @@map("estado_periodo_enum")
+}
+
+// ==========================================
+// 2. MODELOS PRINCIPALES
+// ==========================================
 
 model Unidad {
   id                   BigInt     @id @default(autoincrement())
@@ -114,24 +148,60 @@ model Unidad {
   @@map("unidades")
 }
 
-model Expensa {
-  id               BigInt        @id @default(autoincrement())
-  unidadId         BigInt        @map("unidad_id")
-  periodoMes       Int           @map("periodo_mes")
-  periodoAnio      Int           @map("periodo_anio")
-  montoOrdinario   Decimal       @map("monto_ordinario") @db.Decimal(12, 2)
-  montoExtraordinario Decimal    @default(0.00) @map("monto_extraordinario") @db.Decimal(12, 2)
-  montoCargos      Decimal       @default(0.00) @map("monto_cargos") @db.Decimal(12, 2)
-  recargoMora      Decimal       @default(0.00) @map("recargo_mora") @db.Decimal(12, 2)
-  totalPagar       Decimal       @map("total_pagar") @db.Decimal(12, 2)
-  fechaVencimiento DateTime      @map("fecha_vencimiento") @db.Date
-  estado           EstadoExpensa @default(pendiente)
-  comprobanteUrl   String?       @map("comprobante_url")
-  fechaPago        DateTime?     @map("fecha_pago") @db.Timestamptz()
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+model Usuario {
+  id             BigInt     @id @default(autoincrement())
+  nombreCompleto String     @map("nombre_completo") @db.VarChar(150)
+  email          String     @unique @db.VarChar(255)
+  password       String?    @db.VarChar(255)
+  rol            RolUsuario @default(propietario)
+  unidadId       BigInt?    @map("unidad_id")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz()
 
-  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  unidad         Unidad?    @relation(fields: [unidadId], references: [id], onDelete: SetNull)
+
+  @@map("usuarios")
+}
+
+// --- CONGELAMIENTO DE PERÍODO MENSUAL (RF-08 & Etapa 4) ---
+model PeriodoFinalizado {
+  id                   BigInt        @id @default(autoincrement())
+  periodoMes           Int           @map("periodo_mes")
+  periodoAnio          Int           @map("periodo_anio")
+  totalOrdinarias      Decimal       @default(0.00) @map("total_ordinarias") @db.Decimal(12, 2)
+  totalExtraordinarias Decimal       @default(0.00) @map("total_extraordinarias") @db.Decimal(12, 2)
+  totalFondoReserva    Decimal       @default(0.00) @map("total_fondo_reserva") @db.Decimal(12, 2)
+  totalRetencionMp     Decimal       @default(0.00) @map("total_retencion_mp") @db.Decimal(12, 2)
+  estado               EstadoPeriodo @default(abierto)
+  fechaCierre          DateTime?     @map("fecha_cierre") @db.Timestamptz()
+  cerradoPor           String?       @map("cerrado_por") @db.VarChar(150)
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+
+  expensas             Expensa[]
+
+  @@unique([periodoMes, periodoAnio], name: "uq_periodo_cierre")
+  @@map("periodos_finalizados")
+}
+
+model Expensa {
+  id                  BigInt             @id @default(autoincrement())
+  unidadId            BigInt             @map("unidad_id")
+  periodoFinalizadoId BigInt?            @map("periodo_finalizado_id")
+  periodoMes          Int                @map("periodo_mes")
+  periodoAnio         Int                @map("periodo_anio")
+  montoOrdinario      Decimal            @map("monto_ordinario") @db.Decimal(12, 2)
+  montoExtraordinario Decimal            @default(0.00) @map("monto_extraordinario") @db.Decimal(12, 2)
+  montoCargos         Decimal            @default(0.00) @map("monto_cargos") @db.Decimal(12, 2)
+  recargoMora         Decimal            @default(0.00) @map("recargo_mora") @db.Decimal(12, 2)
+  totalPagar          Decimal            @map("total_pagar") @db.Decimal(12, 2)
+  fechaVencimiento    DateTime           @map("fecha_vencimiento") @db.Date // Día 15 estándar
+  estado              EstadoExpensa      @default(pendiente)
+  comprobanteUrl      String?            @map("comprobante_url")
+  fechaPago           DateTime?          @map("fecha_pago") @db.Timestamptz()
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt           DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  unidad              Unidad             @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  periodoFinalizado   PeriodoFinalizado? @relation(fields: [periodoFinalizadoId], references: [id], onDelete: SetNull)
 
   @@unique([unidadId, periodoMes, periodoAnio], name: "uq_unidad_periodo")
   @@map("expensas")
@@ -140,7 +210,10 @@ model Expensa {
 model PagoVecino {
   id             BigInt     @id @default(autoincrement())
   unidadId       BigInt     @map("unidad_id")
-  monto          Decimal    @db.Decimal(12, 2)
+  monto          Decimal    @default(0.00) @db.Decimal(12, 2)
+  montoBruto     Decimal    @default(0.00) @map("monto_bruto") @db.Decimal(12, 2)
+  retencionMp    Decimal    @default(0.00) @map("retencion_mp") @db.Decimal(12, 2) // 0.6% Mercado Pago
+  montoNeto      Decimal    @default(0.00) @map("monto_neto") @db.Decimal(12, 2)
   fechaPago      DateTime   @map("fecha_pago") @db.Date
   periodoMes     Int        @map("periodo_mes")
   periodoAnio    Int        @map("periodo_anio")
@@ -149,7 +222,7 @@ model PagoVecino {
   createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  unidad         Unidad     @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@map("pagos_vecinos")
 }
@@ -164,7 +237,7 @@ model CargoParticular {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  unidad Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  unidad      Unidad   @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@map("cargos_particulares")
 }
@@ -174,6 +247,8 @@ model Gasto {
   concepto              String         @db.VarChar(255)
   monto                 Decimal        @db.Decimal(12, 2)
   categoria             CategoriaGasto @default(ordinario)
+  periodoMes            Int?           @map("periodo_mes")
+  periodoAnio           Int?           @map("periodo_anio")
   fechaGasto            DateTime       @default(now()) @map("fecha_gasto") @db.Date
   deduccionMpPorcentaje Decimal        @default(0.60) @map("deduccion_mp_porcentaje") @db.Decimal(5, 2)
   comprobanteUrl        String?        @map("comprobante_url")
@@ -182,21 +257,23 @@ model Gasto {
   @@map("gastos")
 }
 
-model LimpiezaRotativa {
-  id                BigInt         @id @default(autoincrement())
-  unidadIdAsignada  BigInt         @map("unidad_id_asignada")
-  semanaInicio      DateTime       @map("semana_inicio") @db.Date
-  semanaFin         DateTime       @map("semana_fin") @db.Date
-  estado            EstadoLimpieza @default(programado)
-  unidadIdSustituta       BigInt?  @map("unidad_id_sustituta")
-  solicitudPermutaAUnidadId BigInt? @map("solicitud_permuta_a_unidad_id")
-  estadoPermuta           String?  @default("ninguna") @map("estado_permuta") // ninguna, pendiente
-  observaciones           String?
-  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz()
+// --- LIMPIEZA ROTATIVA Y MULTAS ---
 
-  unidadAsignada  Unidad  @relation("LimpiezaAsignada", fields: [unidadIdAsignada], references: [id], onDelete: Restrict)
-  unidadSustituta Unidad? @relation("LimpiezaSustituta", fields: [unidadIdSustituta], references: [id], onDelete: SetNull)
-  unidadPermuta   Unidad? @relation("LimpiezaPermuta", fields: [solicitudPermutaAUnidadId], references: [id], onDelete: SetNull)
+model LimpiezaRotativa {
+  id                        BigInt         @id @default(autoincrement())
+  unidadIdAsignada          BigInt         @map("unidad_id_asignada")
+  semanaInicio              DateTime       @map("semana_inicio") @db.Date
+  semanaFin                 DateTime       @map("semana_fin") @db.Date
+  estado                    EstadoLimpieza @default(programado)
+  unidadIdSustituta         BigInt?        @map("unidad_id_sustituta")
+  solicitudPermutaAUnidadId BigInt?        @map("solicitud_permuta_a_unidad_id")
+  estadoPermuta             String?        @default("ninguna") @map("estado_permuta") // ninguna, solicitada, aceptada, rechazada
+  observaciones             String?
+  createdAt                 DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+
+  unidadAsignada            Unidad         @relation("LimpiezaAsignada", fields: [unidadIdAsignada], references: [id], onDelete: Restrict)
+  unidadSustituta           Unidad?        @relation("LimpiezaSustituta", fields: [unidadIdSustituta], references: [id], onDelete: SetNull)
+  unidadPermuta             Unidad?        @relation("LimpiezaPermuta", fields: [solicitudPermutaAUnidadId], references: [id], onDelete: SetNull)
 
   @@map("limpieza_rotativa")
 }
@@ -210,71 +287,94 @@ model Multa {
   motivo              String   @default("Incumplimiento de turno de limpieza rotativa") @db.VarChar(255)
   pagada              Boolean  @default(false)
 
-  unidadInfractora Unidad  @relation("MultasInfractor", fields: [unidadIdInfractora], references: [id], onDelete: Cascade)
-  unidadAcreditada Unidad? @relation("MultasAcreditadas", fields: [acreditadoAUnidadId], references: [id], onDelete: SetNull)
+  unidadInfractora    Unidad   @relation("MultasInfractor", fields: [unidadIdInfractora], references: [id], onDelete: Cascade)
+  unidadAcreditada    Unidad?  @relation("MultasAcreditadas", fields: [acreditadoAUnidadId], references: [id], onDelete: SetNull)
 
   @@map("multas")
 }
 
-model TicketReclamo {
-  id              BigInt          @id @default(autoincrement())
-  unidadId        BigInt          @map("unidad_id")
-  titulo          String          @db.VarChar(200)
-  descripcion     String
-  categoria       CategoriaTicket @default(varios)
-  estado          EstadoTicket    @default(abierto)
-  fechaCreacion   DateTime        @default(now()) @map("fecha_creacion") @db.Timestamptz()
-  fechaResolucion DateTime?       @map("fecha_resolucion") @db.Timestamptz()
+// ==========================================
+// 3. MESA DE AYUDA BAJO ITIL 4
+// ==========================================
 
-  unidad       Unidad                @relation(fields: [unidadId], references: [id], onDelete: Cascade)
-  presupuestos PresupuestoVotacion[]
+model TicketReclamo {
+  id                BigInt           @id @default(autoincrement())
+  ticketCode        String?          @unique @map("ticket_code") @db.VarChar(20) // Ej: "TK-104", "INC-001"
+  unidadId          BigInt           @map("unidad_id")
+  tipo              TipoTicketITIL   @default(incidente)
+  categoria         CategoriaTicket  @default(varios)
+  prioridad         PrioridadITIL    @default(media)
+  estado            EstadoTicketITIL @default(abierto)
+  titulo            String           @db.VarChar(200)
+  descripcion       String
+  ubicacion         String?          @db.VarChar(150) // "Palier 2do piso", "Acceso PB"
+  proveedorAsignado String?          @map("proveedor_asignado") @db.VarChar(150)
+  
+  // Tiempos y SLA (Service Level Agreement)
+  slaHorasLimite    Int              @default(48) @map("sla_horas_limite")
+  fechaCreacion     DateTime         @default(now()) @map("fecha_creacion") @db.Timestamptz()
+  fechaPrimerRta    DateTime?        @map("fecha_primera_respuesta") @db.Timestamptz()
+  fechaResolucion   DateTime?        @map("fecha_resolucion") @db.Timestamptz()
+
+  // Calidad y Mejora Continua (CSAT)
+  calificacionCsat  Int?             @map("calificacion_csat") // 1 a 5 estrellas
+  comentarioCierre  String?          @map("comentario_cierre")
+
+  unidad            Unidad           @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  historial         TicketHistorial[]
+  presupuestos      PresupuestoVotacion[]
 
   @@map("tickets_reclamos")
 }
 
-model PresupuestoVotacion {
-  id              BigInt            @id @default(autoincrement())
-  ticketId        BigInt            @map("ticket_id")
-  proveedorNombre String            @map("proveedor_nombre") @db.VarChar(150)
-  montoTotal      Decimal           @map("monto_total") @db.Decimal(12, 2)
-  detalle         String
-  pdfUrl          String?           @map("pdf_url")
-  votosFavor      Int               @default(0) @map("votos_favor")
-  estado          EstadoPresupuesto @default(en_votacion)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+// Historial y Conversación del Ticket (Activity Log / Trazabilidad ITIL)
+model TicketHistorial {
+  id             BigInt            @id @default(autoincrement())
+  ticketId       BigInt            @map("ticket_id")
+  autorNombre    String            @map("autor_nombre") @db.VarChar(150)
+  autorRol       RolUsuario        @map("autor_rol")
+  mensaje        String
+  estadoAnterior EstadoTicketITIL? @map("estado_anterior")
+  estadoNuevo    EstadoTicketITIL? @map("estado_nuevo")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz()
 
-  ticket TicketReclamo @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  votos  VotoVecino[]
+  ticket         TicketReclamo     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("tickets_historial")
+}
+
+// Votación de Presupuestos (Change Enablement ITIL)
+model PresupuestoVotacion {
+  id               BigInt            @id @default(autoincrement())
+  ticketId         BigInt            @map("ticket_id")
+  proveedorNombre  String            @map("proveedor_nombre") @db.VarChar(150)
+  montoTotal       Decimal           @map("monto_total") @db.Decimal(12, 2)
+  detalle          String
+  pdfUrl           String?           @map("pdf_url")
+  votosFavor       Int               @default(0) @map("votos_favor")
+  coeficienteFavor Decimal           @default(0.00) @map("coeficiente_favor") @db.Decimal(5, 2)
+  quorumAlcanzado  Boolean           @default(false) @map("quorum_alcanzado") // True si supera 30%-40%
+  estado           EstadoPresupuesto @default(en_votacion)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  ticket           TicketReclamo     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  votos            VotoVecino[]
 
   @@map("presupuestos_votacion")
 }
 
 model VotoVecino {
-  id            BigInt   @id @default(autoincrement())
-  presupuestoId BigInt   @map("presupuesto_id")
-  unidadId      BigInt   @map("unidad_id")
-  fechaVoto     DateTime @default(now()) @map("fecha_voto") @db.Timestamptz()
+  id            BigInt              @id @default(autoincrement())
+  presupuestoId BigInt              @map("presupuesto_id")
+  unidadId      BigInt              @map("unidad_id")
+  fechaVoto     DateTime            @default(now()) @map("fecha_voto") @db.Timestamptz()
 
-  presupuesto PresupuestoVotacion @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
-  unidad      Unidad              @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  presupuesto   PresupuestoVotacion @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
+  unidad        Unidad              @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@unique([presupuestoId, unidadId], name: "uq_presupuesto_unidad")
   @@map("votos_vecinos")
-}
-
-model Usuario {
-  id             BigInt   @id @default(autoincrement())
-  nombreCompleto String   @map("nombre_completo") @db.VarChar(150)
-  email          String   @unique @db.VarChar(255)
-  password       String?  @db.VarChar(255)
-  rol            RolUsuario @default(propietario)
-  unidadId       BigInt?  @map("unidad_id")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
-
-  unidad    Unidad?  @relation(fields: [unidadId], references: [id], onDelete: SetNull)
-
-  @@map("usuarios")
 }
 
 model Mantenimiento {
@@ -287,3 +387,4 @@ model Mantenimiento {
 
   @@map("mantenimientos")
 }
+
