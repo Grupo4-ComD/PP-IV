@@ -19,8 +19,11 @@ export const metadata: Metadata = {
   description:
     "Plataforma integral de gestión residencial, transparencia y convivencia para el Consorcio Calle 425.",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo-icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/logo-icon.png",
   },
 };
 

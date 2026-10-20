@@ -269,7 +269,7 @@ export default function MesaAyudaPage() {
           <div className="flex items-center gap-3">
             <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white shrink-0 shadow-xs">
               <Image
-                src="/logo.png"
+                src="/logo-icon.png"
                 alt="Logo Consorcio 425"
                 fill
                 sizes="32px"

@@ -133,11 +133,11 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
           <div className="flex items-center gap-3 px-1">
             <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm bg-white shrink-0">
               <Image
-                src="/logo.png"
+                src="/logo-icon.png"
                 alt="Logo Consorcio Inteligente Calle 425"
                 fill
                 sizes="44px"
-                className="object-contain p-0.5"
+                className="object-contain p-1"
                 priority
               />
             </div>

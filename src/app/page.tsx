@@ -28,13 +28,13 @@ export default function HomePage() {
       <div className="w-full max-w-4xl relative z-10 flex flex-col items-center text-center gap-8 py-8">
         {/* Header Consorcio */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-slate-700 bg-white shadow-xl flex items-center justify-center p-2">
+          <div className="relative h-20 sm:h-24 px-6 rounded-2xl overflow-hidden border border-slate-700 bg-white shadow-xl flex items-center justify-center">
             <Image
               src="/logo.png"
-              alt="Logo Consorcio Calle 425"
-              width={80}
+              alt="Logo Consorcio Inteligente Calle 425"
+              width={260}
               height={80}
-              className="object-contain"
+              className="h-14 sm:h-16 w-auto object-contain"
               priority
             />
           </div>

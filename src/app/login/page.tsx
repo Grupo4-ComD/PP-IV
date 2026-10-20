@@ -164,13 +164,13 @@ export default function LoginPage() {
           
           {/* Header & Identidad Consorcio Calle 425 con Logo Oficial */}
           <header className="flex flex-col items-center text-center gap-3">
-            <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 p-1.5 shadow-lg bg-white dark:bg-slate-900 flex items-center justify-center">
+            <div className="relative h-20 sm:h-22 px-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-white flex items-center justify-center">
               <Image
                 src="/logo.png"
-                alt="Logo Consorcio Calle 425"
-                width={88}
-                height={88}
-                className="object-contain rounded-xl"
+                alt="Logo Consorcio Inteligente Calle 425"
+                width={240}
+                height={75}
+                className="h-13 sm:h-15 w-auto object-contain"
                 priority
               />
             </div>
