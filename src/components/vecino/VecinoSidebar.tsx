@@ -111,7 +111,7 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
       {/* Botón flotante para móviles (Hamburger Menu) */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed bottom-6 right-6 z-50 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-xl cursor-pointer hover:bg-indigo-500 transition-colors active:scale-95"
+        className="md:hidden fixed bottom-6 left-6 z-50 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-xl cursor-pointer hover:bg-indigo-500 transition-colors active:scale-95"
         aria-label="Abrir menú"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
