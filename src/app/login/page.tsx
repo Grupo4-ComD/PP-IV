@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import ThemeToggle from "@/components/common/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import {
   Building2,
@@ -158,6 +159,11 @@ export default function LoginPage() {
       {/* Efectos de fondo y gradientes ambientales */}
       <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/10 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-emerald-500/10 dark:bg-emerald-600/15 blur-3xl pointer-events-none" />
+
+      {/* Botón Flotante para Alternar Modo Claro / Modo Oscuro */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+        <ThemeToggle showLabel />
+      </div>
 
       <main className="w-full max-w-[32rem] relative z-10">
         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col gap-6">
@@ -391,25 +397,25 @@ export default function LoginPage() {
             </div>
           </section>
 
-          {/* Footer */}
-          <footer className="flex flex-col items-center text-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Desarrollado por</span>
-              <div className="bg-[#FAF8F3] dark:bg-white/95 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-slate-700/80 shadow-xs inline-flex items-center">
-                <Image
-                  src="/logodev.jpeg"
-                  alt="DeveloPet Friendly"
-                  width={110}
-                  height={28}
-                  className="h-5 w-auto object-contain"
-                />
-              </div>
+          {/* Footer con Logo del Equipo de Desarrollo */}
+          <footer className="flex flex-col items-center text-center gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Desarrollado y diseñado por
+            </span>
+
+            <div className="bg-[#FAF8F3] dark:bg-white px-5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center">
+              <Image
+                src="/logodev.jpeg"
+                alt="Logo DeveloPET Friendly"
+                width={220}
+                height={60}
+                className="h-11 sm:h-12 w-auto object-contain"
+              />
             </div>
-            <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-              <span>Prácticas Profesionalizantes IV</span>
-              <span>•</span>
-              <span>IFTS 29</span>
-            </div>
+
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+              Prácticas Profesionalizantes IV • IFTS 29
+            </p>
           </footer>
         </div>
       </main>

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import CambiarPasswordModal from "@/components/common/CambiarPasswordModal";
+import ThemeToggle from "@/components/common/ThemeToggle";
 import {
   LayoutDashboard,
   Sparkles,
@@ -253,33 +254,38 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
           </div>
 
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
-              title="Cambiar Mi Contraseña"
-            >
-              <KeyRound className="w-3.5 h-3.5 stroke-[2]" />
-              <span>Clave</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
-            >
-              <LogOut className="w-3.5 h-3.5 stroke-[2]" />
-              <span>Salir</span>
-            </button>
+            <ThemeToggle />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
+                title="Cambiar Mi Contraseña"
+              >
+                <KeyRound className="w-3.5 h-3.5 stroke-[2]" />
+                <span>Clave</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
+              >
+                <LogOut className="w-3.5 h-3.5 stroke-[2]" />
+                <span>Salir</span>
+              </button>
+            </div>
           </div>
 
-          {/* Sello de Desarrollo Discreto */}
-          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
-            <span>Dev Team</span>
-            <div className="bg-[#FAF8F3] px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/80 inline-flex items-center shadow-xs">
+          {/* Sello de Desarrollo DeveloPET */}
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center gap-1.5 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+              Equipo de Desarrollo
+            </span>
+            <div className="w-full bg-[#FAF8F3] dark:bg-white py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs flex items-center justify-center">
               <Image
                 src="/logodev.jpeg"
-                alt="DeveloPet Friendly"
-                width={80}
-                height={20}
-                className="h-3.5 w-auto object-contain"
+                alt="Logo DeveloPET Friendly"
+                width={160}
+                height={45}
+                className="h-8 w-auto object-contain"
               />
             </div>
           </div>

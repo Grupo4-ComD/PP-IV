@@ -464,18 +464,23 @@ export default function AdminDashboardPage() {
         <CuotaExtraModal isOpen={isCuotaModalOpen} onClose={() => setIsCuotaModalOpen(false)} onCuotaExitosa={loadDashboard} />
         <AjusteCajaModal isOpen={isAjusteModalOpen} onClose={() => setIsAjusteModalOpen(false)} onAjusteExitoso={loadDashboard} />
 
-        {/* Footer Institucional Discreto */}
-        <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <p>© Consorcio Calle 425 • Panel de Administración</p>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px]">Desarrollado por</span>
-            <div className="bg-[#FAF8F3] dark:bg-white/95 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-xs inline-flex items-center">
+        {/* Footer Institucional con Logo del Equipo de Desarrollo */}
+        <footer className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+            <p className="font-semibold text-slate-800 dark:text-slate-200">Consorcio Calle 425</p>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+            <p>Panel de Administración y Control Consorcial</p>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-medium">Desarrollado por</span>
+            <div className="bg-[#FAF8F3] dark:bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
               <Image
                 src="/logodev.jpeg"
-                alt="DeveloPet Friendly"
-                width={85}
-                height={22}
-                className="h-4 w-auto object-contain"
+                alt="Logo DeveloPET Friendly"
+                width={160}
+                height={45}
+                className="h-8 w-auto object-contain"
               />
             </div>
           </div>
