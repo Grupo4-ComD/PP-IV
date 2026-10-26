@@ -253,25 +253,26 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <ThemeToggle />
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowPasswordModal(true)}
-                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
-                title="Cambiar Mi Contraseña"
-              >
-                <KeyRound className="w-3.5 h-3.5 stroke-[2]" />
-                <span>Clave</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium transition cursor-pointer bg-transparent border-none p-0"
-              >
-                <LogOut className="w-3.5 h-3.5 stroke-[2]" />
-                <span>Salir</span>
-              </button>
-            </div>
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-3 gap-1.5">
+            <ThemeToggle className="w-full justify-center" />
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium transition cursor-pointer"
+              title="Cambiar Mi Contraseña"
+            >
+              <KeyRound className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+              <span className="text-[11px]">Clave</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-rose-200/60 dark:border-rose-900/40 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-medium transition cursor-pointer"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+              <span className="text-[11px]">Salir</span>
+            </button>
           </div>
 
           {/* Sello de Desarrollo DeveloPET */}

@@ -130,8 +130,9 @@ export default function AdminDashboardPage() {
       {/* Sidebar Admin Modular */}
       <AdminSidebar />
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 sm:p-10 overflow-y-auto max-w-7xl relative">
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 overflow-y-auto flex flex-col">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10 w-full max-w-[1600px] mx-auto relative">
         
         {/* Loader Overlay */}
         {cargando && (
@@ -487,5 +488,6 @@ export default function AdminDashboardPage() {
         </footer>
       </main>
     </div>
+  </div>
   );
 }

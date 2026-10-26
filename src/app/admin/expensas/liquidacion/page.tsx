@@ -154,7 +154,9 @@ export default function LiquidacionExpensasPage() {
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex">
       <AdminSidebar />
 
-      <main className="flex-1 p-6 sm:p-10 overflow-y-auto max-w-6xl">
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 overflow-y-auto flex flex-col">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10 w-full max-w-[1600px] mx-auto">
         {/* Header */}
         <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -405,5 +407,6 @@ export default function LiquidacionExpensasPage() {
         />
       </main>
     </div>
+  </div>
   );
 }
