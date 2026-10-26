@@ -392,10 +392,21 @@ export default function LoginPage() {
           </section>
 
           {/* Footer */}
-          <footer className="flex flex-col items-center text-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <span>Desarrollado por</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">DeveloPet Friendly</span>
+          <footer className="flex flex-col items-center text-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Desarrollado por</span>
+              <div className="bg-[#FAF8F3] dark:bg-white/95 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-slate-700/80 shadow-xs inline-flex items-center">
+                <Image
+                  src="/logodev.jpeg"
+                  alt="DeveloPet Friendly"
+                  width={110}
+                  height={28}
+                  className="h-5 w-auto object-contain"
+                />
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+              <span>Prácticas Profesionalizantes IV</span>
               <span>•</span>
               <span>IFTS 29</span>
             </div>

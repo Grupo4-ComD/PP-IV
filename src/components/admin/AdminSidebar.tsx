@@ -176,6 +176,20 @@ export default function AdminSidebar() {
             </button>
           </div>
         </div>
+
+        {/* Sello de Desarrollo Discreto */}
+        <div className="mt-3 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+          <span>Dev Team</span>
+          <div className="bg-[#FAF8F3] px-1.5 py-0.5 rounded border border-slate-700/60 inline-flex items-center shadow-xs">
+            <Image
+              src="/logodev.jpeg"
+              alt="DeveloPet Friendly"
+              width={80}
+              height={20}
+              className="h-3.5 w-auto object-contain"
+            />
+          </div>
+        </div>
       </aside>
 
       <CambiarPasswordModal

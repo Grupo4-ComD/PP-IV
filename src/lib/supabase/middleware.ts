@@ -41,9 +41,10 @@ export async function updateSession(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname.startsWith('/login');
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   const isVecinoRoute = request.nextUrl.pathname.startsWith('/vecino');
+  const isRootPage = request.nextUrl.pathname === '/';
 
-  // 1. Si no hay usuario y trata de acceder a rutas protegidas, mandar al login
-  if (!user && (isAdminRoute || isVecinoRoute)) {
+  // 1. Si no hay usuario y trata de acceder a la raíz o a rutas protegidas, mandar al login
+  if (!user && (isAdminRoute || isVecinoRoute || isRootPage)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
@@ -56,8 +57,8 @@ export async function updateSession(request: NextRequest) {
 
     const isAdmin = userRole === 'admin' || userEmail.includes('admin');
     
-    // Si es login y ya está autenticado, mandarlo a su dashboard
-    if (isLoginPage) {
+    // Si es login o raíz y ya está autenticado, mandarlo a su dashboard
+    if (isLoginPage || isRootPage) {
       const url = request.nextUrl.clone();
       url.pathname = isAdmin ? '/admin/dashboard' : '/vecino/dashboard';
       return NextResponse.redirect(url);

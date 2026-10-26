@@ -401,6 +401,23 @@ export default function VecinoDashboardPage() {
               </div>
             </div>
           </section>
+
+          {/* Footer Institucional Discreto */}
+          <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <p>© Consorcio Calle 425 • Portal del Copropietario</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px]">Desarrollado por</span>
+              <div className="bg-[#FAF8F3] dark:bg-white/95 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-xs inline-flex items-center">
+                <Image
+                  src="/logodev.jpeg"
+                  alt="DeveloPet Friendly"
+                  width={85}
+                  height={22}
+                  className="h-4 w-auto object-contain"
+                />
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

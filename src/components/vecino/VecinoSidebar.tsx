@@ -269,6 +269,20 @@ export default function VecinoSidebar({ unidad, usuario }: VecinoSidebarProps) {
               <span>Salir</span>
             </button>
           </div>
+
+          {/* Sello de Desarrollo Discreto */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+            <span>Dev Team</span>
+            <div className="bg-[#FAF8F3] px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/80 inline-flex items-center shadow-xs">
+              <Image
+                src="/logodev.jpeg"
+                alt="DeveloPet Friendly"
+                width={80}
+                height={20}
+                className="h-3.5 w-auto object-contain"
+              />
+            </div>
+          </div>
         </div>
       </aside>
 
