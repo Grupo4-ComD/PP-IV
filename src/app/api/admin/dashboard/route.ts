@@ -118,10 +118,13 @@ export async function GET() {
     ].sort((a, b) => b.fecha - a.fecha).slice(0, 15);
 
     const totalPagos = await prisma.pagoVecino.aggregate({ where: { estado: 'aprobado' }, _sum: { monto: true } });
-    const totalGastos = await prisma.gasto.aggregate({ _sum: { monto: true } });
+    const todosLosGastos = await prisma.gasto.findMany();
+    const totalGastos = todosLosGastos
+      .filter(g => !(g.concepto || '').toUpperCase().includes('_SD'))
+      .reduce((sum, g) => sum + Number(g.monto), 0);
     
     // Saldo real de Caja Bancaria (Total cobrado histórico - Total gastado histórico)
-    const saldoCaja = Number(totalPagos._sum.monto || 0) - Number(totalGastos._sum.monto || 0);
+    const saldoCaja = Number(totalPagos._sum.monto || 0) - totalGastos;
 
     const limpiezasEnVerificacion = await prisma.limpiezaRotativa.findMany({
       where: { estado: 'en_verificacion' },

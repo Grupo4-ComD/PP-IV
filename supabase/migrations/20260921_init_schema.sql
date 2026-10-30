@@ -149,10 +149,6 @@ BEGIN
     NEW.monto_cargos := COALESCE(NEW.monto_cargos, 0.00);
     NEW.recargo_mora := COALESCE(NEW.recargo_mora, 0.00);
 
-    -- Regla de Negocio 3: Si no se informó mora explícita y la expensa está vencida
-    IF NEW.estado != 'pagado' AND CURRENT_DATE > NEW.fecha_vencimiento AND NEW.recargo_mora = 0 THEN
-        NEW.recargo_mora := ROUND(NEW.monto_ordinario * 0.07, 2);
-    END IF;
 
     -- Fórmula Integral: Total a pagar = Ordinarias + Extraordinarias + Cargos/Multas + Recargo Mora
     NEW.total_pagar := NEW.monto_ordinario + NEW.monto_extraordinario + NEW.monto_cargos + NEW.recargo_mora;

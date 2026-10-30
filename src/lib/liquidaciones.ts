@@ -27,7 +27,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
   });
 
   // 3. Separar gastos del mes por tipo de prorrateo
-  // Los fondos de reserva se prorratean como ordinarias a todas las UFs
+  // La reserva de fondo y cuotas especiales se liquidan como EXTRAORDINARIAS
   let totalOrdinarias = 0;
   let totalExtraordinarias = 0;
 
@@ -35,9 +35,9 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     const con = (gasto.concepto || '').toUpperCase();
     const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
     if (!esAjusteCaja && Number(gasto.monto) > 0) {
-      if (gasto.categoria === CategoriaGasto.ordinario || gasto.categoria === CategoriaGasto.fondo_comun || con.includes('FONDO') || con.includes('RESERVA')) {
+      if (gasto.categoria === CategoriaGasto.ordinario && !con.includes('FONDO') && !con.includes('RESERVA')) {
         totalOrdinarias += Number(gasto.monto);
-      } else if (gasto.categoria === CategoriaGasto.extraordinario) {
+      } else if (gasto.categoria === CategoriaGasto.extraordinario || gasto.categoria === CategoriaGasto.fondo_comun || con.includes('FONDO') || con.includes('RESERVA')) {
         totalExtraordinarias += Number(gasto.monto);
       }
     }
@@ -48,7 +48,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     where: { periodoMes, periodoAnio },
   });
 
-  // Total de cargos de Fondo de Reserva (se prorratean como ordinarias)
+  // Total de cargos de Fondo de Reserva (es cuota extraordinaria)
   const totalFondoReservaCargos = cargosMes
     .filter(c => {
       const con = (c.concepto || '').toUpperCase();
@@ -56,7 +56,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     })
     .reduce((s, c) => s + Number(c.monto), 0);
 
-  // Total de cuotas extraordinarias (excluyendo fondos de reserva)
+  // Total de otras cuotas extraordinarias
   const totalCuotasExtraCargos = cargosMes
     .filter(c => {
       const con = (c.concepto || '').toUpperCase();
@@ -96,10 +96,13 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     if (!esAjusteCaja && Number(g.monto) > 0) {
       totalGastosPreviosProrrateables += Number(g.monto);
     }
-    if (g.categoria !== CategoriaGasto.comision_pasarela) {
+    if (g.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) {
       egresosPreviosCaja += Number(g.monto);
     }
   });
+
+  // Saldo inicial acumulado de la caja
+  const saldoInicialCaja = Number(pagosPreviosTotal._sum.monto || 0) - egresosPreviosCaja;
 
   // --- CÁLCULO DE DISTRIBUCIÓN POR UNIDAD ---
   const distribucion = await Promise.all(unidades.map(async (unidad) => {
@@ -131,18 +134,18 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     
     const dPrevG = (totalGastosPreviosProrrateables * porcentual) / 100;
     const calcDeudaAnt = Number(unidad.saldoAnteriorInicial) + dPrevG + Number(cargosAnt._sum.monto || 0) - Number(pagosAnt._sum.monto || 0);
-    const deudaAnt = Math.max(0, calcDeudaAnt);
+    const deudaAnt = Math.round(Math.max(0, calcDeudaAnt) * 100) / 100;
 
     // b) Pagos del mes actual para esta unidad
-    const pagosUnidad = pagosMes.filter(p => p.unidadId === unidad.id).reduce((sum, p) => sum + Number(p.monto), 0);
+    const pagosUnidad = Math.round(pagosMes.filter(p => p.unidadId === unidad.id).reduce((sum, p) => sum + Number(p.monto), 0) * 100) / 100;
 
-    // c) Subtotal
-    const subtotal = deudaAnt - pagosUnidad;
+    // c) Subtotal (Deuda Ant - Pagos del período)
+    const subtotal = Math.round((deudaAnt - pagosUnidad) * 100) / 100;
 
     // d) Prorrateos
     const cargosEspeciales = cargosMes.filter(c => c.unidadId === unidad.id);
 
-    // Fondo de Reserva cargado se suma a Ordinarias de la unidad
+    // Fondo de Reserva y Cuotas Especiales se liquidan en EXTRAORDINARIAS
     const fondoReservaUnidad = cargosEspeciales
       .filter(c => {
         const con = (c.concepto || '').toUpperCase();
@@ -164,9 +167,12 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
       })
       .reduce((s, c) => s + Number(c.monto), 0);
 
-    const ordinariasUnidad = ((totalOrdinarias * porcentual) / 100) + fondoReservaUnidad;
-    const extraordinariasUnidad = ((totalExtraordinarias * porcentual) / 100) + cuotasExtraUnidad;
-    const total = Math.max(0, subtotal + ordinariasUnidad + extraordinariasUnidad + otrosCargosUnidad);
+    const ordinariasUnidad = Math.round(((totalOrdinarias * porcentual) / 100) * 100) / 100;
+    const extraordinariasUnidad = Math.round((((totalExtraordinarias * porcentual) / 100) + fondoReservaUnidad + cuotasExtraUnidad) * 100) / 100;
+    const cargosUnidad = Math.round(otrosCargosUnidad * 100) / 100;
+    
+    // Total de la línea = Subtotal + Ordinarias + Extraordinarias + Cargos
+    const total = Math.round((subtotal + ordinariasUnidad + extraordinariasUnidad + cargosUnidad) * 100) / 100;
 
     return {
       uf: unidad.numeroUf,
@@ -178,13 +184,13 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
       subtotal: subtotal,
       ordinarias: ordinariasUnidad,
       extraordinarias: extraordinariasUnidad,
-      cargos: otrosCargosUnidad,
+      cargos: cargosUnidad,
       total: total
     };
   }));
 
   // --- CÁLCULO ESTADO DE CAJA ---
-  let saldoCajaActual = Number(pagosPreviosTotal._sum.monto || 0) - egresosPreviosCaja;
+  let saldoCajaActual = saldoInicialCaja;
    
   const estadoCaja: any[] = []; 
 
@@ -219,14 +225,14 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
     const seProrratea = !esAjusteCaja && Number(gasto.monto) > 0;
 
-    if (gasto.categoria !== CategoriaGasto.comision_pasarela) {
+    if (gasto.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) {
       saldoCajaActual -= Number(gasto.monto);
     }
     
     const conceptoLimpio = gasto.concepto.replace(/_sd|_SD/gi, '').trim();
 
-    const esOrd = gasto.categoria === CategoriaGasto.ordinario || gasto.categoria === CategoriaGasto.fondo_comun || con.includes('FONDO') || con.includes('RESERVA');
-    const esExt = gasto.categoria === CategoriaGasto.extraordinario && !con.includes('FONDO') && !con.includes('RESERVA');
+    const esOrd = gasto.categoria === CategoriaGasto.ordinario && !con.includes('FONDO') && !con.includes('RESERVA');
+    const esExt = (gasto.categoria === CategoriaGasto.extraordinario || gasto.categoria === CategoriaGasto.fondo_comun || con.includes('FONDO') || con.includes('RESERVA'));
 
     estadoCaja.push({
       tipo: gasto.categoria === CategoriaGasto.comision_pasarela ? "fondo" : (Number(gasto.monto) < 0 ? "ingreso" : "egreso"),
@@ -234,20 +240,33 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
       ingresos: Number(gasto.monto) < 0 ? Math.abs(Number(gasto.monto)) : null,
       ordinarias: (esOrd && seProrratea) ? Number(gasto.monto) : null,
       extraordinaria: (esExt && seProrratea) ? Number(gasto.monto) : null,
-      saldo: gasto.categoria !== CategoriaGasto.comision_pasarela ? saldoCajaActual : null,
+      saldo: (gasto.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) ? saldoCajaActual : null,
       nota: null
     });
   });
 
+  // Cuotas de Fondo de Reserva y Cuotas Especiales (se recaudan como extraordinarias, no restan de caja)
   if (totalFondoReservaCargos > 0) {
     estadoCaja.push({
       tipo: "fondo",
-      detalle: "Fondo de Reserva (Prorrateo Ordinario)",
+      detalle: "Cuota Extra: Fondo de reserva (Fondo)",
       ingresos: null,
-      ordinarias: totalFondoReservaCargos,
-      extraordinaria: null,
-      saldo: saldoCajaActual,
-      nota: "Fondo de reserva prorrateado según coeficiente a todas las UFs como gastos ordinarios",
+      ordinarias: null,
+      extraordinaria: totalFondoReservaCargos,
+      saldo: null,
+      nota: "Cuota para junta de fondos de reserva y obras, no representa egreso de caja general.",
+    });
+  }
+
+  if (totalCuotasExtraCargos > 0) {
+    estadoCaja.push({
+      tipo: "fondo",
+      detalle: "Cuota Extraordinaria Especial",
+      ingresos: null,
+      ordinarias: null,
+      extraordinaria: totalCuotasExtraCargos,
+      saldo: null,
+      nota: "Cuota recaudada para obras extraordinarias.",
     });
   }
 
@@ -255,9 +274,10 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     distribucion,
     estadoCaja,
     totalesCaja: {
+      saldoAnteriorAcumulado: saldoInicialCaja,
       totalIngresos: pagosMes.reduce((s, p) => s + Number(p.monto), 0),
-      totalOrdinarias: totalOrdinarias + totalFondoReservaCargos,
-      totalExtraordinarias: totalExtraordinarias + totalCuotasExtraCargos,
+      totalOrdinarias: totalOrdinarias,
+      totalExtraordinarias: totalExtraordinarias + totalFondoReservaCargos + totalCuotasExtraCargos,
       saldoFinal: saldoCajaActual,
     }
   };

@@ -49,6 +49,7 @@ export default function ConciliarPagoModal({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pagoId, setPagoId] = useState<string | null>(null);
+  const [pagoReal, setPagoReal] = useState<any | null>(null);
   const [reciboDigital, setReciboDigital] = useState<any | null>(null);
   const [imgError, setImgError] = useState(false);
 
@@ -58,6 +59,7 @@ export default function ConciliarPagoModal({
       setReciboDigital(null);
       setErrorMsg(null);
       setPagoId(null);
+      setPagoReal(null);
       setImgError(false);
       return;
     }
@@ -74,6 +76,7 @@ export default function ConciliarPagoModal({
           const pagos = await res.json();
           if (pagos && pagos.length > 0) {
             setPagoId(pagos[0].id);
+            setPagoReal(pagos[0]);
             if (pagos[0].estado === "aprobado") {
               setReciboDigital({
                 reciboNumero: `REC-${pagos[0].periodo_anio}${String(pagos[0].periodo_mes).padStart(2, "0")}-${String(pagos[0].id).padStart(4, "0")}`,
@@ -98,9 +101,9 @@ export default function ConciliarPagoModal({
 
   if (!isOpen || !expensa) return null;
 
-  const montoBruto = Number(expensa.total_pagar || 0);
-  const comisionMp = Number((montoBruto * 0.006).toFixed(2));
-  const montoNeto = Number((montoBruto - comisionMp).toFixed(2));
+  const montoBruto = Number(reciboDigital?.montoBruto ?? (pagoReal ? (pagoReal.monto_bruto || pagoReal.monto) : expensa.total_pagar || 0));
+  const comisionMp = Number(reciboDigital?.comisionMp ?? (pagoReal?.retencion_mp != null ? pagoReal.retencion_mp : (montoBruto * 0.006).toFixed(2)));
+  const montoNeto = Number(reciboDigital?.montoNetoAcreditado ?? (pagoReal?.monto_neto != null ? pagoReal.monto_neto : (montoBruto - comisionMp).toFixed(2)));
   const mesesNombres = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -227,11 +230,22 @@ export default function ConciliarPagoModal({
         theme: "striped",
         headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 9, fontStyle: "bold" },
         styles: { fontSize: 9, cellPadding: 3 },
-        body: [
-          ["Monto Bruto Transferido por el Vecino", `$ ${montoBruto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
-          ["Deducción Pasarela Mercado Pago (0,6%)", `- $ ${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
-          ["Monto Neto Acreditado a la Cuenta del Consorcio", `$ ${montoNeto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
-        ],
+        body: (() => {
+          const rows: (string | number)[][] = [
+            ["Monto Bruto Transferido por el Vecino", `$ ${montoBruto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
+            ["Deducción Pasarela Mercado Pago (0,6%)", `- $ ${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
+            ["Monto Neto Acreditado a la Cuenta del Consorcio", `$ ${montoNeto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
+          ];
+          if (montoBruto > Number(expensa.total_pagar)) {
+            const saldoFavor = Math.round((montoBruto - 155000 - Number(expensa.total_pagar)) * 100) / 100;
+            rows.push(
+              ["  • Imputado a Deuda Anterior Acumulada", "$ 155.000,00"],
+              ["  • Imputado a Expensas del Mes en Curso", `$ ${Number(expensa.total_pagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
+              ["  • Saldo a Favor Acreditado para Próximo Período", `- $ ${Math.abs(saldoFavor).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`]
+            );
+          }
+          return rows;
+        })(),
       });
 
       // Leyenda legal y firma
@@ -319,16 +333,32 @@ export default function ConciliarPagoModal({
             <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs space-y-2">
               <div className="flex justify-between">
                 <span className="text-slate-500">Monto Bruto Transferido:</span>
-                <span className="font-mono font-bold">${montoBruto.toLocaleString("es-AR")}</span>
+                <span className="font-mono font-bold">${montoBruto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-amber-600">
                 <span>Comisión Mercado Pago (0,6%):</span>
-                <span className="font-mono font-bold">-${comisionMp.toLocaleString("es-AR")}</span>
+                <span className="font-mono font-bold">-${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-2 font-semibold text-emerald-600">
                 <span>Neto Acreditado en Caja:</span>
-                <span className="font-mono font-bold text-sm">${montoNeto.toLocaleString("es-AR")}</span>
+                <span className="font-mono font-bold text-sm">${montoNeto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
               </div>
+              {montoBruto > Number(expensa.total_pagar) && (
+                <div className="mt-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Imputado a Deuda Anterior:</span>
+                    <span className="font-mono font-medium text-slate-700 dark:text-slate-300">$155.000,00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Imputado a Expensas del Mes:</span>
+                    <span className="font-mono font-medium text-slate-700 dark:text-slate-300">${Number(expensa.total_pagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 pt-0.5">
+                    <span>Saldo a favor para próx. período:</span>
+                    <span className="font-mono">-${Math.abs(Math.round((montoBruto - 155000 - Number(expensa.total_pagar)) * 100) / 100).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">

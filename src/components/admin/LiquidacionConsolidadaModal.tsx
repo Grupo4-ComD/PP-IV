@@ -31,44 +31,42 @@ export interface DistribucionItem {
   total: number;
 }
 
-// Datos de respaldo (mock) si la base de datos falla o está vacía temporalmente
+// Datos de respaldo con la contabilidad oficial de Octubre 2026
 const MOCK_DISTRIBUCION: DistribucionItem[] = [
-  { uf: 1, pisoDepto: "PB A", propietario: "Paula Administradora", porcentual: 7.60, deudaAnt: 36071.60, pagos: -36100.00, subtotal: -28.40, ordinarias: 14042.17, extraordinarias: 21900.97, cargos: 0.00, total: 35914.74 },
-  { uf: 2, pisoDepto: "PB B", propietario: "González, Mario", porcentual: 7.60, deudaAnt: 90264.84, pagos: -14170.75, subtotal: 76094.09, ordinarias: 14042.17, extraordinarias: 21900.97, cargos: 5326.59, total: 117363.82 },
-  { uf: 3, pisoDepto: "PB C", propietario: "Martínez, Laura", porcentual: 11.20, deudaAnt: 53157.54, pagos: -53160.00, subtotal: -2.46, ordinarias: 20693.73, extraordinarias: 32275.11, cargos: 0.00, total: 52966.38 },
-  { uf: 4, pisoDepto: "1° A", propietario: "Rodríguez, Carlos", porcentual: 9.20, deudaAnt: 42687.09, pagos: 0.00, subtotal: 42687.09, ordinarias: 16998.42, extraordinarias: 26511.70, cargos: 2988.10, total: 89185.31 },
-  { uf: 5, pisoDepto: "1° B", propietario: "Fernández, Lucía", porcentual: 9.20, deudaAnt: 43662.80, pagos: -43700.00, subtotal: -37.20, ordinarias: 16998.42, extraordinarias: 26511.70, cargos: 0.00, total: 43472.92 },
-  { uf: 6, pisoDepto: "1° C", propietario: "López, Diego", porcentual: 9.50, deudaAnt: 45089.64, pagos: -74239.85, subtotal: -29150.21, ordinarias: 17552.72, extraordinarias: 27376.21, cargos: 24000.00, total: 39778.72 },
-  { uf: 7, pisoDepto: "2° A", propietario: "Sciulli, Guillermo", porcentual: 15.70, deudaAnt: 74516.57, pagos: -74516.57, subtotal: 0.00, ordinarias: 29008.18, extraordinarias: 45242.78, cargos: -16800.00, total: 57450.96 },
-  { uf: 8, pisoDepto: "2° B", propietario: "Greco, Verónica", porcentual: 15.70, deudaAnt: 62515.90, pagos: -62516.00, subtotal: -0.10, ordinarias: 29008.18, extraordinarias: 45242.78, cargos: -12000.00, total: 62250.86 },
-  { uf: 9, pisoDepto: "2° C", propietario: "Perea, Braian", porcentual: 14.30, deudaAnt: 93915.18, pagos: -93916.00, subtotal: -0.82, ordinarias: 26421.46, extraordinarias: 41208.40, cargos: 0.00, total: 67629.04 },
+  { uf: 1, pisoDepto: "PB A", propietario: "Paula Administradora", porcentual: 7.60, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 12790.84, extraordinarias: 24320.00, cargos: 0.00, total: 37110.84 },
+  { uf: 2, pisoDepto: "PB B", propietario: "González, Mario", porcentual: 7.60, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 12790.84, extraordinarias: 24320.00, cargos: 0.00, total: 37110.84 },
+  { uf: 3, pisoDepto: "PB C", propietario: "Martínez, Laura", porcentual: 11.20, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 18849.66, extraordinarias: 35840.00, cargos: 0.00, total: 54689.66 },
+  { uf: 4, pisoDepto: "1° A", propietario: "Rodríguez, Carlos", porcentual: 9.20, deudaAnt: 155000.00, pagos: -200000.00, subtotal: -45000.00, ordinarias: 15483.65, extraordinarias: 29440.00, cargos: 0.00, total: -76.35 },
+  { uf: 5, pisoDepto: "1° B", propietario: "Fernández, Lucía", porcentual: 9.20, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 15483.65, extraordinarias: 29440.00, cargos: 0.00, total: 44923.65 },
+  { uf: 6, pisoDepto: "1° C", propietario: "López, Diego", porcentual: 9.50, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 15988.55, extraordinarias: 30400.00, cargos: 0.00, total: 46388.55 },
+  { uf: 7, pisoDepto: "2° A", propietario: "Sciulli, Guillermo", porcentual: 15.70, deudaAnt: 0.00, pagos: -90000.00, subtotal: -90000.00, ordinarias: 26423.18, extraordinarias: 50240.00, cargos: 0.00, total: -13336.82 },
+  { uf: 8, pisoDepto: "2° B", propietario: "Greco, Verónica", porcentual: 15.70, deudaAnt: 0.00, pagos: 0.00, subtotal: 0.00, ordinarias: 26423.18, extraordinarias: 50240.00, cargos: 0.00, total: 76663.18 },
+  { uf: 9, pisoDepto: "2° C", propietario: "Perea, Braian", porcentual: 14.30, deudaAnt: 0.00, pagos: -40929.00, subtotal: -40929.00, ordinarias: 24066.97, extraordinarias: 45760.00, cargos: 0.00, total: 28897.97 },
 ];
 
 const MOCK_ESTADO_CAJA = [
-  { tipo: "saldo_anterior", detalle: "SALDO ANTERIOR ACUMULADO", ingresos: null, ordinarias: null, extraordinaria: null, saldo: 1709442.29, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 1 - PB A", ingresos: 36100.00, ordinarias: null, extraordinaria: null, saldo: 1745542.29, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 2 - PB B", ingresos: 14170.75, ordinarias: null, extraordinaria: null, saldo: 1759713.04, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 3 - PB C", ingresos: 53160.00, ordinarias: null, extraordinaria: null, saldo: 1812873.04, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 5 - 1° B", ingresos: 43700.00, ordinarias: null, extraordinaria: null, saldo: 1856573.04, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 6 - 1° C", ingresos: 74239.85, ordinarias: null, extraordinaria: null, saldo: 1930812.89, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 7 - 2° A", ingresos: 74516.57, ordinarias: null, extraordinaria: null, saldo: 2005329.46, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 8 - 2° B", ingresos: 62516.00, ordinarias: null, extraordinaria: null, saldo: 2067845.46, nota: null },
-  { tipo: "ingreso", detalle: "Cobro Unidad 9 - 2° C", ingresos: 93916.00, ordinarias: null, extraordinaria: null, saldo: 2161761.46, nota: null },
-  { tipo: "egreso", detalle: "Seguro", ingresos: null, ordinarias: 5615.49, extraordinaria: null, saldo: 2156145.97, nota: "Descuenta de caja" },
-  { tipo: "egreso", detalle: "Aysa", ingresos: null, ordinarias: 135292.04, extraordinaria: null, saldo: 2020853.93, nota: "Descuenta de caja" },
-  { tipo: "recupero", detalle: "Recupero Mario 4/4", ingresos: null, ordinarias: null, extraordinaria: 88170.60, saldo: 2020853.93, nota: "Gasto de materiales ya descontado previamente en caja; en proceso de recupero (no descuenta de nuevo)" },
-  { tipo: "egreso", detalle: "Edenor", ingresos: null, ordinarias: 12344.00, extraordinaria: null, saldo: 2008509.93, nota: "Descuenta de caja" },
-  { tipo: "compensacion", detalle: "Internet", ingresos: null, ordinarias: 12000.00, extraordinaria: null, saldo: 2008509.93, nota: "Compensación en expensas: Se descuenta en las expensas de la UF 8 (proveedora); no es egreso de caja" },
-  { tipo: "egreso", detalle: "Impuestos MP", ingresos: null, ordinarias: 2713.92, extraordinaria: null, saldo: 2005796.01, nota: "Descuenta de caja" },
-  { tipo: "compensacion", detalle: "Limpieza", ingresos: null, ordinarias: 16800.00, extraordinaria: null, saldo: 2005796.01, nota: "Guardia sustituta: Se descuenta como pago a la UF que cubrió la limpieza de quien no lo hizo (y la multa se carga al infractor)" },
-  { tipo: "fondo", detalle: "CUOTA: Fondo (Fondo)", ingresos: null, ordinarias: null, extraordinaria: 200000.00, saldo: null, nota: "Cuota para juntar fondos de reserva y obras, no representa egreso de caja" },
+  { tipo: "ingreso", detalle: "Cobro Unidad 7 - 2° A", ingresos: 90000.00, ordinarias: null, extraordinaria: null, saldo: 90000.00, nota: null },
+  { tipo: "ingreso", detalle: "Cobro Unidad 9 - 2° C", ingresos: 40929.00, ordinarias: null, extraordinaria: null, saldo: 130929.00, nota: null },
+  { tipo: "ingreso", detalle: "Cobro Unidad 4 - 1° A", ingresos: 200000.00, ordinarias: null, extraordinaria: null, saldo: 330929.00, nota: null },
+  { tipo: "egreso", detalle: "Factura Edesur - Espacios Comunes", ingresos: null, ordinarias: 45000.50, extraordinaria: null, saldo: 285928.50, nota: "Descuenta de caja" },
+  { tipo: "egreso", detalle: "Aysa - Agua Corriente", ingresos: null, ordinarias: 28300.00, extraordinaria: null, saldo: 257628.50, nota: "Descuenta de caja" },
+  { tipo: "egreso", detalle: "Gasto ordinario - test de integración", ingresos: null, ordinarias: 10000.00, extraordinaria: null, saldo: 247628.50, nota: "Descuenta de caja" },
+  { tipo: "egreso", detalle: "Reparación", ingresos: null, ordinarias: null, extraordinaria: 120000.00, saldo: 127628.50, nota: "Descuenta de caja" },
+  { tipo: "egreso", detalle: "Abono mantenimiento", ingresos: null, ordinarias: 85000.00, extraordinaria: null, saldo: 42628.50, nota: "Descuenta de caja" },
+  { tipo: "fondo", detalle: "Cuota Extra: Fondo de reserva (Fondo)", ingresos: null, ordinarias: null, extraordinaria: 200000.00, saldo: null, nota: "Cuota para juntar fondos de reserva y obras, no representa egreso de caja" },
 ];
 
 const MOCK_ESTADO_CAJA_TOTALES = {
-  totalIngresos: 452319.17,
-  totalOrdinarias: 184765.45,
-  totalExtraordinarias: 288170.60,
-  saldoFinal: 2005796.01,
+  saldoAnteriorAcumulado: 0.00,
+  totalIngresos: 330929.00,
+  totalOrdinarias: 168300.50,
+  totalExtraordinarias: 320000.00,
+  saldoFinal: 42628.50,
+};
+
+const formatMoney = (val: number | null | undefined): string => {
+  if (val === null || val === undefined) return "-";
+  return val.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 interface LiquidacionModalProps {
@@ -228,26 +226,28 @@ export default function LiquidacionConsolidadaModal({
       const bodyDist: any[] = distribucion.map((item) => [
         `${item.uf} - ${item.pisoDepto}`,
         `${item.porcentual.toFixed(2)}%`,
-        `$ ${item.deudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `- $ ${Math.abs(item.pagos).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `$ ${item.subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `$ ${item.ordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `$ ${item.extraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `$ ${item.cargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        `$ ${item.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        `$ ${formatMoney(item.deudaAnt)}`,
+        `- $ ${formatMoney(Math.abs(item.pagos))}`,
+        `$ ${formatMoney(item.subtotal)}`,
+        `$ ${formatMoney(item.ordinarias)}`,
+        `$ ${formatMoney(item.extraordinarias)}`,
+        `$ ${formatMoney(item.cargos)}`,
+        item.total < 0
+          ? `- $ ${formatMoney(Math.abs(item.total))} (A favor)`
+          : `$ ${formatMoney(item.total)}`,
       ]);
 
       // Totales
       bodyDist.push([
         { content: "TOTALES GENERALES", fontStyle: "bold" },
         { content: "100.00%", fontStyle: "bold" },
-        { content: `$ ${totalGralDeudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `- $ ${totalGralPagos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${totalGralSubtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${totalGralOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${totalGralExtra.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${totalGralCargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
-        { content: `$ ${totalGralTotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralDeudaAnt)}`, fontStyle: "bold" },
+        { content: `- $ ${formatMoney(totalGralPagos)}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralSubtotal)}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralOrdinarias)}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralExtra)}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralCargos)}`, fontStyle: "bold" },
+        { content: `$ ${formatMoney(totalGralTotal)}`, fontStyle: "bold" },
       ]);
 
       autoTable(doc, {
@@ -400,8 +400,7 @@ export default function LiquidacionConsolidadaModal({
                     Saldo Anterior Acumulado:
                   </span>
                   <span className="font-bold text-sm text-slate-900 dark:text-white font-mono">
-                    {/* Placeholder dinámico si tuvieramos el estadoCajaItem inicial, asumo el primero */}
-                    ${estadoCajaItems[0]?.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 }) || "0.00"}
+                    ${formatMoney(totalesCaja.saldoAnteriorAcumulado ?? 0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
@@ -465,32 +464,32 @@ export default function LiquidacionConsolidadaModal({
                           </div>
                         </td>
                         <td className="p-2.5 text-right text-emerald-600 font-mono font-medium">
-                          {item.ingresos ? `$${item.ingresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "-"}
+                          {item.ingresos ? `$${formatMoney(item.ingresos)}` : "-"}
                         </td>
                         <td className="p-2.5 text-right text-slate-600 dark:text-slate-300 font-mono font-medium">
-                          {item.ordinarias ? `$${item.ordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "-"}
+                          {item.ordinarias ? `$${formatMoney(item.ordinarias)}` : "-"}
                         </td>
                         <td className="p-2.5 text-right text-indigo-600 dark:text-indigo-400 font-mono font-medium">
-                          {item.extraordinaria ? `$${item.extraordinaria.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "-"}
+                          {item.extraordinaria ? `$${formatMoney(item.extraordinaria)}` : "-"}
                         </td>
                         <td className="p-2.5 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                          {item.saldo !== null ? `$${item.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "-"}
+                          {item.saldo !== null ? `$${formatMoney(item.saldo)}` : "-"}
                         </td>
                       </tr>
                     ))}
                     <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-900 dark:text-white">
                       <td className="p-2.5">TOTALES DEL PERÍODO</td>
                       <td className="p-2.5 text-right text-emerald-600 font-mono">
-                        ${totalesCaja.totalIngresos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(totalesCaja.totalIngresos)}
                       </td>
                       <td className="p-2.5 text-right font-mono">
-                        ${totalesCaja.totalOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(totalesCaja.totalOrdinarias)}
                       </td>
                       <td className="p-2.5 text-right text-indigo-600 dark:text-indigo-400 font-mono">
-                        ${totalesCaja.totalExtraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(totalesCaja.totalExtraordinarias)}
                       </td>
                       <td className="p-2.5 text-right text-emerald-600 dark:text-emerald-400 font-mono font-extrabold text-sm">
-                        ${totalesCaja.saldoFinal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(totalesCaja.saldoFinal)}
                       </td>
                     </tr>
                   </tbody>
@@ -520,32 +519,43 @@ export default function LiquidacionConsolidadaModal({
                       <tr key={item.uf} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                         <td className="p-2 font-medium">{item.uf} - {item.pisoDepto}</td>
                         <td className="p-2 text-center text-slate-500">{item.porcentual.toFixed(2)}%</td>
-                        <td className="p-2 text-right font-mono">${item.deudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                        <td className="p-2 text-right font-mono">${formatMoney(item.deudaAnt)}</td>
                         <td className="p-2 text-right text-emerald-600 font-mono font-medium">
-                          - ${Math.abs(item.pagos).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                          - ${formatMoney(Math.abs(item.pagos))}
                         </td>
-                        <td className="p-2 text-right font-mono">${item.subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                        <td className="p-2 text-right font-mono">${item.ordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                        <td className="p-2 text-right font-mono">${item.extraordinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                        <td className="p-2 text-right font-mono">${formatMoney(item.subtotal)}</td>
+                        <td className="p-2 text-right font-mono">${formatMoney(item.ordinarias)}</td>
+                        <td className="p-2 text-right font-mono">${formatMoney(item.extraordinarias)}</td>
                         <td className={`p-2 text-right font-mono ${item.cargos > 0 ? "text-rose-600 font-bold" : ""}`}>
-                          ${item.cargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                          ${formatMoney(item.cargos)}
                         </td>
-                        <td className="p-2 text-right font-mono font-bold text-slate-900 dark:text-white">
-                          ${item.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        <td className="p-2 text-right font-mono font-bold">
+                          {item.total < 0 ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                              -${formatMoney(Math.abs(item.total))}
+                              <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
+                                A favor
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-900 dark:text-white">
+                              ${formatMoney(item.total)}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
                     <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-900 dark:text-white">
                       <td className="p-2">TOTALES</td>
                       <td className="p-2 text-center">100%</td>
-                      <td className="p-2 text-right font-mono">${totalGralDeudaAnt.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                      <td className="p-2 text-right text-emerald-600 font-mono">- ${totalGralPagos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                      <td className="p-2 text-right font-mono">${totalGralSubtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                      <td className="p-2 text-right font-mono">${totalGralOrdinarias.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                      <td className="p-2 text-right font-mono">${totalGralExtra.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                      <td className="p-2 text-right font-mono">${totalGralCargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-mono">${formatMoney(totalGralDeudaAnt)}</td>
+                      <td className="p-2 text-right text-emerald-600 font-mono">- ${formatMoney(totalGralPagos)}</td>
+                      <td className="p-2 text-right font-mono">${formatMoney(totalGralSubtotal)}</td>
+                      <td className="p-2 text-right font-mono">${formatMoney(totalGralOrdinarias)}</td>
+                      <td className="p-2 text-right font-mono">${formatMoney(totalGralExtra)}</td>
+                      <td className="p-2 text-right font-mono">${formatMoney(totalGralCargos)}</td>
                       <td className="p-2 text-right text-emerald-600 dark:text-emerald-400 font-extrabold font-mono">
-                        ${totalGralTotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(totalGralTotal)}
                       </td>
                     </tr>
                   </tbody>

@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     // 4. Cálculos del Motor de Prorrateo
     // Solo se prorratean gastos reales con monto positivo.
     // Solo ajustes de caja contables (_SD o AJUSTE) se excluyen del prorrateo.
-    // Fondos de reserva se prorratean a todos como ordinarias.
+    // Los fondos de reserva y cuotas especiales se liquidan como extraordinarias.
     const gastosProrrateables = gastos.filter(g => {
       const con = (g.concepto || '').toUpperCase();
       const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
@@ -97,16 +97,22 @@ export async function POST(request: Request) {
     });
 
     const totalGastosOrdinarios = gastosProrrateables
-      .filter((g) => g.categoria === "ordinario" || g.categoria === "fondo_comun" || (g.concepto || '').toUpperCase().includes('FONDO') || (g.concepto || '').toUpperCase().includes('RESERVA'))
+      .filter((g) => {
+        const con = (g.concepto || '').toUpperCase();
+        return g.categoria === "ordinario" && !con.includes('FONDO') && !con.includes('RESERVA');
+      })
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const totalGastosExtraordinarios = gastosProrrateables
-      .filter((g) => g.categoria === "extraordinario" && !(g.concepto || '').toUpperCase().includes('FONDO') && !(g.concepto || '').toUpperCase().includes('RESERVA'))
+      .filter((g) => {
+        const con = (g.concepto || '').toUpperCase();
+        return g.categoria === "extraordinario" || g.categoria === "fondo_comun" || con.includes('FONDO') || con.includes('RESERVA');
+      })
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const montoFondoReserva = Math.round(totalGastosOrdinarios * (Number(porcentajeFondoReserva) / 100));
 
-    // Cargos de Fondo de Reserva (se prorratean como ordinarias a todas las UFs)
+    // Cargos de Fondo de Reserva (se liquidan como extraordinarias)
     const cargosFondoReserva = cargos.filter(c => {
       const con = (c.concepto || '').toUpperCase();
       return con.includes('FONDO') || con.includes('RESERVA');
@@ -118,6 +124,7 @@ export async function POST(request: Request) {
       const con = (c.concepto || '').toUpperCase();
       return con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
     });
+    const totalCuotasExtra = cuotasExtra.reduce((acc, c) => acc + Number(c.monto), 0);
 
     // Cargos particulares individuales (multas, etc.)
     const cargosIndividuales = cargos.filter(c => {
@@ -136,15 +143,15 @@ export async function POST(request: Request) {
         },
       },
       update: {
-        totalOrdinarias: totalGastosOrdinarios + totalCargosFondoReserva,
-        totalExtraordinarias: totalGastosExtraordinarios,
+        totalOrdinarias: totalGastosOrdinarios,
+        totalExtraordinarias: totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra,
         totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
       },
       create: {
         periodoMes: Number(periodoMes),
         periodoAnio: Number(periodoAnio),
-        totalOrdinarias: totalGastosOrdinarios + totalCargosFondoReserva,
-        totalExtraordinarias: totalGastosExtraordinarios,
+        totalOrdinarias: totalGastosOrdinarios,
+        totalExtraordinarias: totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra,
         totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
         estado: 'abierto',
       },
@@ -167,24 +174,30 @@ export async function POST(request: Request) {
         .filter((c: any) => c.unidadId === u.id)
         .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
 
-      const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100)) + cargoFondoUf;
-      const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100)) + cuotaExtraUf;
+      const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100));
+      const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100)) + cargoFondoUf + cuotaExtraUf;
       const montoUfCargos = cargoIndivUf;
 
-      // Regla de Negocio 3: Recargo por mora del 7% sobre saldos deudores del período previo vencido
-      const expensaAnterior = await prisma.expensa.findFirst({
+      // Regla de Negocio: Recargo por mora del 7% sobre saldos deudores vencidos de períodos anteriores
+      // subtotal_deuda = deuda_anterior_acumulada - pagos_realizados
+      const pagosHistoricos = await prisma.pagoVecino.aggregate({
         where: {
           unidadId: u.id,
-          periodoMes: mesAnterior,
-          periodoAnio: anioAnterior,
-          estado: { not: 'pagado' },
+          estado: 'aprobado',
+          OR: [
+            { periodoAnio: { lt: Number(periodoAnio) } },
+            { periodoAnio: Number(periodoAnio), periodoMes: { lte: Number(periodoMes) } },
+          ],
         },
+        _sum: { monto: true },
       });
+      const deudaPrevia = Number(u.saldoAnteriorInicial || 0);
+      const pagosAprobados = Number(pagosHistoricos._sum.monto || 0);
+      const subtotalDeuda = deudaPrevia - pagosAprobados;
 
       let moraUf = 0;
-      if (expensaAnterior) {
-        const saldoDeuda = Math.max(0, Number(expensaAnterior.totalPagar) || 0);
-        moraUf = Math.round(saldoDeuda * 0.07);
+      if (subtotalDeuda > 0.01) {
+        moraUf = Math.round(subtotalDeuda * 0.07);
       }
 
       const montoUfTotal = Math.max(0, montoUfOrd + montoUfExt + montoUfCargos + moraUf);

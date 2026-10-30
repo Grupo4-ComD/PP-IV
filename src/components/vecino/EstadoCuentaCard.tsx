@@ -75,11 +75,11 @@ export default function EstadoCuentaCard({
       unidad_id: 3,
       periodo_mes: 10,
       periodo_anio: 2026,
-      monto_ordinario: 19792.00,
-      monto_extraordinario: 13440.00,
+      monto_ordinario: 18850.00,
+      monto_extraordinario: 35840.00,
       monto_cargos: 0,
-      recargo_mora: 0,
-      total_pagar: 33232.00,
+      recargo_mora: 1385.44,
+      total_pagar: 56075.44,
       deuda_anterior: 0,
       pago_registrado: 0,
       fecha_vencimiento: "2026-10-15",
@@ -192,10 +192,14 @@ export default function EstadoCuentaCard({
             <span>Total a Liquidar</span>
           </div>
           <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-            ${expensa.total_pagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            {expensa.total_pagar < 0
+              ? `-${Math.abs(expensa.total_pagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+              : `${expensa.total_pagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
           </div>
           <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/70 mt-1">
-            {expensa.estado === "pagado" ? "Saldo cancelado" : `Importe exigible (Vence ${expensa.fecha_vencimiento})`}
+            {expensa.estado === "pagado" || expensa.total_pagar <= 0
+              ? (expensa.total_pagar < 0 ? `Saldo a favor: $${Math.abs(expensa.total_pagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "Saldo cancelado")
+              : `Importe exigible (Vence ${expensa.fecha_vencimiento})`}
           </p>
         </div>
       </div>

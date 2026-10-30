@@ -122,7 +122,7 @@ export default function GenerarExpensasPage() {
   }, [periodoMes, periodoAnio]);
 
   // Cálculos contables de la liquidación
-  // Fondos de reserva se prorratean como ordinarias a todas las UFs
+  // La reserva de fondo y cuotas especiales se liquidan como EXTRAORDINARIAS
   const gastosProrrateables = gastos.filter(g => {
     const con = (g.concepto || '').toUpperCase();
     const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
@@ -130,21 +130,27 @@ export default function GenerarExpensasPage() {
   });
 
   const totalGastosOrdinarios = gastosProrrateables
-    .filter(g => g.categoria === "ordinario" || g.categoria === "fondo_comun" || (g.concepto || '').toUpperCase().includes('FONDO') || (g.concepto || '').toUpperCase().includes('RESERVA'))
+    .filter(g => {
+      const con = (g.concepto || '').toUpperCase();
+      return g.categoria === "ordinario" && !con.includes('FONDO') && !con.includes('RESERVA');
+    })
     .reduce((acc, g) => acc + Number(g.monto), 0);
 
   const totalGastosExtraordinarios = gastosProrrateables
-    .filter(g => g.categoria === "extraordinario" && !(g.concepto || '').toUpperCase().includes('FONDO') && !(g.concepto || '').toUpperCase().includes('RESERVA'))
+    .filter(g => {
+      const con = (g.concepto || '').toUpperCase();
+      return (g.categoria === "extraordinario" || g.categoria === "fondo_comun" || con.includes('FONDO') || con.includes('RESERVA'));
+    })
     .reduce((acc, g) => acc + Number(g.monto), 0);
 
-  // Cargos de Fondo de Reserva (se prorratean como ordinarias a todas las UFs)
+  // Cargos de Fondo de Reserva (ES EXTRAORDINARIA)
   const cargosFondoReserva = cargos.filter(c => {
     const con = (c.concepto || '').toUpperCase();
     return con.includes('FONDO') || con.includes('RESERVA');
   });
   const totalCargosFondoReserva = cargosFondoReserva.reduce((acc, c) => acc + Number(c.monto), 0);
 
-  // Cuotas Extraordinarias adicionales (que no sean de fondo de reserva)
+  // Cuotas Extraordinarias adicionales
   const cuotasExtra = cargos.filter(c => {
     const con = (c.concepto || '').toUpperCase();
     return con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
@@ -159,8 +165,9 @@ export default function GenerarExpensasPage() {
   const totalCargosParticulares = cargosIndividuales.reduce((acc, c) => acc + Number(c.monto), 0);
 
   const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
-  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva + totalCargosFondoReserva;
-  const totalGeneralProrratear = totalProrratearOrdinario + totalGastosExtraordinarios + totalCuotasExtra;
+  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
+  const totalProrratearExtraordinario = totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra;
+  const totalGeneralProrratear = totalProrratearOrdinario + totalProrratearExtraordinario;
 
   // Agregar gasto a la base de datos
   const handleAgregarGasto = async (e: React.FormEvent) => {
@@ -393,7 +400,7 @@ export default function GenerarExpensasPage() {
                 ${totalProrratearOrdinario.toLocaleString("es-AR")}
               </span>
               <span className="text-[11px] text-slate-400 block mt-0.5">
-                {totalCargosFondoReserva > 0 ? `Incluye Fondo Reserva ($${totalCargosFondoReserva.toLocaleString("es-AR")})` : `Incluye ${porcentajeFondoReserva}% de Fondo de Reserva`}
+                Gastos corrientes de administración y servicios
               </span>
             </div>
           </div>
@@ -405,9 +412,11 @@ export default function GenerarExpensasPage() {
             </div>
             <div className="mt-2">
               <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                ${(totalGastosExtraordinarios + totalCuotasExtra).toLocaleString("es-AR")}
+                ${totalProrratearExtraordinario.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Se prorratea por m2</span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">
+                {totalCargosFondoReserva > 0 ? `Incluye Fondo de Reserva ($${totalCargosFondoReserva.toLocaleString("es-AR")})` : "Obras y cuotas extraordinarias"}
+              </span>
             </div>
           </div>
 
@@ -558,8 +567,8 @@ export default function GenerarExpensasPage() {
                       .filter(c => Number(c.unidadId) === u.id)
                       .reduce((acc, c) => acc + Number(c.monto), 0);
 
-                    const montoUfOrd = Math.round((totalGastosOrdinarios + montoFondoReserva) * (u.porcentual_m2 / 100)) + cargoFondoUf;
-                    const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100)) + cuotaExtraUf;
+                    const montoUfOrd = Math.round(totalProrratearOrdinario * (u.porcentual_m2 / 100));
+                    const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100)) + cargoFondoUf + cuotaExtraUf;
                     const montoUfTotal = montoUfOrd + montoUfExt + cargoIndivUf;
 
                     return (
@@ -603,7 +612,7 @@ export default function GenerarExpensasPage() {
                       ${totalProrratearOrdinario.toLocaleString("es-AR")}
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-white">
-                      ${(totalGastosExtraordinarios + totalCuotasExtra).toLocaleString("es-AR")}
+                      ${totalProrratearExtraordinario.toLocaleString("es-AR")}
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-rose-500">
                       ${totalCargosParticulares.toLocaleString("es-AR")}

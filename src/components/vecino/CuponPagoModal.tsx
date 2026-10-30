@@ -196,13 +196,12 @@ export default function CuponPagoModal({
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(255, 255, 255);
-      doc.text("TOTAL A PAGAR:", 22, finalY + 13.5);
-      doc.text(
-        `$ ${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-        188,
-        finalY + 13.5,
-        { align: "right" }
-      );
+      const textoEtiqueta = cupon.totalPagar < 0 ? "SALDO A FAVOR (ACREDITADO):" : "TOTAL A PAGAR:";
+      const textoMonto = cupon.totalPagar < 0
+        ? `- $ ${Math.abs(cupon.totalPagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+        : `$ ${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+      doc.text(textoEtiqueta, 22, finalY + 13.5);
+      doc.text(textoMonto, 188, finalY + 13.5, { align: "right" });
 
       // Bloque de Notas e Información de Pago
       doc.setTextColor(30, 41, 59);
@@ -373,9 +372,13 @@ export default function CuponPagoModal({
 
             {/* Barra de TOTAL A PAGAR */}
             <div className="bg-slate-900 text-white rounded-lg p-3.5 flex items-center justify-between shadow-md">
-              <span className="font-bold tracking-wide text-xs sm:text-sm">TOTAL A PAGAR:</span>
+              <span className="font-bold tracking-wide text-xs sm:text-sm">
+                {cupon.totalPagar < 0 ? "SALDO A FAVOR (ACREDITADO):" : "TOTAL A PAGAR:"}
+              </span>
               <span className="font-extrabold text-lg sm:text-xl text-emerald-400">
-                ${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                {cupon.totalPagar < 0
+                  ? `- ${Math.abs(cupon.totalPagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+                  : `${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
               </span>
             </div>
 
