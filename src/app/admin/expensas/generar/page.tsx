@@ -57,7 +57,6 @@ export default function GenerarExpensasPage() {
   const [nuevoMonto, setNuevoMonto] = useState("");
   const [nuevoRubro, setNuevoRubro] = useState("Servicios Públicos");
 
-  const [porcentajeFondoReserva, setPorcentajeFondoReserva] = useState(5.0); // 5% por defecto
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -164,8 +163,7 @@ export default function GenerarExpensasPage() {
   });
   const totalCargosParticulares = cargosIndividuales.reduce((acc, c) => acc + Number(c.monto), 0);
 
-  const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
-  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
+  const totalProrratearOrdinario = totalGastosOrdinarios;
   const totalProrratearExtraordinario = totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra;
   const totalGeneralProrratear = totalProrratearOrdinario + totalProrratearExtraordinario;
 
@@ -233,7 +231,6 @@ export default function GenerarExpensasPage() {
           periodoMes, 
           periodoAnio, 
           fechaVencimiento,
-          porcentajeFondoReserva,
           forceOverride
         })
       });
@@ -367,7 +364,7 @@ export default function GenerarExpensasPage() {
                   2. Coeficientes m2 (100%)
                 </span>
                 <span className="text-[11px] text-slate-500 truncate block">
-                  Prorrateo 9 UFs + Fondo Reserva ({porcentajeFondoReserva}%)
+                  Prorrateo 9 UFs según Coeficiente m2
                 </span>
               </div>
             </div>

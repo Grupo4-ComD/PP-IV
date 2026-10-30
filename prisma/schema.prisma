@@ -388,3 +388,16 @@ model Mantenimiento {
   @@map("mantenimientos")
 }
 
+
+model ConfiguracionConsorcio {
+  id                       BigInt   @id @default(autoincrement())
+  tasaInteresMora          Decimal  @default(7.00) @map("tasa_interes_mora") @db.Decimal(5, 2)
+  comisionPasarelaMp       Decimal  @default(0.60) @map("comision_pasarela_mp") @db.Decimal(5, 2)
+  montoMultaLimpieza       Decimal  @default(24000.00) @map("monto_multa_limpieza") @db.Decimal(12, 2)
+  umbralConsensoPorcentaje Decimal  @default(33.33) @map("umbral_consenso_porcentaje") @db.Decimal(5, 2)
+  diasVencimientoExpensas  Int      @default(15) @map("dias_vencimiento_expensas")
+  montoFondoReserva        Decimal  @default(200000.00) @map("monto_fondo_reserva") @db.Decimal(12, 2)
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("configuracion_consorcio")
+}

@@ -10,12 +10,13 @@ CREATE TABLE IF NOT EXISTS public.configuracion_consorcio (
     monto_multa_limpieza NUMERIC(12, 2) NOT NULL DEFAULT 24000.00,
     umbral_consenso_porcentaje NUMERIC(5, 2) NOT NULL DEFAULT 33.33,
     dias_vencimiento_expensas INT NOT NULL DEFAULT 15,
+    monto_fondo_reserva NUMERIC(12, 2) NOT NULL DEFAULT 200000.00,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Insertar configuración inicial por defecto (ID = 1)
-INSERT INTO public.configuracion_consorcio (id, tasa_interes_mora, comision_pasarela_mp, monto_multa_limpieza, umbral_consenso_porcentaje, dias_vencimiento_expensas)
-VALUES (1, 7.00, 0.60, 24000.00, 33.33, 15)
+INSERT INTO public.configuracion_consorcio (id, tasa_interes_mora, comision_pasarela_mp, monto_multa_limpieza, umbral_consenso_porcentaje, dias_vencimiento_expensas, monto_fondo_reserva)
+VALUES (1, 7.00, 0.60, 24000.00, 33.33, 15, 200000.00)
 ON CONFLICT (id) DO NOTHING;
 
 -- Habilitar RLS

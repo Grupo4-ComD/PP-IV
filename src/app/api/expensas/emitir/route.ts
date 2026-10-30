@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!isAdmin) return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
 
     // 2. Obtener parámetros
-    const { periodoMes, periodoAnio, fechaVencimiento, porcentajeFondoReserva = 5.0, forceOverride = false } = await request.json();
+    const { periodoMes, periodoAnio, fechaVencimiento, forceOverride = false } = await request.json();
 
     // 2.1 Verificar si el período fue cerrado/bloqueado por seguridad contable (RF-08)
     const periodoExistente = await prisma.periodoFinalizado.findUnique({
@@ -110,7 +110,6 @@ export async function POST(request: Request) {
       })
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
-    const montoFondoReserva = Math.round(totalGastosOrdinarios * (Number(porcentajeFondoReserva) / 100));
 
     // Cargos de Fondo de Reserva (se liquidan como extraordinarias)
     const cargosFondoReserva = cargos.filter(c => {
@@ -132,7 +131,7 @@ export async function POST(request: Request) {
       return !con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
     });
 
-    const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
+    const totalProrratearOrdinario = totalGastosOrdinarios;
 
     // 5. Crear o actualizar el registro oficial de PeriodoFinalizado (RF-08)
     const periodoFinalizado = await prisma.periodoFinalizado.upsert({
@@ -145,14 +144,14 @@ export async function POST(request: Request) {
       update: {
         totalOrdinarias: totalGastosOrdinarios,
         totalExtraordinarias: totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra,
-        totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
+        totalFondoReserva: totalCargosFondoReserva,
       },
       create: {
         periodoMes: Number(periodoMes),
         periodoAnio: Number(periodoAnio),
         totalOrdinarias: totalGastosOrdinarios,
         totalExtraordinarias: totalGastosExtraordinarios + totalCargosFondoReserva + totalCuotasExtra,
-        totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
+        totalFondoReserva: totalCargosFondoReserva,
         estado: 'abierto',
       },
     });

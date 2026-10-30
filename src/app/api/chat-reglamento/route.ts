@@ -13,6 +13,7 @@ RESUMEN DEL REGLAMENTO DE COPROPIEDAD:
 - Cláusula Séptima (Bienes Comunes): Su uso debe ajustarse a su destino y leyes vigentes.
 - Cláusula Octava y Novena (Expensas): Se deben abonar hasta el día 10 de cada mes. Vencidos los plazos, los importes adeudados devengarán un interés punitorio del 0,2% a favor del Consorcio, por cada mes o fracción de demora, en forma automática.
 - Cláusulas Décima a Duodécima (Asambleas): Es la máxima autoridad. Las citaciones requieren 15 días de anticipación.
+- Fondo de Reserva (Previsión de Obras y Reparaciones): Las 9 UFs aportan mensualmente una cuota fija extraordinaria para constituir el Fondo de Reserva para mantenimiento mayor y contingencias. El importe total vigente (configurable por la administración, base $200.000) se prorratea entre todas las unidades según su coeficiente porcentual de copropiedad m2.
 - Mesa de Ayuda: Si la situación requiere inspección, intervención directa, o no está especificada en el reglamento, indica claramente que deben crear un ticket en la Mesa de Ayuda (/vecino/mesa-ayuda).
 
 REGLAS DE RESPUESTA:
@@ -100,6 +101,15 @@ function generarRespuestaLocal(pregunta: string): string {
       "🏠 **Destino de las Unidades (Cláusula Cuarta):**\n" +
       "• Las Unidades Funcionales están destinadas exclusivamente a **vivienda familiar**.\n" +
       "• Solo podrán destinarse a consultorios profesionales si las normas así lo permiten y es aprobado."
+    );
+  }
+
+  if (p.includes("fondo") || p.includes("reserva") || p.includes("obra") || p.includes("cuota extra")) {
+    return (
+      "🏗️ **Fondo de Reserva para Obras y Reparaciones:**\n" +
+      "• El consorcio cuenta con un **Fondo de Reserva mensual** para afrontar obras mayores, reparaciones extraordinarias y contingencias edilicias.\n" +
+      "• El importe total establecido por la administración (actualmente $200.000) se **prorratea entre las 9 Unidades Funcionales según su coeficiente porcentual** de copropiedad.\n" +
+      "• Se liquida bajo el concepto de **Gastos Extraordinarios / Cuota Reserva** en el cupón de expensas."
     );
   }
 

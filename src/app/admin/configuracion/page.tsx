@@ -34,6 +34,7 @@ interface ConfigData {
   monto_multa_limpieza: number;
   umbral_consenso_porcentaje: number;
   dias_vencimiento_expensas: number;
+  monto_fondo_reserva: number;
 }
 
 const DEFAULT_CONFIG: ConfigData = {
@@ -42,6 +43,7 @@ const DEFAULT_CONFIG: ConfigData = {
   monto_multa_limpieza: 24000.0,
   umbral_consenso_porcentaje: 33.33,
   dias_vencimiento_expensas: 15,
+  monto_fondo_reserva: 200000.0,
 };
 
 export default function AdminConfiguracionPage() {
@@ -99,6 +101,7 @@ export default function AdminConfiguracionPage() {
             monto_multa_limpieza: Number(data.monto_multa_limpieza) || DEFAULT_CONFIG.monto_multa_limpieza,
             umbral_consenso_porcentaje: Number(data.umbral_consenso_porcentaje) || DEFAULT_CONFIG.umbral_consenso_porcentaje,
             dias_vencimiento_expensas: Number(data.dias_vencimiento_expensas) || DEFAULT_CONFIG.dias_vencimiento_expensas,
+            monto_fondo_reserva: Number(data.monto_fondo_reserva) || DEFAULT_CONFIG.monto_fondo_reserva,
           });
         } else {
           const localStored = localStorage.getItem("calle425_config");
@@ -133,10 +136,16 @@ export default function AdminConfiguracionPage() {
           monto_multa_limpieza: config.monto_multa_limpieza,
           umbral_consenso_porcentaje: config.umbral_consenso_porcentaje,
           dias_vencimiento_expensas: config.dias_vencimiento_expensas,
+          monto_fondo_reserva: config.monto_fondo_reserva,
           updated_at: new Date().toISOString(),
         });
 
       localStorage.setItem("calle425_config", JSON.stringify(config));
+      fetch("/api/configuracion", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config)
+      }).catch(console.error);
 
       if (error) {
         setSuccessMsg("¡Parámetros guardados y sincronizados localmente con éxito!");
@@ -726,6 +735,74 @@ export default function AdminConfiguracionPage() {
                   </div>
                 </div>
               </div>
+              {/* 5. Fondo de Reserva Mensual (Obras & Contingencias) */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between gap-4 md:col-span-2">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                          Fondo de Reserva Mensual (Cuota Obras)
+                        </h2>
+                        <span className="text-[11px] text-slate-400">Importe extraordinario fijo prorrateado entre las 9 UFs</span>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold font-mono">
+                      ${config.monto_fondo_reserva.toLocaleString("es-AR")}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">
+                    Monto total establecido por la administración para el fondo de reserva y obras edilicias. Se prorratea según el porcentual de copropiedad de cada unidad en la liquidación de expensas.
+                  </p>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3.5 top-2.5 text-xs text-slate-400 font-bold">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="2000000"
+                        step="5000"
+                        value={config.monto_fondo_reserva}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            monto_fondo_reserva: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full h-10 pl-8 pr-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Simulador de Prorrateo del Fondo */}
+                  <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40 text-[11px] text-emerald-900 dark:text-emerald-300">
+                    <span className="font-bold block mb-1.5 text-emerald-800 dark:text-emerald-200">
+                      Distribución según Coeficiente de Copropiedad:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono">
+                      <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/50">
+                        <span className="text-[10px] text-slate-400 block font-sans">UF 1 y 2 (7.60%):</span>
+                        <strong>${Math.round(config.monto_fondo_reserva * 0.076).toLocaleString("es-AR")}</strong>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/50">
+                        <span className="text-[10px] text-slate-400 block font-sans">UF 3 (11.20%):</span>
+                        <strong>${Math.round(config.monto_fondo_reserva * 0.112).toLocaleString("es-AR")}</strong>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/50">
+                        <span className="text-[10px] text-slate-400 block font-sans">UF 7 y 8 (15.70%):</span>
+                        <strong>${Math.round(config.monto_fondo_reserva * 0.157).toLocaleString("es-AR")}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Parámetro Adicional: Día de vencimiento */}
@@ -851,6 +928,15 @@ export default function AdminConfiguracionPage() {
                 </h3>
                 <p className="text-slate-600 dark:text-slate-300">
                   Las mudanzas deben coordinarse con 48 hs de anticipación. Para cualquier incidente no tipificado, la IA instruye al vecino abrir un ticket en la Mesa de Ayuda ITIL.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-500" />
+                  <span>5. Fondo de Reserva para Obras & Mantenimiento Mayor</span>
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Las 9 UFs aportan mensualmente una cuota extraordinaria fija (actualmente configurable, base <strong>${config.monto_fondo_reserva.toLocaleString("es-AR")}</strong>) que se prorratea según el porcentual de copropiedad de cada unidad. Este fondo se acumula para refacciones edilicias, reparaciones extraordinarias o proyectos votados en asamblea.
                 </p>
               </div>
             </div>
