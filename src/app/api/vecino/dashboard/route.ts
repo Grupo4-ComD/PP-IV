@@ -86,6 +86,7 @@ export async function GET(request: Request) {
         },
       });
       const deudaAnterior = expensasPreviasImpagas.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+      const saldoNetoPeriodo = Math.round((Number(ultimaExpensa.totalPagar) + deudaAnterior - pagoRegistrado) * 100) / 100;
 
       expensaRes = {
         id: ultimaExpensa.id.toString(),
@@ -96,7 +97,7 @@ export async function GET(request: Request) {
         monto_extraordinario: Number(ultimaExpensa.montoExtraordinario),
         monto_cargos: Number(ultimaExpensa.montoCargos),
         recargo_mora: Number(ultimaExpensa.recargoMora),
-        total_pagar: Number(ultimaExpensa.totalPagar),
+        total_pagar: pagoRegistrado > 0 || ultimaExpensa.estado === 'pagado' ? saldoNetoPeriodo : Number(ultimaExpensa.totalPagar),
         deuda_anterior: deudaAnterior,
         pago_registrado: pagoRegistrado,
         fecha_vencimiento: ultimaExpensa.fechaVencimiento.toISOString().split('T')[0],

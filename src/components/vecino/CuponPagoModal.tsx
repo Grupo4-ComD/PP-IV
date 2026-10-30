@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Receipt,
   ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -79,6 +80,9 @@ export default function CuponPagoModal({
   };
 
   const cargosPeriodoActual = cupon.gastosOrdinarios + cupon.gastosExtraordinarios + cupon.cargosActuales;
+  const saldoNetoCalculado = Math.round((cargosPeriodoActual + cupon.deudaAnterior - cupon.pagoRegistrado) * 100) / 100;
+  const saldoFinalCupon = cupon.pagoRegistrado > 0 ? saldoNetoCalculado : cupon.totalPagar;
+  const estaAlDia = saldoFinalCupon <= 0;
 
   const copyAlias = () => {
     navigator.clipboard.writeText(cupon.alias);
@@ -87,6 +91,7 @@ export default function CuponPagoModal({
   };
 
   const simularPagoMercadoPago = async () => {
+    if (estaAlDia) return;
     setPagandoMp(true);
     try {
       if (unidadId && expensaId) {
@@ -97,8 +102,8 @@ export default function CuponPagoModal({
           body: JSON.stringify({
             unidadId,
             expensaId,
-            monto: cupon.totalPagar,
-            montoBruto: cupon.totalPagar,
+            monto: Math.max(0, saldoFinalCupon),
+            montoBruto: Math.max(0, saldoFinalCupon),
             periodoMes: periodoMes || cupon.anio,
             periodoAnio: periodoAnio || cupon.anio,
             comprobanteUrl: "https://mercadopago.com/comprobante-simulado-mp.pdf",
@@ -229,10 +234,18 @@ export default function CuponPagoModal({
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(255, 255, 255);
-      const textoEtiqueta = cupon.totalPagar < 0 ? "SALDO A FAVOR (ACREDITADO):" : "TOTAL A PAGAR:";
-      const textoMonto = cupon.totalPagar < 0
-        ? `- $ ${Math.abs(cupon.totalPagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
-        : `$ ${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+      const textoEtiqueta =
+        saldoFinalCupon < 0
+          ? "SALDO A FAVOR (ACREDITADO):"
+          : estaAlDia
+          ? "TOTAL A PAGAR (EXPENSA SALDADA):"
+          : "TOTAL A PAGAR:";
+      const textoMonto =
+        saldoFinalCupon < 0
+          ? `- $ ${Math.abs(saldoFinalCupon).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+          : estaAlDia
+          ? "$ 0,00"
+          : `$ ${saldoFinalCupon.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
       doc.text(textoEtiqueta, 22, finalY + 13.5);
       doc.text(textoMonto, 188, finalY + 13.5, { align: "right" });
 
@@ -404,14 +417,30 @@ export default function CuponPagoModal({
             </div>
 
             {/* Barra de TOTAL A PAGAR */}
-            <div className="bg-slate-900 text-white rounded-lg p-3.5 flex items-center justify-between shadow-md">
+            <div
+              className={`rounded-lg p-3.5 flex items-center justify-between shadow-md ${
+                estaAlDia
+                  ? "bg-slate-900 border border-emerald-500/50 text-white"
+                  : "bg-slate-900 text-white"
+              }`}
+            >
               <span className="font-bold tracking-wide text-xs sm:text-sm">
-                {cupon.totalPagar < 0 ? "SALDO A FAVOR (ACREDITADO):" : "TOTAL A PAGAR:"}
+                {saldoFinalCupon < 0
+                  ? "SALDO A FAVOR (ACREDITADO):"
+                  : estaAlDia
+                  ? "TOTAL A PAGAR (EXPENSA SALDADA):"
+                  : "TOTAL A PAGAR:"}
               </span>
-              <span className="font-extrabold text-lg sm:text-xl text-emerald-400">
-                {cupon.totalPagar < 0
-                  ? `- ${Math.abs(cupon.totalPagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
-                  : `${cupon.totalPagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
+              <span
+                className={`font-extrabold text-lg sm:text-xl ${
+                  saldoFinalCupon < 0 || estaAlDia ? "text-emerald-400" : "text-white"
+                }`}
+              >
+                {saldoFinalCupon < 0
+                  ? `- ${Math.abs(saldoFinalCupon).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+                  : estaAlDia
+                  ? "$ 0,00"
+                  : `${saldoFinalCupon.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
               </span>
             </div>
 
@@ -447,19 +476,34 @@ export default function CuponPagoModal({
                 </div>
               </div>
 
-              {/* Box Mercado Pago QR */}
-              <div className="border border-sky-300 dark:border-sky-800/60 rounded-xl p-3 bg-sky-50/50 dark:bg-sky-950/20 text-center flex flex-col items-center justify-center space-y-1.5">
-                <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
-                  Pagar con Mercado Pago
-                </span>
-                <div className="w-20 h-20 bg-sky-500 rounded-lg flex items-center justify-center text-white shadow-xs">
-                  <div className="text-center">
-                    <QrCode className="w-8 h-8 mx-auto" />
-                    <span className="text-[9px] font-bold block mt-0.5">QR PAGO</span>
+              {/* Box Mercado Pago QR o Estado Acreditado */}
+              {estaAlDia ? (
+                <div className="border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-3 bg-emerald-50/50 dark:bg-emerald-950/20 text-center flex flex-col items-center justify-center space-y-1.5">
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    Estado de Pago
+                  </span>
+                  <div className="w-20 h-20 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-xs">
+                    <div className="text-center">
+                      <CheckCircle2 className="w-8 h-8 mx-auto" />
+                      <span className="text-[9px] font-bold block mt-0.5">AL DÍA</span>
+                    </div>
                   </div>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Expensa Cancelada</span>
                 </div>
-                <span className="text-[10px] text-slate-400">Escanea para transferir</span>
-              </div>
+              ) : (
+                <div className="border border-sky-300 dark:border-sky-800/60 rounded-xl p-3 bg-sky-50/50 dark:bg-sky-950/20 text-center flex flex-col items-center justify-center space-y-1.5">
+                  <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                    Pagar con Mercado Pago
+                  </span>
+                  <div className="w-20 h-20 bg-sky-500 rounded-lg flex items-center justify-center text-white shadow-xs">
+                    <div className="text-center">
+                      <QrCode className="w-8 h-8 mx-auto" />
+                      <span className="text-[9px] font-bold block mt-0.5">QR PAGO</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Escanea para transferir</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -483,19 +527,23 @@ export default function CuponPagoModal({
             </button>
             <button
               onClick={simularPagoMercadoPago}
-              disabled={pagandoMp || pagoExitoso}
-              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-md cursor-pointer ${
-                pagoExitoso
-                  ? "bg-emerald-600 text-white"
-                  : "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/25"
+              disabled={pagandoMp || pagoExitoso || estaAlDia}
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-md ${
+                estaAlDia || pagoExitoso
+                  ? "bg-emerald-600 text-white cursor-default"
+                  : "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/25 cursor-pointer"
               }`}
             >
-              <CreditCard className="w-4 h-4" />
+              {estaAlDia || pagoExitoso ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <CreditCard className="w-4 h-4" />
+              )}
               <span>
                 {pagandoMp
                   ? "Procesando en Mercado Pago..."
-                  : pagoExitoso
-                  ? "¡Pago Registrado!"
+                  : estaAlDia || pagoExitoso
+                  ? "¡Expensa al Día (Abonada)!"
                   : "Pagar con Mercado Pago"}
               </span>
             </button>
