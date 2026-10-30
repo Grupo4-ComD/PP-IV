@@ -393,6 +393,7 @@ export default function LiquidacionExpensasPage() {
         {/* Modal de Liquidación Consolidada */}
         <LiquidacionConsolidadaModal
           isOpen={isLiquidacionModalOpen}
+          periodo={`${String(periodoActivo.mes).padStart(2, "0")} / ${periodoActivo.anio}`}
           onClose={() => setIsLiquidacionModalOpen(false)}
         />
 

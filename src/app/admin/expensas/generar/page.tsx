@@ -42,10 +42,13 @@ export default function GenerarExpensasPage() {
   const [periodoMes, setPeriodoMes] = useState<number>(new Date().getMonth() + 1);
   const [periodoAnio, setPeriodoAnio] = useState<number>(new Date().getFullYear());
   const [fechaVencimiento, setFechaVencimiento] = useState<string>(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 15)
-      .toISOString()
-      .split("T")[0]
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-15`
   );
+
+  // Sincronizar fecha de vencimiento automáticamente al cambiar el período
+  useEffect(() => {
+    setFechaVencimiento(`${periodoAnio}-${String(periodoMes).padStart(2, "0")}-15`);
+  }, [periodoMes, periodoAnio]);
 
   // Gastos y cargos cargados para el período desde la BD
   const [gastos, setGastos] = useState<any[]>([]);
@@ -119,19 +122,45 @@ export default function GenerarExpensasPage() {
   }, [periodoMes, periodoAnio]);
 
   // Cálculos contables de la liquidación
-  const totalGastosOrdinarios = gastos
-    .filter(g => g.categoria === "ordinario")
+  // Fondos de reserva se prorratean como ordinarias a todas las UFs
+  const gastosProrrateables = gastos.filter(g => {
+    const con = (g.concepto || '').toUpperCase();
+    const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
+    return !esAjusteCaja && Number(g.monto) > 0;
+  });
+
+  const totalGastosOrdinarios = gastosProrrateables
+    .filter(g => g.categoria === "ordinario" || g.categoria === "fondo_comun" || (g.concepto || '').toUpperCase().includes('FONDO') || (g.concepto || '').toUpperCase().includes('RESERVA'))
     .reduce((acc, g) => acc + Number(g.monto), 0);
 
-  const totalGastosExtraordinarios = gastos
-    .filter(g => g.categoria === "extraordinario" || g.categoria === "fondo_comun")
+  const totalGastosExtraordinarios = gastosProrrateables
+    .filter(g => g.categoria === "extraordinario" && !(g.concepto || '').toUpperCase().includes('FONDO') && !(g.concepto || '').toUpperCase().includes('RESERVA'))
     .reduce((acc, g) => acc + Number(g.monto), 0);
 
-  const totalCargosParticulares = cargos.reduce((acc, c) => acc + Number(c.monto), 0);
+  // Cargos de Fondo de Reserva (se prorratean como ordinarias a todas las UFs)
+  const cargosFondoReserva = cargos.filter(c => {
+    const con = (c.concepto || '').toUpperCase();
+    return con.includes('FONDO') || con.includes('RESERVA');
+  });
+  const totalCargosFondoReserva = cargosFondoReserva.reduce((acc, c) => acc + Number(c.monto), 0);
+
+  // Cuotas Extraordinarias adicionales (que no sean de fondo de reserva)
+  const cuotasExtra = cargos.filter(c => {
+    const con = (c.concepto || '').toUpperCase();
+    return con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
+  });
+  const totalCuotasExtra = cuotasExtra.reduce((acc, c) => acc + Number(c.monto), 0);
+
+  // Cargos particulares individuales exclusivos (multas, etc.)
+  const cargosIndividuales = cargos.filter(c => {
+    const con = (c.concepto || '').toUpperCase();
+    return !con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
+  });
+  const totalCargosParticulares = cargosIndividuales.reduce((acc, c) => acc + Number(c.monto), 0);
 
   const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
-  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
-  const totalGeneralProrratear = totalProrratearOrdinario + totalGastosExtraordinarios;
+  const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva + totalCargosFondoReserva;
+  const totalGeneralProrratear = totalProrratearOrdinario + totalGastosExtraordinarios + totalCuotasExtra;
 
   // Agregar gasto a la base de datos
   const handleAgregarGasto = async (e: React.FormEvent) => {
@@ -363,7 +392,9 @@ export default function GenerarExpensasPage() {
               <span className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
                 ${totalProrratearOrdinario.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Incluye {porcentajeFondoReserva}% de Fondo de Reserva</span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">
+                {totalCargosFondoReserva > 0 ? `Incluye Fondo Reserva ($${totalCargosFondoReserva.toLocaleString("es-AR")})` : `Incluye ${porcentajeFondoReserva}% de Fondo de Reserva`}
+              </span>
             </div>
           </div>
 
@@ -374,7 +405,7 @@ export default function GenerarExpensasPage() {
             </div>
             <div className="mt-2">
               <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                ${totalGastosExtraordinarios.toLocaleString("es-AR")}
+                ${(totalGastosExtraordinarios + totalCuotasExtra).toLocaleString("es-AR")}
               </span>
               <span className="text-[11px] text-slate-400 block mt-0.5">Se prorratea por m2</span>
             </div>
@@ -389,7 +420,7 @@ export default function GenerarExpensasPage() {
               <span className="text-2xl font-bold text-rose-600 dark:text-rose-400 font-mono">
                 ${totalCargosParticulares.toLocaleString("es-AR")}
               </span>
-              <span className="text-[11px] text-rose-600 font-semibold block mt-0.5">Multas y reparaciones exclusivas (No prorrateable)</span>
+              <span className="text-[11px] text-rose-600 font-semibold block mt-0.5">Multas y cargos exclusivos (No prorrateable)</span>
             </div>
           </div>
 
@@ -517,10 +548,19 @@ export default function GenerarExpensasPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {unidades.map((u) => {
-                    const montoUfOrd = Math.round(totalProrratearOrdinario * (u.porcentual_m2 / 100));
-                    const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100));
-                    const cargosUf = cargos.filter(c => Number(c.unidadId) === u.id).reduce((acc, c) => acc + Number(c.monto), 0);
-                    const montoUfTotal = montoUfOrd + montoUfExt + cargosUf;
+                    const cargoFondoUf = cargosFondoReserva
+                      .filter(c => Number(c.unidadId) === u.id)
+                      .reduce((acc, c) => acc + Number(c.monto), 0);
+                    const cuotaExtraUf = cuotasExtra
+                      .filter(c => Number(c.unidadId) === u.id)
+                      .reduce((acc, c) => acc + Number(c.monto), 0);
+                    const cargoIndivUf = cargosIndividuales
+                      .filter(c => Number(c.unidadId) === u.id)
+                      .reduce((acc, c) => acc + Number(c.monto), 0);
+
+                    const montoUfOrd = Math.round((totalGastosOrdinarios + montoFondoReserva) * (u.porcentual_m2 / 100)) + cargoFondoUf;
+                    const montoUfExt = Math.round(totalGastosExtraordinarios * (u.porcentual_m2 / 100)) + cuotaExtraUf;
+                    const montoUfTotal = montoUfOrd + montoUfExt + cargoIndivUf;
 
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-950/60 transition">
@@ -542,7 +582,7 @@ export default function GenerarExpensasPage() {
                           ${montoUfExt.toLocaleString("es-AR")}
                         </td>
                         <td className="px-3 py-3 text-right font-mono text-rose-500">
-                          {cargosUf > 0 ? `$${cargosUf.toLocaleString("es-AR")}` : "-"}
+                          {cargoIndivUf > 0 ? `$${cargoIndivUf.toLocaleString("es-AR")}` : "-"}
                         </td>
                         <td className="px-3 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           ${montoUfTotal.toLocaleString("es-AR")}
@@ -563,7 +603,7 @@ export default function GenerarExpensasPage() {
                       ${totalProrratearOrdinario.toLocaleString("es-AR")}
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-white">
-                      ${totalGastosExtraordinarios.toLocaleString("es-AR")}
+                      ${(totalGastosExtraordinarios + totalCuotasExtra).toLocaleString("es-AR")}
                     </td>
                     <td className="px-3 py-3 text-right font-mono text-rose-500">
                       ${totalCargosParticulares.toLocaleString("es-AR")}

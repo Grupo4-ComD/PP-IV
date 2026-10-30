@@ -391,7 +391,7 @@ export default function CuponPagoModal({
                   desde el botón del panel.
                 </p>
                 <p>
-                  • El pago después del <strong>día 10</strong> genera intereses por mora (7%) en la
+                  • El pago después de la fecha de vencimiento (<strong>{cupon.vencimiento}</strong>) genera intereses por mora (7%) en la
                   siguiente liquidación.
                 </p>
                 <div className="pt-2">

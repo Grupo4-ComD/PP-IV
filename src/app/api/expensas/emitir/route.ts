@@ -88,22 +88,43 @@ export async function POST(request: Request) {
 
     // 4. Cálculos del Motor de Prorrateo
     // Solo se prorratean gastos reales con monto positivo.
-    // Conceptos que contengan 'FONDO', 'RESERVA', 'AJUSTE' o '_SD' no se suman al prorrateo regular.
+    // Solo ajustes de caja contables (_SD o AJUSTE) se excluyen del prorrateo.
+    // Fondos de reserva se prorratean a todos como ordinarias.
     const gastosProrrateables = gastos.filter(g => {
       const con = (g.concepto || '').toUpperCase();
-      const esEspecial = con.includes('AJUSTE') || con.includes('FONDO') || con.includes('RESERVA') || con.includes('_SD');
-      return !esEspecial && Number(g.monto) > 0;
+      const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
+      return !esAjusteCaja && Number(g.monto) > 0;
     });
 
     const totalGastosOrdinarios = gastosProrrateables
-      .filter((g) => g.categoria === "ordinario")
+      .filter((g) => g.categoria === "ordinario" || g.categoria === "fondo_comun" || (g.concepto || '').toUpperCase().includes('FONDO') || (g.concepto || '').toUpperCase().includes('RESERVA'))
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const totalGastosExtraordinarios = gastosProrrateables
-      .filter((g) => g.categoria === "extraordinario")
+      .filter((g) => g.categoria === "extraordinario" && !(g.concepto || '').toUpperCase().includes('FONDO') && !(g.concepto || '').toUpperCase().includes('RESERVA'))
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
     const montoFondoReserva = Math.round(totalGastosOrdinarios * (Number(porcentajeFondoReserva) / 100));
+
+    // Cargos de Fondo de Reserva (se prorratean como ordinarias a todas las UFs)
+    const cargosFondoReserva = cargos.filter(c => {
+      const con = (c.concepto || '').toUpperCase();
+      return con.includes('FONDO') || con.includes('RESERVA');
+    });
+    const totalCargosFondoReserva = cargosFondoReserva.reduce((acc, c) => acc + Number(c.monto), 0);
+
+    // Cuotas extraordinarias adicionales (que no sean de fondo de reserva)
+    const cuotasExtra = cargos.filter(c => {
+      const con = (c.concepto || '').toUpperCase();
+      return con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
+    });
+
+    // Cargos particulares individuales (multas, etc.)
+    const cargosIndividuales = cargos.filter(c => {
+      const con = (c.concepto || '').toUpperCase();
+      return !con.includes('CUOTA') && !con.includes('FONDO') && !con.includes('RESERVA');
+    });
+
     const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
 
     // 5. Crear o actualizar el registro oficial de PeriodoFinalizado (RF-08)
@@ -115,16 +136,16 @@ export async function POST(request: Request) {
         },
       },
       update: {
-        totalOrdinarias: totalGastosOrdinarios,
+        totalOrdinarias: totalGastosOrdinarios + totalCargosFondoReserva,
         totalExtraordinarias: totalGastosExtraordinarios,
-        totalFondoReserva: montoFondoReserva,
+        totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
       },
       create: {
         periodoMes: Number(periodoMes),
         periodoAnio: Number(periodoAnio),
-        totalOrdinarias: totalGastosOrdinarios,
+        totalOrdinarias: totalGastosOrdinarios + totalCargosFondoReserva,
         totalExtraordinarias: totalGastosExtraordinarios,
-        totalFondoReserva: montoFondoReserva,
+        totalFondoReserva: montoFondoReserva + totalCargosFondoReserva,
         estado: 'abierto',
       },
     });
@@ -134,11 +155,21 @@ export async function POST(request: Request) {
     const anioAnterior = Number(periodoMes) === 1 ? Number(periodoAnio) - 1 : Number(periodoAnio);
 
     for (const u of unidades) {
-      const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100));
-      const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100));
-      const cargosUf = cargos
+      const cargoFondoUf = cargosFondoReserva
         .filter((c: any) => c.unidadId === u.id)
         .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
+
+      const cuotaExtraUf = cuotasExtra
+        .filter((c: any) => c.unidadId === u.id)
+        .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
+
+      const cargoIndivUf = cargosIndividuales
+        .filter((c: any) => c.unidadId === u.id)
+        .reduce((acc: number, c: any) => acc + Number(c.monto), 0);
+
+      const montoUfOrd = Math.round(totalProrratearOrdinario * (Number(u.coeficienteProrrateo) / 100)) + cargoFondoUf;
+      const montoUfExt = Math.round(totalGastosExtraordinarios * (Number(u.coeficienteProrrateo) / 100)) + cuotaExtraUf;
+      const montoUfCargos = cargoIndivUf;
 
       // Regla de Negocio 3: Recargo por mora del 7% sobre saldos deudores del período previo vencido
       const expensaAnterior = await prisma.expensa.findFirst({
@@ -156,7 +187,7 @@ export async function POST(request: Request) {
         moraUf = Math.round(saldoDeuda * 0.07);
       }
 
-      const montoUfTotal = Math.max(0, montoUfOrd + montoUfExt + cargosUf + moraUf);
+      const montoUfTotal = Math.max(0, montoUfOrd + montoUfExt + montoUfCargos + moraUf);
 
       await prisma.expensa.upsert({
         where: {
@@ -170,7 +201,7 @@ export async function POST(request: Request) {
           periodoFinalizadoId: periodoFinalizado.id,
           montoOrdinario: montoUfOrd,
           montoExtraordinario: montoUfExt,
-          montoCargos: cargosUf,
+          montoCargos: montoUfCargos,
           recargoMora: moraUf,
           totalPagar: montoUfTotal,
           fechaVencimiento: new Date(fechaVencimiento),
@@ -182,7 +213,7 @@ export async function POST(request: Request) {
           periodoAnio: Number(periodoAnio),
           montoOrdinario: montoUfOrd,
           montoExtraordinario: montoUfExt,
-          montoCargos: cargosUf,
+          montoCargos: montoUfCargos,
           recargoMora: moraUf,
           totalPagar: montoUfTotal,
           fechaVencimiento: new Date(fechaVencimiento),

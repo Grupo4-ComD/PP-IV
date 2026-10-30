@@ -80,10 +80,17 @@ interface LiquidacionModalProps {
 export default function LiquidacionConsolidadaModal({
   isOpen,
   onClose,
-  periodo = "08 / 2026",
+  periodo = "10 / 2026",
 }: LiquidacionModalProps) {
   const [tabActiva, setTabActiva] = useState<"caja" | "distribucion">("caja");
   const [exportando, setExportando] = useState(false);
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(periodo || "10 / 2026");
+
+  useEffect(() => {
+    if (periodo) {
+      setPeriodoSeleccionado(periodo);
+    }
+  }, [periodo]);
   
   // Estados para datos dinámicos
   const [cargandoDatos, setCargandoDatos] = useState(true);
@@ -98,9 +105,9 @@ export default function LiquidacionConsolidadaModal({
       const cargarLiquidacion = async () => {
         try {
           setCargandoDatos(true);
-          const [mesStr, anioStr] = periodo.split(" / ");
-          const mes = mesStr.trim();
-          const anio = anioStr.trim();
+          const [mesStr, anioStr] = periodoSeleccionado.split(" / ");
+          const mes = mesStr ? mesStr.trim() : "10";
+          const anio = anioStr ? anioStr.trim() : "2026";
           
           const res = await fetch(`/api/liquidaciones/${anio}/${mes}`);
           if (res.ok) {
@@ -130,7 +137,7 @@ export default function LiquidacionConsolidadaModal({
 
       cargarLiquidacion();
     }
-  }, [isOpen, periodo]);
+  }, [isOpen, periodoSeleccionado]);
 
   // Cálculos dinámicos de los totales de la planilla de distribución
   const totalGralDeudaAnt = distribucion.reduce((acc, item) => acc + item.deudaAnt, 0);
@@ -161,7 +168,7 @@ export default function LiquidacionConsolidadaModal({
       doc.text("LIQUIDACIÓN DE EXPENSAS", 196, 18, { align: "right" });
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text(`Mes: ${periodo}`, 196, 24, { align: "right" });
+      doc.text(`Mes: ${periodoSeleccionado}`, 196, 24, { align: "right" });
 
       doc.setDrawColor(30, 41, 59);
       doc.setLineWidth(0.5);
@@ -216,7 +223,7 @@ export default function LiquidacionConsolidadaModal({
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(15, 23, 42);
-      doc.text(`2. PLANILLA DE DISTRIBUCIÓN - PERÍODO ${periodo}`, 105, 18, { align: "center" });
+      doc.text(`2. PLANILLA DE DISTRIBUCIÓN - PERÍODO ${periodoSeleccionado}`, 105, 18, { align: "center" });
 
       const bodyDist: any[] = distribucion.map((item) => [
         `${item.uf} - ${item.pisoDepto}`,
@@ -300,7 +307,7 @@ export default function LiquidacionConsolidadaModal({
       doc.text("Página 2 de 2 • Liquidación Oficial Consorcio Calle 425", 14, 285);
 
       // Descargar
-      doc.save(`Liquidacion_Consorcio_Calle425_${periodo.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
+      doc.save(`Liquidacion_Consorcio_Calle425_${periodoSeleccionado.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
     } catch (err) {
       console.error("Error al exportar liquidación:", err);
     } finally {
@@ -330,10 +337,21 @@ export default function LiquidacionConsolidadaModal({
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 Liquidación Oficial de Expensas — Consorcio Calle 425
               </h3>
-              <p className="text-xs text-slate-500">
-                Período {periodo} • {distribucion.length} Unidades Funcionales
-                {usandoMock && <span className="ml-2 text-amber-500 font-medium">(Modo Prueba)</span>}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-slate-500 font-medium">Período:</span>
+                <select
+                  value={periodoSeleccionado}
+                  onChange={(e) => setPeriodoSeleccionado(e.target.value)}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold rounded-lg px-2 py-0.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="10 / 2026">10 / 2026 (Octubre)</option>
+                  <option value="09 / 2026">09 / 2026 (Septiembre)</option>
+                  <option value="08 / 2026">08 / 2026 (Agosto)</option>
+                  <option value="07 / 2026">07 / 2026 (Julio)</option>
+                </select>
+                <span className="text-xs text-slate-400">• {distribucion.length} Unidades Funcionales</span>
+                {usandoMock && <span className="ml-1 text-amber-500 font-medium text-xs">(Modo Prueba)</span>}
+              </div>
             </div>
           </div>
           <button
