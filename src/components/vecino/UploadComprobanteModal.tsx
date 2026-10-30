@@ -40,6 +40,7 @@ export default function UploadComprobanteModal({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [numeroOperacion, setNumeroOperacion] = useState("");
+  const [montoIngresado, setMontoIngresado] = useState<number | string>(totalPagar);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -47,9 +48,10 @@ export default function UploadComprobanteModal({
 
   if (!isOpen) return null;
 
-  // Regla de Negocio: Deducción 0,6% Mercado Pago
-  const comisionMp = Number((totalPagar * 0.006).toFixed(2));
-  const netoAcreditado = Number((totalPagar - comisionMp).toFixed(2));
+  // Regla de Negocio: Deducción 0,6% Mercado Pago sobre monto real informado
+  const montoFinal = Number(montoIngresado !== "" && !isNaN(Number(montoIngresado)) ? montoIngresado : totalPagar);
+  const comisionMp = Number((montoFinal * 0.006).toFixed(2));
+  const netoAcreditado = Number((montoFinal - comisionMp).toFixed(2));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -125,8 +127,8 @@ export default function UploadComprobanteModal({
         body: JSON.stringify({
           unidadId,
           expensaId,
-          monto: totalPagar,
-          montoBruto: totalPagar,
+          monto: montoFinal,
+          montoBruto: montoFinal,
           periodoMes,
           periodoAnio,
           comprobanteUrl: publicUrl,
@@ -285,6 +287,39 @@ export default function UploadComprobanteModal({
                 </div>
               )}
             </label>
+          </div>
+
+          {/* Monto Transferido según Comprobante */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Monto Transferido según Comprobante ($)
+              </label>
+              <span className="text-[11px] text-slate-400">
+                Total expensa: ${totalPagar.toLocaleString("es-AR")}
+              </span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">$</span>
+              <input
+                type="number"
+                step="any"
+                value={montoIngresado}
+                onChange={(e) => setMontoIngresado(e.target.value === "" ? "" : Number(e.target.value))}
+                disabled={loading || Boolean(successMsg)}
+                className="w-full pl-7 pr-3 h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            {montoFinal > totalPagar && (
+              <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                ✓ Se computará un saldo a favor de +${(montoFinal - totalPagar).toLocaleString("es-AR", { minimumFractionDigits: 2 })} para tu próxima liquidación.
+              </p>
+            )}
+            {montoFinal < totalPagar && montoFinal > 0 && (
+              <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                ⚠️ Pago parcial: Quedará un saldo pendiente de ${(totalPagar - montoFinal).toLocaleString("es-AR", { minimumFractionDigits: 2 })}.
+              </p>
+            )}
           </div>
 
           {/* Nro de Transacción Opcional */}

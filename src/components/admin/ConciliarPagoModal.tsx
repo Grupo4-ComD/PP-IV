@@ -50,6 +50,7 @@ export default function ConciliarPagoModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pagoId, setPagoId] = useState<string | null>(null);
   const [pagoReal, setPagoReal] = useState<any | null>(null);
+  const [montoAjustado, setMontoAjustado] = useState<number | string>("");
   const [reciboDigital, setReciboDigital] = useState<any | null>(null);
   const [imgError, setImgError] = useState(false);
 
@@ -60,6 +61,7 @@ export default function ConciliarPagoModal({
       setErrorMsg(null);
       setPagoId(null);
       setPagoReal(null);
+      setMontoAjustado("");
       setImgError(false);
       return;
     }
@@ -77,6 +79,7 @@ export default function ConciliarPagoModal({
           if (pagos && pagos.length > 0) {
             setPagoId(pagos[0].id);
             setPagoReal(pagos[0]);
+            setMontoAjustado(Number(pagos[0].monto_bruto || pagos[0].monto || currentExpensa.total_pagar));
             if (pagos[0].estado === "aprobado") {
               setReciboDigital({
                 reciboNumero: `REC-${pagos[0].periodo_anio}${String(pagos[0].periodo_mes).padStart(2, "0")}-${String(pagos[0].id).padStart(4, "0")}`,
@@ -89,10 +92,15 @@ export default function ConciliarPagoModal({
                 aliasDestino: "CONSORCIO.CALLE425",
               });
             }
+          } else {
+            setMontoAjustado(Number(currentExpensa.total_pagar));
           }
+        } else {
+          setMontoAjustado(Number(currentExpensa.total_pagar));
         }
       } catch (err) {
         console.warn("Error buscando pago asociado:", err);
+        setMontoAjustado(Number(currentExpensa.total_pagar));
       }
     }
 
@@ -101,9 +109,14 @@ export default function ConciliarPagoModal({
 
   if (!isOpen || !expensa) return null;
 
-  const montoBruto = Number(reciboDigital?.montoBruto ?? (pagoReal ? (pagoReal.monto_bruto || pagoReal.monto) : expensa.total_pagar || 0));
-  const comisionMp = Number(reciboDigital?.comisionMp ?? (pagoReal?.retencion_mp != null ? pagoReal.retencion_mp : (montoBruto * 0.006).toFixed(2)));
-  const montoNeto = Number(reciboDigital?.montoNetoAcreditado ?? (pagoReal?.monto_neto != null ? pagoReal.monto_neto : (montoBruto - comisionMp).toFixed(2)));
+  const montoBruto = Number(
+    reciboDigital?.montoBruto ??
+    (montoAjustado !== "" && !isNaN(Number(montoAjustado))
+      ? Number(montoAjustado)
+      : (pagoReal ? (pagoReal.monto_bruto || pagoReal.monto) : expensa.total_pagar || 0))
+  );
+  const comisionMp = Number(reciboDigital?.comisionMp ?? (montoBruto * 0.006).toFixed(2));
+  const montoNeto = Number(reciboDigital?.montoNetoAcreditado ?? (montoBruto - comisionMp).toFixed(2));
   const comprobanteEfectivo = expensa.comprobante_url || pagoReal?.comprobante_url;
   const mesesNombres = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -149,6 +162,7 @@ export default function ConciliarPagoModal({
         body: JSON.stringify({
           pagoId: currentPagoId,
           expensaId: expensa.id,
+          montoAjustado: montoBruto,
           accion,
         }),
       });
@@ -406,12 +420,30 @@ export default function ConciliarPagoModal({
                   CONSORCIO.CALLE425
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600 dark:text-slate-400">Total Expensa (Monto Bruto):</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
-                  ${montoBruto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                </span>
+              {/* Campo editable de monto transferido s/ comprobante */}
+              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+                <div className="flex justify-between items-center">
+                  <label className="text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5">
+                    <span>Monto Real Transferido s/ Comprobante:</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Expensa original: ${Number(expensa.total_pagar).toLocaleString("es-AR")}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-slate-400 font-bold text-xs">$</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={montoAjustado}
+                    onChange={(e) => setMontoAjustado(e.target.value === "" ? "" : Number(e.target.value))}
+                    disabled={loading}
+                    placeholder="Monto según comprobante"
+                    className="w-full pl-6 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg font-mono font-bold text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
+
               <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
                 <span>Deducción Mercado Pago (0,6%):</span>
                 <span className="font-mono font-bold">
@@ -424,6 +456,25 @@ export default function ConciliarPagoModal({
                   ${montoNeto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                 </span>
               </div>
+
+              {/* Indicadores de pago de más o pago parcial */}
+              {montoBruto > Number(expensa.total_pagar) && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                  <span>✓ Pagó de más (Saldo a favor próx. período):</span>
+                  <span className="font-mono font-bold">
+                    +${(montoBruto - Number(expensa.total_pagar)).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+
+              {montoBruto < Number(expensa.total_pagar) && montoBruto > 0 && (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                  <span>⚠️ Pago parcial (Resta abonar):</span>
+                  <span className="font-mono font-bold">
+                    ${(Number(expensa.total_pagar) - montoBruto).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Vista Previa del Comprobante */}

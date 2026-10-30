@@ -225,7 +225,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { pagoId, accion, expensaId } = body; // accion: 'aprobar' | 'rechazar'
+    const { pagoId, accion, expensaId, montoAjustado } = body; // accion: 'aprobar' | 'rechazar'
 
     if (!pagoId || !['aprobar', 'rechazar'].includes(accion)) {
       return NextResponse.json(
@@ -245,11 +245,23 @@ export async function PATCH(request: Request) {
 
     const nuevoEstadoPago = accion === 'aprobar' ? EstadoPago.aprobado : EstadoPago.rechazado;
 
-    // Actualizar el estado del pago
+    // Calcular montos finales si el administrador ajustó el importe transferido
+    const finalMontoBruto =
+      montoAjustado != null && !isNaN(Number(montoAjustado)) && Number(montoAjustado) > 0
+        ? Number(montoAjustado)
+        : Number(pago.montoBruto || pago.monto);
+    const finalRetencionMp = Number((finalMontoBruto * TASA_COMISION_MP).toFixed(2));
+    const finalMontoNeto = Number((finalMontoBruto - finalRetencionMp).toFixed(2));
+
+    // Actualizar el estado del pago y montos en la base de datos
     const pagoActualizado = await prisma.pagoVecino.update({
       where: { id: BigInt(pagoId) },
       data: {
         estado: nuevoEstadoPago,
+        monto: finalMontoBruto,
+        montoBruto: finalMontoBruto,
+        retencionMp: finalRetencionMp,
+        montoNeto: finalMontoNeto,
       },
       include: { unidad: true },
     });
@@ -283,15 +295,15 @@ export async function PATCH(request: Request) {
     const reciboDigital =
       accion === 'aprobar'
         ? {
-            reciboNumero: `REC-${pago.periodoAnio}${String(pago.periodoMes).padStart(2, '0')}-${String(
-              pago.id
+            reciboNumero: `REC-${pagoActualizado.periodoAnio}${String(pagoActualizado.periodoMes).padStart(2, '0')}-${String(
+              pagoActualizado.id
             ).padStart(4, '0')}`,
             fechaEmision: new Date().toISOString(),
-            unidad: `UF ${pago.unidad.numeroUf} - ${pago.unidad.pisoDepto}`,
-            propietario: pago.unidad.propietarioNombre,
-            montoBruto: Number(pago.montoBruto || pago.monto),
-            comisionMp: Number(pago.retencionMp),
-            montoNetoAcreditado: Number(pago.montoNeto),
+            unidad: `UF ${pagoActualizado.unidad.numeroUf} - ${pagoActualizado.unidad.pisoDepto}`,
+            propietario: pagoActualizado.unidad.propietarioNombre,
+            montoBruto: Number(pagoActualizado.montoBruto || pagoActualizado.monto),
+            comisionMp: Number(pagoActualizado.retencionMp),
+            montoNetoAcreditado: Number(pagoActualizado.montoNeto),
             aliasDestino: 'CONSORCIO.CALLE425',
           }
         : null;
