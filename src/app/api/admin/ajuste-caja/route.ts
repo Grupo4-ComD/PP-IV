@@ -14,6 +14,8 @@ export async function POST(req: Request) {
 
     // Si es ingreso, registramos un gasto negativo para sumar a la caja.
     // Si es egreso, registramos un gasto positivo para restar de la caja.
+    // Los ajustes de caja llevan sufijo _sd (sin descuento de expensas)
+    // para que no afecten el prorrateo mensual de las expensas ordinarias/extraordinarias.
     if (accion === "ingreso") {
       montoNum = -Math.abs(montoNum);
     } else {
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
 
     const ajuste = await prisma.gasto.create({
       data: {
-        concepto: `Ajuste de caja (${periodo}): ${motivo}`,
+        concepto: `Ajuste de caja (${periodo}): ${motivo} _sd`,
         monto: montoNum,
         categoria: "fondo_comun",
         fechaGasto: new Date(),

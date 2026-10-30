@@ -11,12 +11,15 @@ interface PdfExportProps {
     piso_depto: string;
     propietario_nombre: string;
     email: string;
+    coeficiente_prorrateo?: number;
   };
   expensa: {
     id: number | string;
     periodo_mes: number;
     periodo_anio: number;
     monto_ordinario: number;
+    monto_extraordinario?: number;
+    monto_cargos?: number;
     recargo_mora: number;
     total_pagar: number;
     fecha_vencimiento: string;
@@ -109,19 +112,38 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
       doc.setTextColor(15, 23, 42);
       doc.setFont("helvetica", "bold");
       doc.text(expensa.fecha_vencimiento, 170, 45);
-      doc.text("11.11% (1/9 UF)", 170, 53);
+      doc.text(`${unidad.coeficiente_prorrateo ? Number(unidad.coeficiente_prorrateo).toFixed(2) : "11.20"}%`, 170, 53);
       doc.text(new Date().toLocaleDateString("es-AR"), 170, 61);
 
-      // 4. Tabla de Conceptos Desglosados
+      // 4. Tabla de Conceptos Desglosados con datos reales
       const tableData = [
-        ["1", "Gastos Ordinarios de Mantenimiento y Servicios", "$ 32.000,00"],
-        ["2", "Seguro Integral de Consorcio y Responsabilidad Civil", "$ 7.500,00"],
-        ["3", "Fondo Común de Reserva Operativa y Limpieza", "$ 9.000,00"],
+        [
+          "1",
+          "Gastos Ordinarios (A) - Prorrateo",
+          `$ ${expensa.monto_ordinario.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ],
       ];
+
+      let itemIndex = 2;
+      if (expensa.monto_extraordinario && expensa.monto_extraordinario > 0) {
+        tableData.push([
+          String(itemIndex++),
+          "Gastos Extraordinarios (B) / Cuota Reserva",
+          `$ ${expensa.monto_extraordinario.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ]);
+      }
+
+      if (expensa.monto_cargos && expensa.monto_cargos > 0) {
+        tableData.push([
+          String(itemIndex++),
+          "Cargos Particulares del Período",
+          `$ ${expensa.monto_cargos.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ]);
+      }
 
       if (expensa.recargo_mora > 0) {
         tableData.push([
-          "4",
+          String(itemIndex++),
           "Interés por Mora (7% s/saldo impago vencido)",
           `$ ${expensa.recargo_mora.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
         ]);
@@ -153,11 +175,11 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
 
       // 5. Bloque de Totales y Liquidación
       doc.setFillColor(241, 245, 249);
-      doc.rect(120, finalY + 5, 76, 32, "F");
+      doc.rect(120, finalY + 5, 76, 38, "F");
       doc.setDrawColor(203, 213, 225);
-      doc.rect(120, finalY + 5, 76, 32, "D");
+      doc.rect(120, finalY + 5, 76, 38, "D");
 
-      doc.setFontSize(9);
+      doc.setFontSize(8.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(71, 85, 105);
       doc.text("Subtotal Ordinario:", 124, finalY + 12);
@@ -168,22 +190,32 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
         { align: "right" }
       );
 
-      doc.text("Recargo Mora (7%):", 124, finalY + 19);
+      if (expensa.monto_extraordinario && expensa.monto_extraordinario > 0) {
+        doc.text("Extraordinarias:", 124, finalY + 18);
+        doc.text(
+          `$ ${expensa.monto_extraordinario.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+          192,
+          finalY + 18,
+          { align: "right" }
+        );
+      }
+
+      doc.text("Recargo Mora (7%):", 124, finalY + 24);
       doc.text(
         `$ ${expensa.recargo_mora.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
         192,
-        finalY + 19,
+        finalY + 24,
         { align: "right" }
       );
 
-      doc.setFontSize(11);
+      doc.setFontSize(10.5);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text("TOTAL A PAGAR:", 124, finalY + 30);
+      doc.text("TOTAL A PAGAR:", 124, finalY + 35);
       doc.text(
         `$ ${expensa.total_pagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
         192,
-        finalY + 30,
+        finalY + 35,
         { align: "right" }
       );
 
@@ -195,10 +227,9 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(71, 85, 105);
-      doc.text("• Banco: Banco Provincia de Buenos Aires", 14, finalY + 18);
-      doc.text("• Titular: Consorcio Propietarios Calle 425", 14, finalY + 23);
-      doc.text("• CBU: 0140999803000012345678", 14, finalY + 28);
-      doc.text("• Alias: CONSORCIO.425.MP", 14, finalY + 33);
+      doc.text("• Consorcio Propietarios Calle 425", 14, finalY + 18);
+      doc.text("• CUIT: 30-11223344-9", 14, finalY + 23);
+      doc.text("• Alias: CONSORCIO.CALLE425", 14, finalY + 28);
 
       // 7. Pie Legal
       doc.setFontSize(7.5);

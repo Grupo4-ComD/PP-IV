@@ -78,25 +78,32 @@ export async function POST(request: Request) {
       },
     });
 
+    // Cargos del período según periodoMes y periodoAnio
     const cargos = await prisma.cargoParticular.findMany({
       where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        periodoMes: Number(periodoMes),
+        periodoAnio: Number(periodoAnio),
       },
     });
 
     // 4. Cálculos del Motor de Prorrateo
-    const totalGastosOrdinarios = gastos
+    // Solo se prorratean gastos reales con monto positivo.
+    // Conceptos que contengan 'FONDO', 'RESERVA', 'AJUSTE' o '_SD' no se suman al prorrateo regular.
+    const gastosProrrateables = gastos.filter(g => {
+      const con = (g.concepto || '').toUpperCase();
+      const esEspecial = con.includes('AJUSTE') || con.includes('FONDO') || con.includes('RESERVA') || con.includes('_SD');
+      return !esEspecial && Number(g.monto) > 0;
+    });
+
+    const totalGastosOrdinarios = gastosProrrateables
       .filter((g) => g.categoria === "ordinario")
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
-    const totalGastosExtraordinarios = gastos
-      .filter((g) => g.categoria === "extraordinario" || g.categoria === "fondo_comun")
+    const totalGastosExtraordinarios = gastosProrrateables
+      .filter((g) => g.categoria === "extraordinario")
       .reduce((acc, g) => acc + Number(g.monto), 0);
 
-    const montoFondoReserva = Math.round(totalGastosOrdinarios * (porcentajeFondoReserva / 100));
+    const montoFondoReserva = Math.round(totalGastosOrdinarios * (Number(porcentajeFondoReserva) / 100));
     const totalProrratearOrdinario = totalGastosOrdinarios + montoFondoReserva;
 
     // 5. Crear o actualizar el registro oficial de PeriodoFinalizado (RF-08)
@@ -145,11 +152,11 @@ export async function POST(request: Request) {
 
       let moraUf = 0;
       if (expensaAnterior) {
-        const saldoDeuda = Number(expensaAnterior.totalPagar) || Number(expensaAnterior.montoOrdinario);
+        const saldoDeuda = Math.max(0, Number(expensaAnterior.totalPagar) || 0);
         moraUf = Math.round(saldoDeuda * 0.07);
       }
 
-      const montoUfTotal = montoUfOrd + montoUfExt + cargosUf + moraUf;
+      const montoUfTotal = Math.max(0, montoUfOrd + montoUfExt + cargosUf + moraUf);
 
       await prisma.expensa.upsert({
         where: {

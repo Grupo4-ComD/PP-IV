@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Receipt,
   Calendar,
   AlertCircle,
   CheckCircle2,
   Clock,
-  Paperclip,
   CreditCard,
   TrendingUp,
   Wallet,
   ShieldCheck,
 } from "lucide-react";
 import UploadComprobanteModal from "./UploadComprobanteModal";
-import PdfExportButton from "./PdfExportButton";
 import CuponPagoModal from "./CuponPagoModal";
 import LiquidacionConsolidadaModal from "../admin/LiquidacionConsolidadaModal";
 
@@ -24,8 +22,12 @@ export interface ExpensaData {
   periodo_mes: number;
   periodo_anio: number;
   monto_ordinario: number;
+  monto_extraordinario?: number;
+  monto_cargos?: number;
   recargo_mora: number;
   total_pagar: number;
+  deuda_anterior?: number;
+  pago_registrado?: number;
   fecha_vencimiento: string;
   estado: "pendiente" | "en_verificacion" | "pagado";
   comprobante_url?: string | null;
@@ -38,6 +40,8 @@ export interface UnidadData {
   piso_depto: string;
   propietario_nombre: string;
   email: string;
+  coeficiente_prorrateo?: number;
+  saldo_pendiente?: number;
 }
 
 interface EstadoCuentaProps {
@@ -54,37 +58,49 @@ export default function EstadoCuentaCard({
   expensaInicial,
   unidadInicial,
 }: EstadoCuentaProps) {
-  // Datos por defecto para demostración fluida
-  const [unidad] = useState<UnidadData>(
+  const [unidad, setUnidad] = useState<UnidadData>(
     unidadInicial || {
       id: 3,
       numero_uf: 3,
       piso_depto: "PB C",
       propietario_nombre: "Martínez, Laura",
       email: "laura.martinez@calle425.com",
+      coeficiente_prorrateo: 11.2,
     }
   );
 
   const [expensa, setExpensa] = useState<ExpensaData>(
     expensaInicial || {
-      id: 101,
+      id: 1,
       unidad_id: 3,
-      periodo_mes: 8,
+      periodo_mes: 10,
       periodo_anio: 2026,
-      monto_ordinario: 20693.73,
+      monto_ordinario: 19792.00,
+      monto_extraordinario: 13440.00,
+      monto_cargos: 0,
       recargo_mora: 0,
-      total_pagar: 52966.38,
-      fecha_vencimiento: "2026-08-10",
+      total_pagar: 33232.00,
+      deuda_anterior: 0,
+      pago_registrado: 0,
+      fecha_vencimiento: "2026-10-15",
       estado: "pendiente",
       comprobante_url: null,
     }
   );
 
+  useEffect(() => {
+    if (expensaInicial) setExpensa(expensaInicial);
+  }, [expensaInicial]);
+
+  useEffect(() => {
+    if (unidadInicial) setUnidad(unidadInicial);
+  }, [unidadInicial]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCuponOpen, setIsCuponOpen] = useState(false);
   const [isLiquidacionOpen, setIsLiquidacionOpen] = useState(false);
 
-  const nombreMes = mesesNombres[expensa.periodo_mes - 1] || "Agosto";
+  const nombreMes = mesesNombres[expensa.periodo_mes - 1] || "Mes";
   const tieneMora = expensa.recargo_mora > 0 && expensa.estado !== "pagado";
 
   const handleUploadSuccess = (comprobanteUrl: string) => {
@@ -162,7 +178,7 @@ export default function EstadoCuentaCard({
             </div>
           </div>
           <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
-            $32.275,11
+            ${(expensa.monto_extraordinario ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
             Recupero obras y reserva
@@ -179,7 +195,7 @@ export default function EstadoCuentaCard({
             ${expensa.total_pagar.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/70 mt-1">
-            {expensa.estado === "pagado" ? "Saldo cancelado" : "Importe exigible (Vence 10/08)"}
+            {expensa.estado === "pagado" ? "Saldo cancelado" : `Importe exigible (Vence ${expensa.fecha_vencimiento})`}
           </p>
         </div>
       </div>
@@ -240,11 +256,19 @@ export default function EstadoCuentaCard({
         onClose={() => setIsCuponOpen(false)}
         data={{
           mes: `${String(expensa.periodo_mes).padStart(2, "0")}/${expensa.periodo_anio}`,
+          anio: expensa.periodo_anio,
           vencimiento: expensa.fecha_vencimiento,
+          cuit: "30-11223344-9",
+          alias: "CONSORCIO.CALLE425",
           propietario: unidad.propietario_nombre,
           unidad: `${unidad.numero_uf} - ${unidad.piso_depto}`,
-          totalPagar: expensa.total_pagar,
+          coeficiente: `${unidad.coeficiente_prorrateo ? Number(unidad.coeficiente_prorrateo).toFixed(2) : "11.20"}%`,
           gastosOrdinarios: expensa.monto_ordinario,
+          gastosExtraordinarios: expensa.monto_extraordinario ?? 0,
+          deudaAnterior: expensa.deuda_anterior ?? 0,
+          pagoRegistrado: expensa.pago_registrado ?? 0,
+          cargosActuales: expensa.monto_cargos ?? 0,
+          totalPagar: expensa.total_pagar,
         }}
       />
 

@@ -52,21 +52,23 @@ export default function CuponPagoModal({
   if (!isOpen) return null;
 
   const cupon: CuponPagoData = {
-    mes: data?.mes || "08/2026",
+    mes: data?.mes || "10/2026",
     anio: data?.anio || 2026,
-    vencimiento: data?.vencimiento || "10/08/2026",
-    cuit: data?.cuit || "30-71167103-9",
+    vencimiento: data?.vencimiento || "2026-10-15",
+    cuit: data?.cuit || "30-11223344-9",
     propietario: data?.propietario || "Martínez, Laura",
     unidad: data?.unidad || "3 - PB C",
     coeficiente: data?.coeficiente || "11.20%",
-    gastosOrdinarios: data?.gastosOrdinarios ?? 20693.73,
-    gastosExtraordinarios: data?.gastosExtraordinarios ?? 32275.11,
-    deudaAnterior: data?.deudaAnterior ?? 53157.54,
-    pagoRegistrado: data?.pagoRegistrado ?? 53160.0,
-    cargosActuales: data?.cargosActuales ?? 0.0,
-    totalPagar: data?.totalPagar ?? 52966.38,
+    gastosOrdinarios: data?.gastosOrdinarios ?? 0,
+    gastosExtraordinarios: data?.gastosExtraordinarios ?? 0,
+    deudaAnterior: data?.deudaAnterior ?? 0,
+    pagoRegistrado: data?.pagoRegistrado ?? 0,
+    cargosActuales: data?.cargosActuales ?? 0,
+    totalPagar: data?.totalPagar ?? 0,
     alias: data?.alias || "CONSORCIO.CALLE425",
   };
+
+  const cargosPeriodoActual = cupon.gastosOrdinarios + cupon.gastosExtraordinarios + cupon.cargosActuales;
 
   const copyAlias = () => {
     navigator.clipboard.writeText(cupon.alias);
@@ -122,33 +124,47 @@ export default function CuponPagoModal({
         align: "right",
       });
 
-      // Tabla de conceptos
+      // Tabla de conceptos dinámica
+      const tableBody: (string | number)[][] = [
+        [
+          "Gastos Ordinarios (A) - Prorrateo",
+          `$ ${cupon.gastosOrdinarios.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ],
+        [
+          "Gastos Extraordinarios (B) / Cuota Reserva",
+          `$ ${cupon.gastosExtraordinarios.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ],
+      ];
+
+      if (cupon.cargosActuales > 0) {
+        tableBody.push([
+          "Otros cargos del período",
+          `$ ${cupon.cargosActuales.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ]);
+      }
+
+      tableBody.push([
+        "Deuda de períodos anteriores",
+        `$ ${cupon.deudaAnterior.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+      ]);
+
+      if (cupon.pagoRegistrado > 0) {
+        tableBody.push([
+          "Pago registrado del período",
+          `- $ ${cupon.pagoRegistrado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+        ]);
+      }
+
+      tableBody.push([
+        "Cargos del período actual",
+        `$ ${cargosPeriodoActual.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
+      ]);
+
       autoTable(doc, {
         startY: 58,
         margin: { left: 16, right: 16 },
         head: [["Detalle de Conceptos", "Monto"]],
-        body: [
-          [
-            "Gastos Ordinarios (A) - Prorrateo",
-            `$ ${cupon.gastosOrdinarios.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-          ],
-          [
-            "Gastos Extraordinarios (B) / Cuota Reserva",
-            `$ ${cupon.gastosExtraordinarios.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-          ],
-          [
-            "Deuda de períodos anteriores",
-            `$ ${cupon.deudaAnterior.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-          ],
-          [
-            "Pago registrado del período",
-            `- $ ${cupon.pagoRegistrado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-          ],
-          [
-            "Cargos del período actual",
-            `$ ${cupon.cargosActuales.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
-          ],
-        ],
+        body: tableBody,
         theme: "plain",
         headStyles: {
           fillColor: [241, 245, 249],
@@ -165,7 +181,7 @@ export default function CuponPagoModal({
           1: { cellWidth: 50, halign: "right", fontStyle: "bold" },
         },
         didParseCell: (hookData) => {
-          if (hookData.section === "body" && hookData.row.index === 3) {
+          if (hookData.section === "body" && hookData.cell.raw && String(hookData.cell.raw).startsWith("- $")) {
             hookData.cell.styles.textColor = [16, 185, 129]; // Verde para pago registrado
           }
         },
@@ -255,7 +271,7 @@ export default function CuponPagoModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -301,7 +317,7 @@ export default function CuponPagoModal({
               </div>
             </div>
 
-            {/* Tabla de Conceptos */}
+            {/* Tabla de Conceptos Dinámica */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden text-xs">
               <table className="w-full text-left">
                 <thead className="bg-slate-100 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
@@ -323,22 +339,32 @@ export default function CuponPagoModal({
                       ${cupon.gastosExtraordinarios.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
+                  {cupon.cargosActuales > 0 && (
+                    <tr>
+                      <td className="p-2.5">Otros cargos del período</td>
+                      <td className="p-2.5 text-right font-medium">
+                        ${cupon.cargosActuales.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td className="p-2.5">Deuda de períodos anteriores</td>
                     <td className="p-2.5 text-right font-medium">
                       ${cupon.deudaAnterior.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
-                  <tr className="bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-semibold">
-                    <td className="p-2.5">Pago registrado del período</td>
-                    <td className="p-2.5 text-right">
-                      - ${cupon.pagoRegistrado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                  <tr>
+                  {cupon.pagoRegistrado > 0 && (
+                    <tr className="bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-semibold">
+                      <td className="p-2.5">Pago registrado del período</td>
+                      <td className="p-2.5 text-right">
+                        - ${cupon.pagoRegistrado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="bg-slate-50/50 dark:bg-slate-900/40 font-medium">
                     <td className="p-2.5">Cargos del período actual</td>
-                    <td className="p-2.5 text-right font-medium">
-                      ${cupon.cargosActuales.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    <td className="p-2.5 text-right">
+                      ${cargosPeriodoActual.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tbody>
@@ -376,7 +402,7 @@ export default function CuponPagoModal({
                     <span>Alias: {cupon.alias}</span>
                     <button
                       onClick={copyAlias}
-                      className="p-1 hover:text-indigo-600 transition"
+                      className="p-1 hover:text-indigo-600 transition cursor-pointer"
                       title="Copiar alias"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -385,55 +411,57 @@ export default function CuponPagoModal({
                 </div>
               </div>
 
-              {/* Recuadro Mercado Pago QR */}
-              <div className="border-2 border-dashed border-sky-400 rounded-xl p-3 bg-sky-50/50 dark:bg-sky-950/20 text-center flex flex-col items-center justify-center">
-                <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 mb-1.5 flex items-center gap-1">
-                  <QrCode className="w-3.5 h-3.5" /> Pagar con Mercado Pago
+              {/* Box Mercado Pago QR */}
+              <div className="border border-sky-300 dark:border-sky-800/60 rounded-xl p-3 bg-sky-50/50 dark:bg-sky-950/20 text-center flex flex-col items-center justify-center space-y-1.5">
+                <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                  Pagar con Mercado Pago
                 </span>
-                <div className="w-20 h-20 bg-sky-500 rounded-lg flex items-center justify-center shadow-inner my-1">
-                  <span className="text-white font-black text-xs">QR PAGO</span>
+                <div className="w-20 h-20 bg-sky-500 rounded-lg flex items-center justify-center text-white shadow-xs">
+                  <div className="text-center">
+                    <QrCode className="w-8 h-8 mx-auto" />
+                    <span className="text-[9px] font-bold block mt-0.5">QR PAGO</span>
+                  </div>
                 </div>
-                <span className="text-[10px] text-slate-400">Escaneá para transferir</span>
+                <span className="text-[10px] text-slate-400">Escanea para transferir</span>
               </div>
             </div>
           </div>
-
-          {/* Estado de Simulación de Pago */}
-          {pagoExitoso && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
-              <span>
-                <strong>¡Pago simulado con éxito!</strong> El comprobante se registró y la
-                administración fue notificada.
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Footer con Acciones */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
+        {/* Footer Acciones */}
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             onClick={descargarPdfCupon}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition flex items-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
           >
-            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Download className="w-4 h-4 text-slate-500" />
             <span>Descargar Cupón PDF</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
             >
               Cerrar
             </button>
             <button
               onClick={simularPagoMercadoPago}
               disabled={pagandoMp || pagoExitoso}
-              className="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-[0.99] text-white text-xs font-bold shadow-md shadow-sky-500/25 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-md cursor-pointer ${
+                pagoExitoso
+                  ? "bg-emerald-600 text-white"
+                  : "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/25"
+              }`}
             >
               <CreditCard className="w-4 h-4" />
-              <span>{pagandoMp ? "Procesando..." : pagoExitoso ? "Pagado con MP" : "Pagar con Mercado Pago"}</span>
+              <span>
+                {pagandoMp
+                  ? "Procesando en Mercado Pago..."
+                  : pagoExitoso
+                  ? "¡Pago Registrado!"
+                  : "Pagar con Mercado Pago"}
+              </span>
             </button>
           </div>
         </div>

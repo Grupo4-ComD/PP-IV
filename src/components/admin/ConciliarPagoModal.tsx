@@ -83,7 +83,7 @@ export default function ConciliarPagoModal({
                 montoBruto: pagos[0].monto_bruto || pagos[0].monto,
                 comisionMp: pagos[0].retencion_mp,
                 montoNetoAcreditado: pagos[0].monto_neto,
-                aliasDestino: "consorciorpena1454",
+                aliasDestino: "CONSORCIO.CALLE425",
               });
             }
           }
@@ -190,7 +190,7 @@ export default function ConciliarPagoModal({
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100, 116, 139);
-      doc.text("CUIT: 30-71167103-9 • CABA, Buenos Aires • Administradora Paula", 20, 32);
+      doc.text("CUIT: 30-11223344-9 • CABA, Buenos Aires • Administradora Paula", 20, 32);
 
       doc.setDrawColor(226, 232, 240);
       doc.line(20, 36, 190, 36);
@@ -215,7 +215,7 @@ export default function ConciliarPagoModal({
           ["Unidad Funcional:", `UF ${expensa.unidades?.numero_uf || expensa.unidad_id} (${expensa.unidades?.piso_depto || "—"})`],
           ["Propietario / Residente:", `${expensa.unidades?.propietario_nombre || "—"}`],
           ["Período Liquidado:", `${nombreMes} ${expensa.periodo_anio}`],
-          ["Alias de Pago:", "consorciorpena1454 (Mercado Pago / CVU)"],
+          ["Alias de Pago:", "CONSORCIO.CALLE425 (Mercado Pago / CVU)"],
           ["Estado de Cobranza:", "CONCILIADO Y ACREDITADO"],
         ],
       });
@@ -348,7 +348,7 @@ export default function ConciliarPagoModal({
               <div className="flex justify-between items-center text-slate-500">
                 <span>Alias destino acreditado:</span>
                 <span className="font-mono font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-900">
-                  consorciorpena1454
+                  CONSORCIO.CALLE425
                 </span>
               </div>
               <div className="flex justify-between items-center">

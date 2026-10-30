@@ -201,7 +201,7 @@ export default function UploadComprobanteModal({
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Alias bancario oficial:</span>
             <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-900">
-              consorciorpena1454
+              CONSORCIO.CALLE425
             </span>
           </div>
           <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800">

@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextResponse } from "next/server";
 
 const REGLAMENTO_SISTEMA_PROMPT = `
-Eres el Asistente Virtual del "Consorcio de Propietarios Calle 425 - Rodríguez Peña 1454" (Santos Lugares, Tres de Febrero).
+Eres el Asistente Virtual del "Consorcio de Propietarios Calle 425".
 Tu objetivo es responder dudas sobre el Reglamento de Copropiedad y Administración a los vecinos de las 9 Unidades Funcionales.
 
 RESUMEN DEL REGLAMENTO DE COPROPIEDAD:

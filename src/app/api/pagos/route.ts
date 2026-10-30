@@ -186,7 +186,7 @@ export async function POST(request: Request) {
             montoBruto: montoFinal,
             comisionMp: retencionMp,
             montoNetoAcreditado: montoNeto,
-            aliasDestino: 'consorciorpena1454',
+            aliasDestino: 'CONSORCIO.CALLE425',
           }
         : null;
 
@@ -205,7 +205,7 @@ export async function POST(request: Request) {
         montoNeto: montoNeto,
         estado: nuevoPago.estado,
         comprobanteUrl: nuevoPago.comprobanteUrl,
-        aliasDestino: 'consorciorpena1454',
+        aliasDestino: 'CONSORCIO.CALLE425',
       },
       reciboDigital,
     });
@@ -292,7 +292,7 @@ export async function PATCH(request: Request) {
             montoBruto: Number(pago.montoBruto || pago.monto),
             comisionMp: Number(pago.retencionMp),
             montoNetoAcreditado: Number(pago.montoNeto),
-            aliasDestino: 'consorciorpena1454',
+            aliasDestino: 'CONSORCIO.CALLE425',
           }
         : null;
 

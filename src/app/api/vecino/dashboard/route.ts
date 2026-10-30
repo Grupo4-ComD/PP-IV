@@ -63,6 +63,30 @@ export async function GET(request: Request) {
 
     let expensaRes = null;
     if (ultimaExpensa) {
+      // Pagos aprobados de la unidad en el período de esta expensa
+      const pagosPeriodo = await prisma.pagoVecino.findMany({
+        where: {
+          unidadId: unidad.id,
+          periodoMes: ultimaExpensa.periodoMes,
+          periodoAnio: ultimaExpensa.periodoAnio,
+          estado: 'aprobado',
+        },
+      });
+      const pagoRegistrado = pagosPeriodo.reduce((sum, p) => sum + Number(p.monto), 0);
+
+      // Deuda acumulada de períodos anteriores impagos
+      const expensasPreviasImpagas = await prisma.expensa.findMany({
+        where: {
+          unidadId: unidad.id,
+          estado: { not: 'pagado' },
+          OR: [
+            { periodoAnio: { lt: ultimaExpensa.periodoAnio } },
+            { periodoAnio: ultimaExpensa.periodoAnio, periodoMes: { lt: ultimaExpensa.periodoMes } },
+          ],
+        },
+      });
+      const deudaAnterior = expensasPreviasImpagas.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+
       expensaRes = {
         id: ultimaExpensa.id.toString(),
         unidad_id: ultimaExpensa.unidadId.toString(),
@@ -73,6 +97,8 @@ export async function GET(request: Request) {
         monto_cargos: Number(ultimaExpensa.montoCargos),
         recargo_mora: Number(ultimaExpensa.recargoMora),
         total_pagar: Number(ultimaExpensa.totalPagar),
+        deuda_anterior: deudaAnterior,
+        pago_registrado: pagoRegistrado,
         fecha_vencimiento: ultimaExpensa.fechaVencimiento.toISOString().split('T')[0],
         estado: ultimaExpensa.estado,
         comprobante_url: ultimaExpensa.comprobanteUrl,
