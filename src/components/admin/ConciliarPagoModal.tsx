@@ -104,6 +104,7 @@ export default function ConciliarPagoModal({
   const montoBruto = Number(reciboDigital?.montoBruto ?? (pagoReal ? (pagoReal.monto_bruto || pagoReal.monto) : expensa.total_pagar || 0));
   const comisionMp = Number(reciboDigital?.comisionMp ?? (pagoReal?.retencion_mp != null ? pagoReal.retencion_mp : (montoBruto * 0.006).toFixed(2)));
   const montoNeto = Number(reciboDigital?.montoNetoAcreditado ?? (pagoReal?.monto_neto != null ? pagoReal.monto_neto : (montoBruto - comisionMp).toFixed(2)));
+  const comprobanteEfectivo = expensa.comprobante_url || pagoReal?.comprobante_url;
   const mesesNombres = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -361,6 +362,30 @@ export default function ConciliarPagoModal({
               )}
             </div>
 
+            {/* Comprobante original adjunto si existe */}
+            {comprobanteEfectivo && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">Comprobante Original de Pago</p>
+                    <p className="text-[11px] text-slate-400">Archivo transferido o comprobante digital</p>
+                  </div>
+                </div>
+                <a
+                  href={comprobanteEfectivo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold border border-indigo-200 dark:border-indigo-800 transition cursor-pointer shrink-0"
+                >
+                  <span>Ver Comprobante</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button
                 onClick={descargarReciboPdf}
@@ -406,8 +431,8 @@ export default function ConciliarPagoModal({
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Comprobante Adjuntado por el Vecino:
               </label>
-              {expensa.comprobante_url ? (
-                expensa.comprobante_url.startsWith("blob:") ? (
+              {comprobanteEfectivo ? (
+                comprobanteEfectivo.startsWith("blob:") ? (
                   <div className="border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 bg-amber-50/50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs flex flex-col items-center gap-2 text-center">
                     <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     <p className="font-semibold">Comprobante temporal local no sincronizado</p>
@@ -417,7 +442,7 @@ export default function ConciliarPagoModal({
                   </div>
                 ) : (
                   <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50 dark:bg-slate-950 flex flex-col items-center gap-3">
-                    {expensa.comprobante_url.toLowerCase().includes(".pdf") ? (
+                    {comprobanteEfectivo.toLowerCase().includes(".pdf") ? (
                       <div className="flex items-center gap-2 p-4 text-xs font-semibold text-indigo-600">
                         <FileText className="w-8 h-8" />
                         <span>Documento PDF de transferencia</span>
@@ -429,14 +454,14 @@ export default function ConciliarPagoModal({
                       </div>
                     ) : (
                       <img
-                        src={expensa.comprobante_url}
+                        src={comprobanteEfectivo}
                         alt="Comprobante"
                         onError={() => setImgError(true)}
                         className="max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
                       />
                     )}
                     <a
-                      href={expensa.comprobante_url}
+                      href={comprobanteEfectivo}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"

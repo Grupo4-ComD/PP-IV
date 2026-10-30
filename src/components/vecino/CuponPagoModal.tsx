@@ -37,12 +37,22 @@ export interface CuponPagoData {
 interface CuponPagoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  expensaId?: number | string;
+  unidadId?: number | string;
+  periodoMes?: number;
+  periodoAnio?: number;
+  onPagoRealizado?: () => void;
   data?: Partial<CuponPagoData>;
 }
 
 export default function CuponPagoModal({
   isOpen,
   onClose,
+  expensaId,
+  unidadId,
+  periodoMes,
+  periodoAnio,
+  onPagoRealizado,
   data,
 }: CuponPagoModalProps) {
   const [copied, setCopied] = useState(false);
@@ -76,12 +86,35 @@ export default function CuponPagoModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const simularPagoMercadoPago = () => {
+  const simularPagoMercadoPago = async () => {
     setPagandoMp(true);
-    setTimeout(() => {
-      setPagandoMp(false);
+    try {
+      if (unidadId && expensaId) {
+        // Enviar pago simulado a la API para que impacte en la administración
+        await fetch("/api/pagos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            unidadId,
+            expensaId,
+            monto: cupon.totalPagar,
+            montoBruto: cupon.totalPagar,
+            periodoMes: periodoMes || cupon.anio,
+            periodoAnio: periodoAnio || cupon.anio,
+            comprobanteUrl: "https://mercadopago.com/comprobante-simulado-mp.pdf",
+            origen: "vecino",
+          }),
+        });
+        if (onPagoRealizado) onPagoRealizado();
+      } else {
+        await new Promise((r) => setTimeout(r, 1200));
+      }
       setPagoExitoso(true);
-    }, 1500);
+    } catch (err) {
+      console.error("Error al registrar pago simulado MP:", err);
+    } finally {
+      setPagandoMp(false);
+    }
   };
 
   const descargarPdfCupon = () => {

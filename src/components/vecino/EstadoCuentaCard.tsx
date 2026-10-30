@@ -258,6 +258,16 @@ export default function EstadoCuentaCard({
       <CuponPagoModal
         isOpen={isCuponOpen}
         onClose={() => setIsCuponOpen(false)}
+        expensaId={expensa.id}
+        unidadId={expensa.unidad_id || unidad.id}
+        periodoMes={expensa.periodo_mes}
+        periodoAnio={expensa.periodo_anio}
+        onPagoRealizado={() => {
+          setExpensa((prev) => ({
+            ...prev,
+            estado: "en_verificacion",
+          }));
+        }}
         data={{
           mes: `${String(expensa.periodo_mes).padStart(2, "0")}/${expensa.periodo_anio}`,
           anio: expensa.periodo_anio,
