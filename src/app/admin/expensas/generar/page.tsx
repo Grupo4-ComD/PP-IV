@@ -41,14 +41,45 @@ export default function GenerarExpensasPage() {
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [periodoMes, setPeriodoMes] = useState<number>(new Date().getMonth() + 1);
   const [periodoAnio, setPeriodoAnio] = useState<number>(new Date().getFullYear());
+  const [diaVencimientoConfig, setDiaVencimientoConfig] = useState<number>(15);
+
+  // Regla contable: Las expensas se liquidan a mes vencido.
+  // El período M vence en el mes subsiguiente (M + 1) en el día parametrizado en Configuración.
+  const calcularVencimientoMesVencido = (mes: number, anio: number, dia = diaVencimientoConfig) => {
+    const mesSig = mes === 12 ? 1 : mes + 1;
+    const anioSig = mes === 12 ? anio + 1 : anio;
+    const diaClamped = Math.min(Math.max(1, dia), 28);
+    return `${anioSig}-${String(mesSig).padStart(2, "0")}-${String(diaClamped).padStart(2, "0")}`;
+  };
+
   const [fechaVencimiento, setFechaVencimiento] = useState<string>(
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-15`
+    calcularVencimientoMesVencido(new Date().getMonth() + 1, new Date().getFullYear(), 15)
   );
 
-  // Sincronizar fecha de vencimiento automáticamente al cambiar el período
+  // Cargar parámetro dinámico de vencimiento desde el panel de Configuración
   useEffect(() => {
-    setFechaVencimiento(`${periodoAnio}-${String(periodoMes).padStart(2, "0")}-15`);
-  }, [periodoMes, periodoAnio]);
+    async function fetchConfiguracion() {
+      try {
+        const res = await fetch("/api/configuracion");
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.dias_vencimiento_expensas) {
+            const dia = Number(cfg.dias_vencimiento_expensas);
+            setDiaVencimientoConfig(dia);
+            setFechaVencimiento(calcularVencimientoMesVencido(periodoMes, periodoAnio, dia));
+          }
+        }
+      } catch (err) {
+        console.error("Error al cargar configuración de vencimiento:", err);
+      }
+    }
+    fetchConfiguracion();
+  }, []);
+
+  // Sincronizar fecha de vencimiento automáticamente al cambiar el período o la configuración
+  useEffect(() => {
+    setFechaVencimiento(calcularVencimientoMesVencido(periodoMes, periodoAnio, diaVencimientoConfig));
+  }, [periodoMes, periodoAnio, diaVencimientoConfig]);
 
   // Gastos y cargos cargados para el período desde la BD
   const [gastos, setGastos] = useState<any[]>([]);
@@ -327,7 +358,9 @@ export default function GenerarExpensasPage() {
               />
             </div>
             <div className="ml-2 pl-4 border-l border-slate-200 dark:border-slate-800">
-              <label className="text-[10px] text-slate-400 font-semibold block mb-1">Vencimiento Legal</label>
+              <label className="text-[10px] text-slate-400 font-semibold block mb-1">
+                Vencimiento (Día {diaVencimientoConfig} - A mes vencido)
+              </label>
               <input
                 type="date"
                 value={fechaVencimiento}

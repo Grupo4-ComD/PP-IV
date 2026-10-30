@@ -25,6 +25,17 @@ export async function POST(request: Request) {
     // 2. Obtener parámetros
     const { periodoMes, periodoAnio, fechaVencimiento, forceOverride = false } = await request.json();
 
+    // 2.0 Resolver fecha de vencimiento a mes vencido según configuración si no fue provista manualmente
+    let fechaVencFinal = fechaVencimiento;
+    if (!fechaVencFinal) {
+      const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+      const diaConfig = config?.diasVencimientoExpensas ? Number(config.diasVencimientoExpensas) : 15;
+      const mesSig = Number(periodoMes) === 12 ? 1 : Number(periodoMes) + 1;
+      const anioSig = Number(periodoMes) === 12 ? Number(periodoAnio) + 1 : Number(periodoAnio);
+      const diaClamped = Math.min(Math.max(1, diaConfig), 28);
+      fechaVencFinal = `${anioSig}-${String(mesSig).padStart(2, '0')}-${String(diaClamped).padStart(2, '0')}`;
+    }
+
     // 2.1 Verificar si el período fue cerrado/bloqueado por seguridad contable (RF-08)
     const periodoExistente = await prisma.periodoFinalizado.findUnique({
       where: {
@@ -216,7 +227,7 @@ export async function POST(request: Request) {
           montoCargos: montoUfCargos,
           recargoMora: moraUf,
           totalPagar: montoUfTotal,
-          fechaVencimiento: new Date(fechaVencimiento),
+          fechaVencimiento: new Date(fechaVencFinal),
         },
         create: {
           unidadId: u.id,
@@ -228,7 +239,7 @@ export async function POST(request: Request) {
           montoCargos: montoUfCargos,
           recargoMora: moraUf,
           totalPagar: montoUfTotal,
-          fechaVencimiento: new Date(fechaVencimiento),
+          fechaVencimiento: new Date(fechaVencFinal),
           estado: 'pendiente',
         },
       });

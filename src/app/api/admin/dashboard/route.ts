@@ -65,7 +65,11 @@ export async function GET() {
       // Filtrar las expensas impagas de esta unidad
       const deudaUnidadList = expensasPendientes.filter(e => e.unidadId === u.id);
       const deudaUnidad = deudaUnidadList.reduce((sum, e) => sum + Number(e.totalPagar), 0);
-      const enMora = deudaUnidad > 0;
+      const hoy = new Date();
+      const expensasEnMora = deudaUnidadList.filter(
+        (e) => Number(e.recargoMora) > 0 || (e.fechaVencimiento && new Date(e.fechaVencimiento) < hoy)
+      );
+      const enMora = expensasEnMora.length > 0;
 
       if (enMora) {
         ufsMora++;
