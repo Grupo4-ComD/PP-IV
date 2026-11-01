@@ -61,9 +61,9 @@ export default function AdminSidebar() {
     },
     {
       label: "Cronograma Limpieza",
-      href: "/vecino/limpieza",
+      href: "/admin/limpieza",
       icon: Sparkles,
-      active: pathname.startsWith("/vecino/limpieza"),
+      active: pathname.startsWith("/admin/limpieza"),
     },
     {
       label: "Mesa ITIL & Proveedores",
