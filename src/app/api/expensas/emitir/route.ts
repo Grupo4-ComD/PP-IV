@@ -25,10 +25,13 @@ export async function POST(request: Request) {
     // 2. Obtener parámetros
     const { periodoMes, periodoAnio, fechaVencimiento, forceOverride = false } = await request.json();
 
-    // 2.0 Resolver fecha de vencimiento a mes vencido según configuración si no fue provista manualmente
+    // 2.0 Cargar configuración del consorcio (mora, vencimiento, etc.)
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    const tasaMora = config?.tasaInteresMora != null ? Number(config.tasaInteresMora) / 100 : 0.07;
+
+    // 2.0.1 Resolver fecha de vencimiento a mes vencido según configuración si no fue provista manualmente
     let fechaVencFinal = fechaVencimiento;
     if (!fechaVencFinal) {
-      const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
       const diaConfig = config?.diasVencimientoExpensas ? Number(config.diasVencimientoExpensas) : 15;
       const mesSig = Number(periodoMes) === 12 ? 1 : Number(periodoMes) + 1;
       const anioSig = Number(periodoMes) === 12 ? Number(periodoAnio) + 1 : Number(periodoAnio);
@@ -207,7 +210,7 @@ export async function POST(request: Request) {
 
       let moraUf = 0;
       if (subtotalDeuda > 0.01) {
-        moraUf = Math.round(subtotalDeuda * 0.07);
+        moraUf = Math.round(subtotalDeuda * tasaMora);
       }
 
       const montoUfTotal = Math.max(0, montoUfOrd + montoUfExt + montoUfCargos + moraUf);

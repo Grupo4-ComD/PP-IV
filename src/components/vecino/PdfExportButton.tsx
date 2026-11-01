@@ -144,7 +144,7 @@ export default function PdfExportButton({ unidad, expensa }: PdfExportProps) {
       if (expensa.recargo_mora > 0) {
         tableData.push([
           String(itemIndex++),
-          "Interés por Mora (7% s/saldo impago vencido)",
+          "Interés por Mora s/saldo impago vencido",
           `$ ${expensa.recargo_mora.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`,
         ]);
       }

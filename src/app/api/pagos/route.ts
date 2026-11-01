@@ -3,8 +3,18 @@ import { PrismaClient, EstadoPago, EstadoExpensa } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Tasa oficial de Mercado Pago: 0.6% (0.006)
-const TASA_COMISION_MP = 0.006;
+// Tasa de comisión de Mercado Pago parametrizada en Configuración (por defecto 0.6% = 0.006)
+async function getTasaComisionMp(): Promise<number> {
+  try {
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    if (config?.comisionPasarelaMp != null) {
+      return Number(config.comisionPasarelaMp) / 100;
+    }
+  } catch (err) {
+    console.warn('Error reading config comisionPasarelaMp:', err);
+  }
+  return 0.006;
+}
 
 /**
  * GET /api/pagos
@@ -48,9 +58,11 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
+    const tasaMp = await getTasaComisionMp();
+
     const data = pagos.map((p) => {
       const bruto = Number(p.montoBruto || p.monto);
-      const retencion = Number(p.retencionMp) || Number((bruto * TASA_COMISION_MP).toFixed(2));
+      const retencion = Number(p.retencionMp) || Number((bruto * tasaMp).toFixed(2));
       const neto = Number(p.montoNeto) || Number((bruto - retencion).toFixed(2));
 
       return {
@@ -115,8 +127,9 @@ export async function POST(request: Request) {
     const mesFinal = Number(periodoMes) || (new Date().getMonth() + 1);
     const anioFinal = Number(periodoAnio) || new Date().getFullYear();
 
-    // 1. Regla de negocio: Cálculo automático del 0,6% de comisión Mercado Pago
-    const retencionMp = Number((montoFinal * TASA_COMISION_MP).toFixed(2));
+    const tasaMp = await getTasaComisionMp();
+    // 1. Regla de negocio: Cálculo dinámico de comisión Mercado Pago según configuración
+    const retencionMp = Number((montoFinal * tasaMp).toFixed(2));
     const montoNeto = Number((montoFinal - retencionMp).toFixed(2));
 
     // Si viene del admin entra aprobado; si lo sube el vecino entra en estado pendiente
@@ -250,7 +263,8 @@ export async function PATCH(request: Request) {
       montoAjustado != null && !isNaN(Number(montoAjustado)) && Number(montoAjustado) > 0
         ? Number(montoAjustado)
         : Number(pago.montoBruto || pago.monto);
-    const finalRetencionMp = Number((finalMontoBruto * TASA_COMISION_MP).toFixed(2));
+    const tasaMp = await getTasaComisionMp();
+    const finalRetencionMp = Number((finalMontoBruto * tasaMp).toFixed(2));
     const finalMontoNeto = Number((finalMontoBruto - finalRetencionMp).toFixed(2));
 
     // Actualizar el estado del pago y montos en la base de datos

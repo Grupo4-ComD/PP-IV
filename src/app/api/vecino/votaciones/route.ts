@@ -75,7 +75,20 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ temas, miUnidad });
+    const totalUfs = (await prisma.unidad.count()) || 9;
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    const umbralPorcentaje = config?.umbralConsensoPorcentaje ? Number(config.umbralConsensoPorcentaje) : 33.33;
+    const votosRequeridos = Math.max(1, Math.ceil(totalUfs * (umbralPorcentaje / 100)));
+
+    return NextResponse.json({
+      temas,
+      miUnidad,
+      umbral: {
+        porcentaje: umbralPorcentaje,
+        votosRequeridos,
+        totalUfs,
+      }
+    });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

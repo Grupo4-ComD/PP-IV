@@ -53,6 +53,18 @@ export default function ConciliarPagoModal({
   const [montoAjustado, setMontoAjustado] = useState<number | string>("");
   const [reciboDigital, setReciboDigital] = useState<any | null>(null);
   const [imgError, setImgError] = useState(false);
+  const [tasaMpPorc, setTasaMpPorc] = useState<number>(0.6);
+
+  useEffect(() => {
+    fetch("/api/configuracion")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.comision_pasarela_mp != null) {
+          setTasaMpPorc(Number(data.comision_pasarela_mp));
+        }
+      })
+      .catch((err) => console.warn("Error cargando config MP:", err));
+  }, []);
 
   // Buscar si existe un pago registrado en tabla pagos_vecinos
   useEffect(() => {
@@ -115,7 +127,7 @@ export default function ConciliarPagoModal({
       ? Number(montoAjustado)
       : (pagoReal ? (pagoReal.monto_bruto || pagoReal.monto) : expensa.total_pagar || 0))
   );
-  const comisionMp = Number(reciboDigital?.comisionMp ?? (montoBruto * 0.006).toFixed(2));
+  const comisionMp = Number(reciboDigital?.comisionMp ?? (montoBruto * (tasaMpPorc / 100)).toFixed(2));
   const montoNeto = Number(reciboDigital?.montoNetoAcreditado ?? (montoBruto - comisionMp).toFixed(2));
   const comprobanteEfectivo = expensa.comprobante_url || pagoReal?.comprobante_url;
   const mesesNombres = [
@@ -248,7 +260,7 @@ export default function ConciliarPagoModal({
         body: (() => {
           const rows: (string | number)[][] = [
             ["Monto Bruto Transferido por el Vecino", `$ ${montoBruto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
-            ["Deducción Pasarela Mercado Pago (0,6%)", `- $ ${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
+            [`Deducción Pasarela Mercado Pago (${tasaMpPorc}%)`, `- $ ${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
             ["Monto Neto Acreditado a la Cuenta del Consorcio", `$ ${montoNeto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`],
           ];
           if (montoBruto > Number(expensa.total_pagar)) {
@@ -445,7 +457,7 @@ export default function ConciliarPagoModal({
               </div>
 
               <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                <span>Deducción Mercado Pago (0,6%):</span>
+                <span>Deducción Mercado Pago ({tasaMpPorc}%):</span>
                 <span className="font-mono font-bold">
                   -${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                 </span>

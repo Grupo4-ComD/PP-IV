@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   UploadCloud,
   FileText,
@@ -45,12 +45,24 @@ export default function UploadComprobanteModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [tasaMpPorc, setTasaMpPorc] = useState<number>(0.6);
+
+  useEffect(() => {
+    fetch("/api/configuracion")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.comision_pasarela_mp != null) {
+          setTasaMpPorc(Number(data.comision_pasarela_mp));
+        }
+      })
+      .catch((err) => console.warn("Error cargando config MP:", err));
+  }, []);
 
   if (!isOpen) return null;
 
-  // Regla de Negocio: Deducción 0,6% Mercado Pago sobre monto real informado
+  // Regla de Negocio: Deducción dinámica de Mercado Pago sobre monto real informado según configuración
   const montoFinal = Number(montoIngresado !== "" && !isNaN(Number(montoIngresado)) ? montoIngresado : totalPagar);
-  const comisionMp = Number((montoFinal * 0.006).toFixed(2));
+  const comisionMp = Number((montoFinal * (tasaMpPorc / 100)).toFixed(2));
   const netoAcreditado = Number((montoFinal - comisionMp).toFixed(2));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,7 +219,7 @@ export default function UploadComprobanteModal({
             </span>
           </div>
           <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800">
-            <span>Deducción Mercado Pago (0,6%):</span>
+            <span>Deducción Mercado Pago ({tasaMpPorc}%):</span>
             <span className="font-mono text-amber-600 dark:text-amber-400">
               -${comisionMp.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </span>

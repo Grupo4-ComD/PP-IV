@@ -51,6 +51,11 @@ export default function VotacionesPage() {
   // Temas de votación activos
   const [temas, setTemas] = useState<TemaVotacion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [umbral, setUmbral] = useState<{ porcentaje: number; votosRequeridos: number; totalUfs: number }>({
+    porcentaje: 33.33,
+    votosRequeridos: 3,
+    totalUfs: 9,
+  });
 
   useEffect(() => {
     async function loadTemas() {
@@ -61,6 +66,9 @@ export default function VotacionesPage() {
           setTemas(data.temas || []);
           if (data.miUnidad) {
             setMiUnidad(data.miUnidad);
+          }
+          if (data.umbral) {
+            setUmbral(data.umbral);
           }
         }
       } catch (err) {
@@ -110,7 +118,7 @@ export default function VotacionesPage() {
                   ...p,
                   votos_favor: nuevoTotal,
                   votos_ufs: nuevosVotosUfs,
-                  estado: (nuevoTotal >= 3 ? "aprobado" : "en_votacion") as any,
+                  estado: (nuevoTotal >= umbral.votosRequeridos ? "aprobado" : "en_votacion") as any,
                 };
               } else {
                 // Agregar voto
@@ -120,7 +128,7 @@ export default function VotacionesPage() {
                   ...p,
                   votos_favor: nuevoTotal,
                   votos_ufs: nuevosVotosUfs,
-                  estado: (nuevoTotal >= 3 ? "aprobado" : "en_votacion") as any,
+                  estado: (nuevoTotal >= umbral.votosRequeridos ? "aprobado" : "en_votacion") as any,
                 };
               }
             } else {
@@ -132,7 +140,7 @@ export default function VotacionesPage() {
                   ...p,
                   votos_favor: nuevoTotal,
                   votos_ufs: nuevosVotosUfs,
-                  estado: (nuevoTotal >= 3 ? "aprobado" : "en_votacion") as any,
+                  estado: (nuevoTotal >= umbral.votosRequeridos ? "aprobado" : "en_votacion") as any,
                 };
               }
               return p;
@@ -209,7 +217,7 @@ export default function VotacionesPage() {
               Votación de Presupuestos de Proveedores
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Compare las cotizaciones homologadas recibidas por la administración para cada incidente edilicio. Conforme al reglamento, al alcanzar entre el <strong>30% y 40% de consenso (3 votos)</strong>, el presupuesto queda automáticamente <strong>Aprobado para Ejecución</strong>.
+              Compare las cotizaciones homologadas recibidas por la administración para cada incidente edilicio. Conforme al reglamento, al alcanzar el <strong>{umbral.porcentaje}% de consenso ({umbral.votosRequeridos} {umbral.votosRequeridos === 1 ? 'voto' : 'votos'})</strong>, el presupuesto queda automáticamente <strong>Aprobado para Ejecución</strong>.
             </p>
           </section>
 
@@ -261,7 +269,7 @@ export default function VotacionesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {tema.presupuestos.map((p) => {
                     const votoEmitidoAca = miUnidad ? p.votos_ufs.includes(miUnidad.numero_uf) : false;
-                    const esAprobado = p.votos_favor >= 3 || p.estado === "aprobado";
+                    const esAprobado = p.votos_favor >= umbral.votosRequeridos || p.estado === "aprobado";
 
                     return (
                       <div
@@ -345,8 +353,8 @@ export default function VotacionesPage() {
                           <div className="pt-2">
                             <ProgressBarConsenso
                               votosFavor={p.votos_favor}
-                              totalUfs={9}
-                              umbralMinimo={3}
+                              totalUfs={umbral.totalUfs}
+                              umbralMinimo={umbral.votosRequeridos}
                             />
                           </div>
 
