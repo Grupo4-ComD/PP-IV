@@ -1,7 +1,9 @@
 # DeveloPet Friendly 🐾
 ### Plataforma Integral de Gestión Residencial — Consorcio Calle 425
 
-Bienvenidos al repositorio institucional de **DeveloPet Friendly**, la *Software Factory* conformada para el desarrollo del Proyecto Integrador en la materia **Prácticas Profesionalizantes IV (Jueves)**.
+> **Estado del Proyecto:** ✅ **Finalizado y Desplegado en Producción**  
+> Proyecto Integrador culminado con éxito 
+**Prácticas Profesionalizantes IV**.
 
 ---
 
@@ -9,7 +11,7 @@ Bienvenidos al repositorio institucional de **DeveloPet Friendly**, la *Software
 * **Institución:** Instituto de Formación Técnica Superior Nº 29 (IFTS 29)
 * **Carrera:** Tecnicatura Superior en Desarrollo de Software
 * **Ciclo Lectivo:** Segundo Cuatrimestre de 2026
-* **Cátedra:** Prácticas Profesionalizantes IV — Comisión Jueves
+* **Materia:** Prácticas Profesionalizantes IV 
 * **Docentes Evaluadores:** Lic. Kevin Del Bello & Lic. Emir García Ontiveros
 * **Cliente / Proyecto:** Consorcio Calle 425 (Administradora Paula)
 
@@ -17,58 +19,78 @@ Bienvenidos al repositorio institucional de **DeveloPet Friendly**, la *Software
 
 ## 👥 Integrantes y Roles del Equipo (Software Factory)
 
-1. **Guillermo Sciulli** (`gsciulli@gmail.com`) — **Líder de Proyecto & Analista Funcional**
+1. **Guillermo Sciulli**  — **Líder de Proyecto & Analista Funcional**
    * *Responsabilidades:* Coordinación general del equipo, comunicación con cliente y docentes, relevamiento de requisitos y especificación de reglas de negocio.
-2. **Braian Perea** (`braianperea@gmail.com`) — **Diseñador UX/UI & Arquitecto de Base de Datos**
-   * *Responsabilidades:* Prototipado interactivo navegable en Stitch/Figma, modelado relacional en PostgreSQL/Prisma ORM y diagramación UML de la solución.
-3. **Verónica Greco** (`soyvero9@gmail.com`) — **Desarrolladora Frontend & Maquetación UI**
-   * *Responsabilidades:* Maquetación de interfaces responsivas en Next.js 15, Tailwind CSS (Glassmorphism) y componentes del Portal del Vecino y Dashboard.
-4. **Mailén Juárez** (`juarezmailen@gmail.com`) — **Responsable de QA / Testing & Aseguramiento de Calidad**
-   * *Responsabilidades:* Control de calidad de entregables, matriz de pruebas funcionales, validación de reglas de negocio y confección de minutas/documentación.
+2. **Braian Perea**  — **Diseñador UX/UI & Arquitecto de Base de Datos**
+   * *Responsabilidades:* Prototipado interactivo navegable en Figma, modelado relacional en PostgreSQL/Prisma ORM y diagramación UML/DER de la solución.
+3. **Verónica Greco**  — **Desarrolladora Frontend & Maquetación UI**
+   * *Responsabilidades:* Maquetación de interfaces responsivas en Next.js (App Router), Tailwind CSS (*Glassmorphism*) y vistas del Portal del Vecino y Administrador.
+4. **Mailén Juárez**  — **Responsable de QA / Testing & Aseguramiento de Calidad**
+   * *Responsabilidades:* Control de calidad de entregables, matriz de pruebas funcionales, validación de reglas de negocio y aseguramiento de la entrega final.
 
 ---
 
-## 🛠️ Stack Tecnológico Seleccionado
-* **Frontend & Framework:** Next.js 15+ (App Router) con React 19 y TypeScript.
-* **Estilos & UI:** Tailwind CSS (Maquetado Glassmorphism adaptable e intuitivo).
-* **Base de Datos Relacional:** PostgreSQL alojado en la nube mediante **Supabase**.
-* **ORM:** Prisma ORM (v5.22.0) para modelado relacional e integridad de datos.
-* **Inteligencia Artificial:** API de Google Gemini (RAG) para el Asistente Virtual sobre el Reglamento de Copropiedad.
-* **Seguridad & Autenticación:** Tokens JWT (vía `jose`) y Hasheo de credenciales con `bcrypt`.
-* **Integración Financiera:** API / Servicio Mock de Mercado Pago (verificación de Alias/CVU, retención del 0,6% y recargo por mora del 7%).
-* **Control de Versiones & CI/CD:** GitHub conectado a Vercel para despliegues automatizados.
+## 🛠️ Stack Tecnológico
+
+* **Frontend & Framework:** Next.js (App Router) con React y TypeScript.
+* **Estilos & UI:** Tailwind CSS (Maquetado *Glassmorphism* adaptable, soporte Dark/Light mode) y Lucide Icons.
+* **Base de Datos Relacional:** PostgreSQL alojado en la nube mediante **Supabase** (soporte de connection pooling y direct connection).
+* **ORM:** Prisma ORM para modelado relacional fuertemente tipado, migraciones y transacciones ACID.
+* **Inteligencia Artificial:** Google Gemini API (modelo RAG con streaming vía Vercel AI SDK) para el Asistente Virtual sobre el Reglamento de Copropiedad (con motor de reglas de respaldo local).
+* **Seguridad & Autenticación:** Sesiones basadas en cookies seguras HttpOnly con Supabase SSR Auth, control de acceso basado en roles (RBAC) y hasheo de credenciales con `bcrypt`.
+* **Integración Financiera:** Módulo de conciliación con deducción automática de comisión de Mercado Pago (0,6%) y cálculo de recargo por mora (7%).
+* **Generación de Reportes:** Exportación de cupones de expensas y balances en formato PDF (`jspdf` y `jspdf-autotable`).
+* **CI/CD & Hosting:** GitHub integrado con Vercel para despliegues automatizados y Edge Network.
 
 ---
 
-## 🚀 Roadmap del Proyecto & Estado de Situación
+## 📌 Reglas de Negocio Implementadas y Validadas
 
-* **[x] Hito 1 — Relevamiento Inicial:** Entrevista sincrónica grabada con la administradora Paula. Identificación de las 9 UFs, desglose de expensas (Ordinarias A, Extraordinarias B, Fondo de Reserva) y problemática operativa.
-* **[x] Hito 2 — Prototipado Interactivo & Segunda Entrevista:** Desarrollo del prototipo navegable en Stitch/Figma. Demostración sincrónica realizada el **30/09/2026** con validación del 100% de los módulos por parte de la cliente.
-* **[x] Hito 3 — Firma de Minuta & Entrega Etapa 2:** Aprobación de la Minuta de Conformidad, confección de la Especificación UML (Casos de Uso, Clases/DER, Secuencia y Actividades) y presentación del Informe Maestro.
-* **[ ] Hito 4 — Etapa 3 (En Curso):** Apertura de ramas de desarrollo para codificación ágil de los sprints de software sobre Next.js, Prisma y Supabase.
-
----
-
-## 📌 Reglas de Negocio Validadas con la Cliente
-1. **Prorrateo por Coeficiente:** Distribución de Gastos Ordinarios (A), Extraordinarios (B) y Fondo de Reserva entre las 9 Unidades Funcionales.
+1. **Prorrateo por Coeficiente m²:** Distribución de Gastos Ordinarios, Extraordinarios y Fondo de Reserva entre las 9 Unidades Funcionales según su porcentual legal exacto.
 2. **Retención de Mercado Pago (0,6%):** Deducción automática de comisiones sobre transferencias imputada como Gasto Ordinario a prorratear.
-3. **Recargo por Mora (7%):** Aplicación automática de recargo sobre saldos deudores a partir del día 1 del mes subsiguiente (vencimiento regular fijado el **día 15**).
-4. **Carga de Gastos y Período por Defecto:** Selección automática del mes en curso para cargas diarias y **bloqueo/congelamiento de seguridad** tras la emisión de las expensas.
-5. **Cronograma Rotativo de Limpieza:** Ciclo de 9 semanas con función de permuta/intercambio y multa automática de **$24.000** ante incumplimiento.
-6. **Mesa de Ayuda, Votación & Chatbot IA:** Tiquetera de reclamos, votación de presupuestos con quórum del **30%-40%** y Asistente Virtual 24/7 con la API de Gemini.
+3. **Recargo por Mora (7%):** Aplicación automática de recargo punitorio sobre saldos deudores a partir del día subsiguiente al vencimiento regular (fijado el **día 15**).
+4. **Congelamiento Inmutable de Período (RF-08):** Bloqueo de seguridad contable tras el cierre y emisión de expensas, impidiendo alteraciones o reemisiones retroactivas.
+5. **Cronograma Rotativo de Limpieza:** Ciclo continuo de 9 semanas con función peer-to-peer de solicitud de permuta y multa automática de **$24.000** ante incumplimiento (compensando a la UF sustituta).
+6. **Mesa de Ayuda ITIL 4 & Votación de Obras:** Tiquetera de reclamos clasificada por incidente, solicitud o problema con control de SLAs (4h a 96h), CSAT y votación ponderada de presupuestos con quórum mínimo del **30%–40%**.
+7. **Asistente Virtual 24/7:** Chatbot interactivo con conocimiento del Reglamento de Copropiedad que responde citando cláusulas y deriva a la Mesa de Ayuda ante incidencias edilicias.
 
 ---
 
-## 📁 Estructura Oficial de Archivos (Google Drive)
+## 🚀 Puesta en Marcha Local (Desarrollo y Auditoría)
+
+### 1. Clonación e Instalación
+```bash
+git clone https://github.com/Grupo4-ComD/PP-IV
+npm install
 ```
-📁 PPIV_DeveloPet_Friendly_2C26/
-  ├── 📁 Cliente_IFTS/Consorcio_Calle_425/
-  │     ├── Presentación visual y propuesta de valor
-  │     ├── Enlace al prototipo interactivo (Stitch / Figma)
-  │     ├── Grabación de la Demo del 30/09/2026
-  │     └── Minuta de Conformidad
-  └── 📁 Documentacion_Interna/
-        ├── Informe Maestro de Análisis y Diseño (Etapa 2 )
-        ├── Especificación de Diagramas UML (Etapa 2 )
-        └── Diagramas Editables y Recursos
+
+### 2. Variables de Entorno
+Copia el archivo de plantilla `.env` en la raíz del proyecto,
+
+
+### 3. Base de Datos y Sembrado Inicial (Seeds)
+```bash
+# Sincronizar el esquema relacional de Prisma con PostgreSQL
+npx prisma db push
+
+# Poblar datos iniciales (las 9 UFs, usuarios, gastos y mantenimientos)
+node seed.js
+node migrar.js
+node seed_mantenimientos.js
 ```
+
+### 4. Servidor de Desarrollo
+```bash
+npm run dev
+```
+La aplicación quedará disponible en `http://localhost:3000`.
+
+---
+
+## 🚦 Roadmap del Proyecto & Estado de Cumplimiento
+
+* [x] **Hito 1 — Relevamiento Inicial:** Entrevista sincrónica grabada con la administradora Paula. Identificación de las 9 UFs, desglose de expensas y problemática operativa.
+* [x] **Hito 2 — Prototipado Interactivo & Segunda Entrevista:** Prototipo navegable en Figma validado al 100% por la cliente en la demo del 30/09/2026.
+* [x] **Hito 3 — Firma de Minuta & Entrega Etapa 2:** Minuta de Conformidad, especificación UML completa e Informe Maestro de Análisis y Diseño.
+* [x] **Hito 4 — Arquitectura, Base de Datos y Desarrollo Core (Etapa 3):** Implementación integral en Next.js, Prisma ORM, Supabase, Mesa ITIL 4 y Gemini AI.
+* [x] **Hito 5 — Cierre, Homologación y Despliegue en Producción (Finalizado):** Validación completa de la matriz de pruebas funcionales (QA), auditoría de seguridad y despliegue continuo en producción (Vercel & Supabase Cloud).
