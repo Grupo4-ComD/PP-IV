@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   KeyRound,
+  Sparkles,
 } from "lucide-react";
 import CambiarPasswordModal from "@/components/common/CambiarPasswordModal";
 import ThemeToggle from "@/components/common/ThemeToggle";
@@ -57,6 +58,12 @@ export default function AdminSidebar() {
       href: "/admin/expensas/liquidacion",
       icon: Receipt,
       active: pathname.startsWith("/admin/expensas/liquidacion"),
+    },
+    {
+      label: "Cronograma Limpieza",
+      href: "/vecino/limpieza",
+      icon: Sparkles,
+      active: pathname.startsWith("/vecino/limpieza"),
     },
     {
       label: "Mesa ITIL & Proveedores",
