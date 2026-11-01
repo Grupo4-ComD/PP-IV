@@ -62,6 +62,7 @@ export default function AdminDashboardPage() {
   const [alertasMantenimiento, setAlertasMantenimiento] = useState<{tipo: string, fechaUltimo: string, vencido: boolean}[]>([]);
 
   const [limpiezasPendientes, setLimpiezasPendientes] = useState<any[]>([]);
+  const [montoMulta, setMontoMulta] = useState<number>(24000);
 
   const loadDashboard = async () => {
     try {
@@ -83,6 +84,7 @@ export default function AdminDashboardPage() {
           ...(data.limpiezasVencidas || [])
         ];
         setLimpiezasPendientes(todasLasLimpiezas);
+        if (data.montoMulta) setMontoMulta(Number(data.montoMulta));
       }
       
       const resMant = await fetch("/api/admin/mantenimiento");
@@ -195,8 +197,8 @@ export default function AdminDashboardPage() {
                 titleColor = 'text-rose-900 dark:text-rose-200';
                 textColor = 'text-rose-700 dark:text-rose-400';
                 titulo = `Denuncia: UF 0${limpieza.denunciante_uf || '?'} reportó incumplimiento de UF 0${limpieza.numero_uf}`;
-                desc = `${limpieza.denunciante_nombre || 'Un vecino'} asumió la limpieza por inasistencia de ${limpieza.residente}. Requiere tu homologación para imputar la multa de $24.000.`;
-                btnAprobarText = 'Homologar y Multar ($24.000)';
+                desc = `${limpieza.denunciante_nombre || 'Un vecino'} asumió la limpieza por inasistencia de ${limpieza.residente}. Requiere tu homologación para imputar la multa de ${montoMulta.toLocaleString("es-AR")}.`;
+                btnAprobarText = `Homologar y Multar (${montoMulta.toLocaleString("es-AR")})`;
                 btnAprobarClass = 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm';
                 btnRechazarText = 'Desestimar';
                 btnRechazarClass = 'border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800';

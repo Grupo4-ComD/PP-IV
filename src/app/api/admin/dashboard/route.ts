@@ -143,6 +143,9 @@ export async function GET() {
       include: { unidadAsignada: true }
     });
 
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    const montoMulta = config?.montoMultaLimpieza ? Number(config.montoMultaLimpieza) : 24000;
+
     return NextResponse.json({
       saldoCaja,
       movimientos,
@@ -152,6 +155,7 @@ export async function GET() {
       totalMoraPendiente,
       ticketsActivos: tickets,
       unidades: unidadesConEstado,
+      montoMulta,
       limpiezasEnVerificacion: limpiezasEnVerificacion.map(l => ({
         id: l.id.toString(),
         numero_uf: l.unidadAsignada.numeroUf,

@@ -33,6 +33,9 @@ export async function GET(request: Request) {
       orderBy: { semanaInicio: 'asc' }
     });
 
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    const montoMulta = config?.montoMultaLimpieza ? Number(config.montoMultaLimpieza) : 24000;
+
     const turnosResult = allTurnos.map(t => {
       const tInicio = new Date(t.semanaInicio);
       const tFin = new Date(t.semanaFin);
@@ -61,7 +64,7 @@ export async function GET(request: Request) {
         estado_permuta: t.estadoPermuta
       };
     });
-    return NextResponse.json({ turnos: turnosResult, miNumeroUf });
+    return NextResponse.json({ turnos: turnosResult, miNumeroUf, montoMulta });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

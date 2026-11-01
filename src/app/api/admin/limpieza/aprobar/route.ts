@@ -16,6 +16,9 @@ export async function PATCH(request: Request) {
 
     if (!turno) return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 });
 
+    const config = await prisma.configuracionConsorcio.findFirst({ where: { id: 1 } });
+    const montoMulta = config?.montoMultaLimpieza ? Number(config.montoMultaLimpieza) : 24000;
+
     const esDenuncia = Boolean(turno.unidadIdSustituta);
     const now = new Date();
 
@@ -23,34 +26,34 @@ export async function PATCH(request: Request) {
       // Caso 1: Es una DENUNCIA de vecino con suplente
       if (accion === 'aprobar') {
         // La administradora valida la denuncia:
-        // Se aplica la multa de $24.000 a la infractora y se bonifica a la sustituta
+        // Se aplica la multa a la infractora y se bonifica a la sustituta
         await prisma.multa.create({
           data: {
             unidadIdInfractora: turno.unidadIdAsignada,
             acreditadoAUnidadId: turno.unidadIdSustituta,
-            monto: 24000,
+            monto: montoMulta,
             motivo: 'Incumplimiento de turno de limpieza rotativa (Homologado por Admin)',
           }
         });
 
-        // +$24.000 a la UF infractora
+        // +montoMulta a la UF infractora
         await prisma.cargoParticular.create({
           data: {
             unidadId: turno.unidadIdAsignada,
             concepto: 'Multa por incumplimiento limpieza rotativa',
-            monto: 24000,
+            monto: montoMulta,
             periodoMes: now.getMonth() + 1,
             periodoAnio: now.getFullYear(),
           }
         });
 
-        // -$24.000 de compensación a la UF sustituta
+        // -montoMulta de compensación a la UF sustituta
         if (turno.unidadIdSustituta) {
           await prisma.cargoParticular.create({
             data: {
               unidadId: turno.unidadIdSustituta,
               concepto: 'Bonificación por suplencia de limpieza',
-              monto: -24000,
+              monto: -montoMulta,
               periodoMes: now.getMonth() + 1,
               periodoAnio: now.getFullYear(),
             }
@@ -87,7 +90,7 @@ export async function PATCH(request: Request) {
         await prisma.multa.create({
           data: {
             unidadIdInfractora: turno.unidadIdAsignada,
-            monto: 24000,
+            monto: montoMulta,
             motivo: 'Incumplimiento de turno de limpieza rotativa (Rechazado por Admin)',
           }
         });
@@ -96,7 +99,7 @@ export async function PATCH(request: Request) {
           data: {
             unidadId: turno.unidadIdAsignada,
             concepto: 'Multa por incumplimiento limpieza rotativa',
-            monto: 24000,
+            monto: montoMulta,
             periodoMes: now.getMonth() + 1,
             periodoAnio: now.getFullYear(),
           }

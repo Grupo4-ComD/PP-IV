@@ -36,6 +36,7 @@ export interface TurnoLimpieza {
 interface CalendarioLimpiezaProps {
   turnos: TurnoLimpieza[];
   miNumeroUf: number;
+  montoMulta?: number;
   onPedirPermuta?: (turno: TurnoLimpieza) => void;
   onReportarIncumplimiento?: (turno: TurnoLimpieza) => void;
 }
@@ -50,6 +51,7 @@ const MESES = [
 export default function CalendarioLimpieza({
   turnos,
   miNumeroUf,
+  montoMulta = 24000,
   onPedirPermuta,
   onReportarIncumplimiento,
 }: CalendarioLimpiezaProps) {
@@ -314,7 +316,7 @@ export default function CalendarioLimpieza({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-          <span>Multado ($24.000)</span>
+          <span>Multado (${montoMulta.toLocaleString("es-AR")})</span>
         </div>
         <div className="flex items-center gap-1.5 ml-auto font-medium text-indigo-600 dark:text-indigo-400">
           <Sparkles className="w-3.5 h-3.5" />
@@ -483,7 +485,7 @@ export default function CalendarioLimpieza({
 
               {selectedTurno.unidad_sustituta_uf && (
                 <div className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-700 dark:text-amber-300">
-                  Turno cubierto por Unidad Sustituta: UF {selectedTurno.unidad_sustituta_uf} (Compensación de $24.000 aplicada)
+                  Turno cubierto por Unidad Sustituta: UF {selectedTurno.unidad_sustituta_uf} (Compensación de ${montoMulta.toLocaleString("es-AR")} aplicada)
                 </div>
               )}
             </div>
