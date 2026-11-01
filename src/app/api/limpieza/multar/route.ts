@@ -26,56 +26,22 @@ export async function POST(request: Request) {
     const turno = await prisma.limpiezaRotativa.findUnique({ where: { id: BigInt(turnoId) } });
     if (!turno) return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 });
 
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
-
-    // 1. Crear registro de Multa
-    const multa = await prisma.multa.create({
-      data: {
-        unidadIdInfractora: BigInt(unidadIdInfractora),
-        acreditadoAUnidadId: unidadIdSustituta ? BigInt(unidadIdSustituta) : null,
-        monto: 24000,
-        motivo: 'Incumplimiento de turno de limpieza rotativa',
-      }
-    });
-
-    // 2. Insertar CargoParticular a la UF infractora (+)
-    await prisma.cargoParticular.create({
-      data: {
-        unidadId: BigInt(unidadIdInfractora),
-        concepto: 'Multa por incumplimiento limpieza rotativa',
-        monto: 24000,
-        periodoMes: currentMonth,
-        periodoAnio: currentYear,
-      }
-    });
-
-    // 3. Insertar Bonificación a la UF sustituta (-) si existe
-    if (unidadIdSustituta) {
-      await prisma.cargoParticular.create({
-        data: {
-          unidadId: BigInt(unidadIdSustituta),
-          concepto: 'Bonificación por suplencia de limpieza',
-          monto: -24000,
-          periodoMes: currentMonth,
-          periodoAnio: currentYear,
-        }
-      });
-    }
-
-    // 4. Actualizar el estado del turno
+    // En lugar de aplicar la multa directamente de forma unilateral,
+    // el turno pasa a 'en_verificacion' con la UF sustituta registrada para que
+    // la Administradora lo revise y homologue desde su Dashboard Central (Segregación de funciones)
     await prisma.limpiezaRotativa.update({
       where: { id: BigInt(turnoId) },
       data: {
-        estado: 'multado',
-        unidadIdSustituta: unidadIdSustituta ? BigInt(unidadIdSustituta) : null
+        estado: 'en_verificacion',
+        unidadIdSustituta: unidadIdSustituta ? BigInt(unidadIdSustituta) : null,
+        observaciones: `Denuncia radicada por UF 0${unidadIdSustituta}. Pendiente de homologación por la Administración.`,
       }
     });
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Multa aplicada exitosamente' 
+      enRevision: true,
+      message: 'Denuncia registrada con éxito. Queda pendiente de revisión y homologación por la Administradora.' 
     });
   } catch (error) {
     console.error("Multar error:", error);

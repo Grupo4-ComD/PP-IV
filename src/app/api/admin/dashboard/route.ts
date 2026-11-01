@@ -132,7 +132,7 @@ export async function GET() {
 
     const limpiezasEnVerificacion = await prisma.limpiezaRotativa.findMany({
       where: { estado: 'en_verificacion' },
-      include: { unidadAsignada: true }
+      include: { unidadAsignada: true, unidadSustituta: true }
     });
 
     const limpiezasVencidas = await prisma.limpiezaRotativa.findMany({
@@ -158,7 +158,9 @@ export async function GET() {
         piso_depto: l.unidadAsignada.pisoDepto,
         residente: l.unidadAsignada.propietarioNombre,
         semana_inicio: l.semanaInicio.toISOString().split('T')[0],
-        tipo: 'verificacion'
+        tipo: l.unidadIdSustituta ? 'denuncia' : 'verificacion',
+        denunciante_uf: l.unidadSustituta?.numeroUf || null,
+        denunciante_nombre: l.unidadSustituta?.propietarioNombre || null,
       })),
       limpiezasVencidas: limpiezasVencidas.map(l => ({
         id: l.id.toString(),

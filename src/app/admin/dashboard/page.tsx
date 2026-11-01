@@ -16,6 +16,7 @@ import {
   Plus,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Loader2,
   DollarSign,
   Wallet,
@@ -119,6 +120,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) {
         setLimpiezasPendientes(prev => prev.filter(l => l.id !== id));
+        loadDashboard();
       }
     } catch (err) {
       console.error(err);
@@ -169,38 +171,75 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Limpiezas Pendientes de Aprobación */}
+        {/* Limpiezas Pendientes de Aprobación, Vencidas o Denuncias */}
         {limpiezasPendientes.length > 0 && (
           <div className="mb-6 space-y-3 animate-fade-in">
             {limpiezasPendientes.map((limpieza) => {
               const esVencida = limpieza.tipo === 'vencida';
+              const esDenuncia = limpieza.tipo === 'denuncia';
+
+              let borderColor = 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50';
+              let iconBg = 'bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400';
+              let titleColor = 'text-amber-900 dark:text-amber-200';
+              let textColor = 'text-amber-700 dark:text-amber-400';
+              let titulo = `UF 0${limpieza.numero_uf} envió reporte de Limpieza`;
+              let desc = `El vecino ${limpieza.residente} reportó haber completado sus tareas.`;
+              let btnAprobarText = 'Aprobar';
+              let btnAprobarClass = 'bg-emerald-600 hover:bg-emerald-500 text-white';
+              let btnRechazarText = 'Rechazar';
+              let btnRechazarClass = 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50';
+
+              if (esDenuncia) {
+                borderColor = 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50';
+                iconBg = 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400';
+                titleColor = 'text-rose-900 dark:text-rose-200';
+                textColor = 'text-rose-700 dark:text-rose-400';
+                titulo = `Denuncia: UF 0${limpieza.denunciante_uf || '?'} reportó incumplimiento de UF 0${limpieza.numero_uf}`;
+                desc = `${limpieza.denunciante_nombre || 'Un vecino'} asumió la limpieza por inasistencia de ${limpieza.residente}. Requiere tu homologación para imputar la multa de $24.000.`;
+                btnAprobarText = 'Homologar y Multar ($24.000)';
+                btnAprobarClass = 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm';
+                btnRechazarText = 'Desestimar';
+                btnRechazarClass = 'border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800';
+              } else if (esVencida) {
+                borderColor = 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50';
+                iconBg = 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400';
+                titleColor = 'text-rose-900 dark:text-rose-200';
+                textColor = 'text-rose-700 dark:text-rose-400';
+                titulo = `UF 0${limpieza.numero_uf} no reportó su Limpieza a tiempo`;
+                desc = `La semana de ${limpieza.residente} venció sin reportes. Puedes multar o perdonar.`;
+                btnAprobarText = 'Aprobar Igual';
+                btnAprobarClass = 'bg-slate-800 hover:bg-slate-700 text-white';
+                btnRechazarText = 'Aplicar Multa';
+                btnRechazarClass = 'border-rose-600 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white';
+              }
+
               return (
-                <div key={limpieza.id} className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border ${esVencida ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50' : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50'}`}>
+                <div key={limpieza.id} className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border ${borderColor}`}>
                   <div className="flex items-start sm:items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${esVencida ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400'}`}>
-                      {esVencida ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+                      {esDenuncia ? <AlertTriangle className="w-5 h-5" /> : esVencida ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                     </div>
                     <div>
-                      <h3 className={`text-sm font-bold ${esVencida ? 'text-rose-900 dark:text-rose-200' : 'text-amber-900 dark:text-amber-200'}`}>
-                        {esVencida ? `UF 0${limpieza.numero_uf} no reportó su Limpieza a tiempo` : `UF 0${limpieza.numero_uf} envió reporte de Limpieza`}
+                      <h3 className={`text-sm font-bold ${titleColor}`}>
+                        {titulo}
                       </h3>
-                      <p className={`text-xs mt-1 ${esVencida ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                        {esVencida ? `La semana de ${limpieza.residente} venció sin reportes. Puedes multar o perdonar.` : `El vecino ${limpieza.residente} reportó haber completado sus tareas.`}
+                      <p className={`text-xs mt-1 ${textColor}`}>
+                        {desc}
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
                     <button 
                       onClick={() => handleAprobarLimpieza(limpieza.id, 'aprobar')}
-                      className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-xl transition shadow-sm text-center ${esVencida ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-xl transition shadow-sm text-center cursor-pointer ${btnAprobarClass}`}
                     >
-                      {esVencida ? 'Aprobar Igual' : 'Aprobar'}
+                      {btnAprobarText}
                     </button>
                     <button 
                       onClick={() => handleAprobarLimpieza(limpieza.id, 'rechazar')}
-                      className={`flex-1 sm:flex-none px-4 py-2 border text-xs font-bold rounded-xl transition text-center ${esVencida ? 'border-rose-600 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white' : 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50'}`}
+                      className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-xl transition text-center cursor-pointer ${btnRechazarClass}`}
                     >
-                      {esVencida ? 'Aplicar Multa' : 'Rechazar'}
+                      {btnRechazarText}
                     </button>
                   </div>
                 </div>

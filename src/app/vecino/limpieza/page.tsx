@@ -31,7 +31,7 @@ interface TurnoLimpieza {
   numero_uf: number;
   piso_depto: string;
   residente: string;
-  estado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado" | "incumplido";
+  estado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado" | "incumplido" | "en_verificacion";
   insumos_verificados?: boolean;
   unidad_sustituta_uf?: number | null;
   solicitud_permuta_uf?: number | null;
@@ -127,7 +127,7 @@ export default function LimpiezaPage() {
       setTurnos((prev) =>
         prev.map((t) =>
           t.numero_uf === infractoraUf
-            ? { ...t, estado: "multado", unidad_sustituta_uf: sustitutaUf }
+            ? { ...t, estado: "en_verificacion", unidad_sustituta_uf: sustitutaUf }
             : t
         )
       );
@@ -143,7 +143,7 @@ export default function LimpiezaPage() {
       setMultasHistorial((prev) => [nuevaMulta, ...prev]);
 
       setReportSuccessMsg(
-        `¡Multa de $24.000 imputada exitosamente a la UF 0${infractoraUf}! Se ha acreditado el saldo a favor de la UF 0${sustitutaUf} en el Fondo Especial.`
+        `Denuncia enviada exitosamente. Queda pendiente para homologación de la Administradora en el panel central.`
       );
 
       setTimeout(() => {
@@ -669,7 +669,7 @@ export default function LimpiezaPage() {
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
-                  <p>• La función <code>aplicar_multa_limpieza()</code> registrará $24.000 en la tabla <code>multas</code>.</p>
+                  <p>• La denuncia se enviará al Panel Central de la Administradora para su homologación.</p>
                   <p>• El cargo se sumará a la próxima liquidación de la UF 0{infractoraUf} y se descontará a la UF 0{sustitutaUf}.</p>
                 </div>
 
@@ -692,7 +692,7 @@ export default function LimpiezaPage() {
                         <span>Aplicando...</span>
                       </>
                     ) : (
-                      "Confirmar e Imputar Multa"
+                      "Enviar Reporte a Administración"
                     )}
                   </button>
                 </div>
