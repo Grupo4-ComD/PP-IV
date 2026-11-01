@@ -264,7 +264,7 @@ export default function CuponPagoModal({
         finalY + 36
       );
       doc.text(
-        "- El pago después del día 10 puede generar intereses por mora en la siguiente liquidación.",
+        "- El pago después de la fecha de vencimiento puede generar intereses por mora en la siguiente liquidación.",
         16,
         finalY + 42
       );
@@ -456,7 +456,7 @@ export default function CuponPagoModal({
                   desde el botón del panel.
                 </p>
                 <p>
-                  • El pago después de la fecha de vencimiento (<strong>{cupon.vencimiento}</strong>) genera intereses por mora (7%) en la
+                  • El pago después de la fecha de vencimiento (<strong>{cupon.vencimiento}</strong>) genera intereses por mora en la
                   siguiente liquidación.
                 </p>
                 <div className="pt-2">
