@@ -8,6 +8,7 @@ interface UnidadBase {
   numero_uf: number;
   piso_depto: string;
   propietario_nombre: string;
+  saldo_pendiente?: number;
 }
 
 interface RegistrarCobroModalProps {
@@ -20,16 +21,26 @@ interface RegistrarCobroModalProps {
 export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobroExitoso }: RegistrarCobroModalProps) {
   const [unidadId, setUnidadId] = useState("");
   const [monto, setMonto] = useState("");
-  
-  // Asumimos el mes actual para simplificar
-  const periodoMes = new Date().getMonth() + 1;
-  const periodoAnio = new Date().getFullYear();
+  const [periodo, setPeriodo] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleUnidadChange = (selectedId: string) => {
+    setUnidadId(selectedId);
+    const u = unidades.find((item) => item.id === selectedId);
+    if (u && u.saldo_pendiente && Number(u.saldo_pendiente) > 0) {
+      setMonto(u.saldo_pendiente.toString());
+    }
+  };
+
+  const selectedUnidad = unidades.find((u) => u.id === unidadId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,14 +54,17 @@ export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobro
     setSuccess(false);
 
     try {
+      const [anio, mes] = periodo ? periodo.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
+
       const res = await fetch("/api/pagos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           unidadId,
           monto,
-          periodoMes,
-          periodoAnio,
+          periodoMes: mes,
+          periodoAnio: anio,
+          origen: "admin",
         }),
       });
 
@@ -65,7 +79,7 @@ export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobro
         setSuccess(false);
         setUnidadId("");
         setMonto("");
-      }, 1500);
+      }, 1200);
 
     } catch (err) {
       setError("Ocurrió un error. Verifica los datos e intenta nuevamente.");
@@ -101,7 +115,7 @@ export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobro
           {success && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>¡Cobro registrado exitosamente en la BD!</span>
+              <span>¡Cobro registrado y saldos impactados exitosamente!</span>
             </div>
           )}
 
@@ -111,7 +125,7 @@ export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobro
             </label>
             <select
               value={unidadId}
-              onChange={(e) => setUnidadId(e.target.value)}
+              onChange={(e) => handleUnidadChange(e.target.value)}
               disabled={loading || success}
               className="w-full h-11 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             >
@@ -119,28 +133,51 @@ export default function RegistrarCobroModal({ isOpen, onClose, unidades, onCobro
               {unidades.map((u) => (
                 <option key={u.id} value={u.id}>
                   UF {u.numero_uf} - {u.piso_depto} ({u.propietario_nombre})
+                  {u.saldo_pendiente && Number(u.saldo_pendiente) > 0 ? ` [Debe $${u.saldo_pendiente.toLocaleString("es-AR")}]` : ""}
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-              Monto Pagado
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Período Imputado
+              </label>
               <input
-                type="number"
-                step="0.01"
-                placeholder="Ej. 45000"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
+                type="month"
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
                 disabled={loading || success}
-                className="w-full h-11 pl-8 pr-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                className="w-full h-11 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               />
             </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Monto Cobrado
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-3 text-slate-400 font-bold text-sm">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ej. 45000"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  disabled={loading || success}
+                  className="w-full h-11 pl-7 pr-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+            </div>
           </div>
+
+          {selectedUnidad && selectedUnidad.saldo_pendiente && Number(selectedUnidad.saldo_pendiente) > 0 && (
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-700 dark:text-amber-300">
+              Saldo pendiente de esta unidad: <strong>${selectedUnidad.saldo_pendiente.toLocaleString("es-AR")}</strong>
+            </div>
+          )}
 
           <div className="pt-2">
             <button

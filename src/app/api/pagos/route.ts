@@ -166,13 +166,27 @@ export async function POST(request: Request) {
       });
     } else {
       // Buscar si existe la expensa para este mes y unidad
-      const expensaExistente = await prisma.expensa.findFirst({
+      let expensaExistente = await prisma.expensa.findFirst({
         where: {
           unidadId: BigInt(unidadId),
           periodoMes: mesFinal,
           periodoAnio: anioFinal,
         },
       });
+
+      // Si viene de admin y no encontró una expensa de ese mes exacto, busca la expensa impaga más antigua de la unidad
+      if (!expensaExistente && origen === 'admin') {
+        expensaExistente = await prisma.expensa.findFirst({
+          where: {
+            unidadId: BigInt(unidadId),
+            estado: { not: EstadoExpensa.pagado },
+          },
+          orderBy: [
+            { periodoAnio: 'asc' },
+            { periodoMes: 'asc' },
+          ],
+        });
+      }
 
       if (expensaExistente) {
         await prisma.expensa.update({

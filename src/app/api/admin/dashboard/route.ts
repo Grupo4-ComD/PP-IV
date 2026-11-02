@@ -42,8 +42,17 @@ export async function GET() {
     const periodoMes = hoy.getMonth() + 1;
     const periodoAnio = hoy.getFullYear();
 
+    const fechaInicioMes = new Date(periodoAnio, periodoMes - 1, 1);
+    const fechaFinMes = new Date(periodoAnio, periodoMes, 0, 23, 59, 59);
+
     const pagos = await prisma.pagoVecino.findMany({
-      where: { periodoMes, periodoAnio, estado: 'aprobado' }
+      where: {
+        estado: 'aprobado',
+        OR: [
+          { periodoMes, periodoAnio },
+          { fechaPago: { gte: fechaInicioMes, lte: fechaFinMes } }
+        ]
+      }
     });
     
     const recaudacionMes = pagos.reduce((sum, p) => sum + Number(p.monto), 0);
@@ -70,10 +79,11 @@ export async function GET() {
         (e) => Number(e.recargoMora) > 0 || (e.fechaVencimiento && new Date(e.fechaVencimiento) < hoy)
       );
       const enMora = expensasEnMora.length > 0;
+      const tieneDeuda = deudaUnidad > 0;
 
       if (enMora) {
         ufsMora++;
-      } else {
+      } else if (!tieneDeuda) {
         ufsAlDia++;
       }
 
@@ -84,7 +94,7 @@ export async function GET() {
         propietario_nombre: u.propietarioNombre,
         email: u.email,
         porcentual_m2: Number(u.coeficienteProrrateo),
-        estado_expensa: enMora ? "pendiente" : "pagado",
+        estado_expensa: tieneDeuda ? (enMora ? "mora" : "pendiente") : "pagado",
         saldo_pendiente: deudaUnidad
       };
     });
@@ -103,32 +113,62 @@ export async function GET() {
     });
 
     const movimientos = [
-      ...gastosData.map(g => ({
-        id: `g-${g.id}`,
-        periodo: `${(new Date(g.fechaGasto).getMonth() + 1).toString().padStart(2, '0')}/${new Date(g.fechaGasto).getFullYear()}`,
-        detalle: g.concepto,
-        monto: Number(g.monto),
-        tipo: 'GASTO',
-        fecha: g.fechaGasto.getTime()
-      })),
+      ...gastosData.map(g => {
+        const con = (g.concepto || '').toUpperCase();
+        const esAjuste = con.includes('AJUSTE');
+        const esIngreso = Number(g.monto) < 0;
+        const conceptoLimpio = g.concepto.replace(/\s*_sd\b/gi, '').trim();
+
+        let tipo: 'GASTO' | 'INGRESO' | 'EGRESO' = 'GASTO';
+        if (esAjuste) {
+          tipo = esIngreso ? 'INGRESO' : 'EGRESO';
+        } else if (esIngreso) {
+          tipo = 'INGRESO';
+        }
+
+        return {
+          id: `g-${g.id}`,
+          periodo: `${(new Date(g.fechaGasto).getMonth() + 1).toString().padStart(2, '0')}/${new Date(g.fechaGasto).getFullYear()}`,
+          detalle: conceptoLimpio,
+          monto: Math.abs(Number(g.monto)),
+          tipo,
+          fecha: g.fechaGasto.getTime()
+        };
+      }),
       ...pagosData.map(p => ({
         id: `p-${p.id}`,
         periodo: `${p.periodoMes.toString().padStart(2, '0')}/${p.periodoAnio}`,
         detalle: `Cobro (U. ${p.unidad.pisoDepto})`,
         monto: Number(p.monto),
-        tipo: 'PAGO',
+        tipo: 'PAGO' as const,
         fecha: p.fechaPago.getTime()
       }))
     ].sort((a, b) => b.fecha - a.fecha).slice(0, 15);
 
     const totalPagos = await prisma.pagoVecino.aggregate({ where: { estado: 'aprobado' }, _sum: { monto: true } });
     const todosLosGastos = await prisma.gasto.findMany();
-    const totalGastos = todosLosGastos
-      .filter(g => !(g.concepto || '').toUpperCase().includes('_SD'))
-      .reduce((sum, g) => sum + Number(g.monto), 0);
-    
-    // Saldo real de Caja Bancaria (Total cobrado histórico - Total gastado histórico)
-    const saldoCaja = Number(totalPagos._sum.monto || 0) - totalGastos;
+
+    let egresosCaja = 0;
+    let ingresosAjusteCaja = 0;
+
+    for (const g of todosLosGastos) {
+      const con = (g.concepto || '').toUpperCase();
+      const monto = Number(g.monto);
+      const esAjuste = con.includes('AJUSTE');
+
+      if (esAjuste) {
+        if (monto < 0) {
+          ingresosAjusteCaja += Math.abs(monto);
+        } else {
+          egresosCaja += monto;
+        }
+      } else if (!con.includes('_SD')) {
+        egresosCaja += monto;
+      }
+    }
+
+    // Saldo real de Caja Bancaria (Total cobrado histórico + Ajustes ingreso - Total egresos reales)
+    const saldoCaja = Number(totalPagos._sum.monto || 0) + ingresosAjusteCaja - egresosCaja;
 
     const limpiezasEnVerificacion = await prisma.limpiezaRotativa.findMany({
       where: { estado: 'en_verificacion' },

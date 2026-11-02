@@ -96,8 +96,12 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     if (!esAjusteCaja && Number(g.monto) > 0) {
       totalGastosPreviosProrrateables += Number(g.monto);
     }
-    if (g.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) {
-      egresosPreviosCaja += Number(g.monto);
+    if (g.categoria !== CategoriaGasto.comision_pasarela) {
+      if (con.includes('AJUSTE')) {
+        egresosPreviosCaja += Number(g.monto);
+      } else if (!con.includes('_SD')) {
+        egresosPreviosCaja += Number(g.monto);
+      }
     }
   });
 
@@ -225,8 +229,13 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
     const esAjusteCaja = con.includes('AJUSTE') || con.includes('_SD');
     const seProrratea = !esAjusteCaja && Number(gasto.monto) > 0;
 
-    if (gasto.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) {
-      saldoCajaActual -= Number(gasto.monto);
+    const esAjuste = con.includes('AJUSTE');
+    if (gasto.categoria !== CategoriaGasto.comision_pasarela) {
+      if (esAjuste) {
+        saldoCajaActual -= Number(gasto.monto);
+      } else if (!con.includes('_SD')) {
+        saldoCajaActual -= Number(gasto.monto);
+      }
     }
     
     const conceptoLimpio = gasto.concepto.replace(/_sd|_SD/gi, '').trim();
@@ -240,7 +249,7 @@ export async function generarLiquidacionConsolidada({ periodoMes, periodoAnio }:
       ingresos: Number(gasto.monto) < 0 ? Math.abs(Number(gasto.monto)) : null,
       ordinarias: (esOrd && seProrratea) ? Number(gasto.monto) : null,
       extraordinaria: (esExt && seProrratea) ? Number(gasto.monto) : null,
-      saldo: (gasto.categoria !== CategoriaGasto.comision_pasarela && !esAjusteCaja) ? saldoCajaActual : null,
+      saldo: (gasto.categoria !== CategoriaGasto.comision_pasarela && (!con.includes('_SD') || esAjuste)) ? saldoCajaActual : null,
       nota: null
     });
   });

@@ -412,13 +412,17 @@ export default function AdminDashboardPage() {
                     <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/70 transition">
                       <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">{m.periodo}</td>
                       <td className="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">{m.detalle}</td>
-                      <td className={`px-4 py-3.5 text-right font-mono font-bold ${m.tipo === "GASTO" ? "text-rose-600" : m.tipo === "PAGO" ? "text-emerald-600" : "text-amber-600"}`}>
-                        {m.tipo === "GASTO" ? "-" : "+"}${m.monto.toLocaleString("es-AR")}
+                      <td className={`px-4 py-3.5 text-right font-mono font-bold ${
+                        m.tipo === "GASTO" || m.tipo === "EGRESO" ? "text-rose-600" : 
+                        m.tipo === "PAGO" || m.tipo === "INGRESO" ? "text-emerald-600" : 
+                        "text-amber-600"
+                      }`}>
+                        {m.tipo === "GASTO" || m.tipo === "EGRESO" ? "-" : "+"}${Math.abs(m.monto).toLocaleString("es-AR")}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          m.tipo === "GASTO" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" : 
-                          m.tipo === "PAGO" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : 
+                          m.tipo === "GASTO" || m.tipo === "EGRESO" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" : 
+                          m.tipo === "PAGO" || m.tipo === "INGRESO" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : 
                           "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                         }`}>
                           {m.tipo}
@@ -450,6 +454,7 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {unidades.map((u) => {
                     const alDia = u.estado_expensa === "pagado";
+                    const enMora = u.estado_expensa === "mora";
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/70 transition">
                         <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
@@ -472,10 +477,15 @@ export default function AdminDashboardPage() {
                               <CheckCircle2 className="w-3 h-3" />
                               <span>Al día</span>
                             </span>
-                          ) : (
+                          ) : enMora ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300">
                               <AlertCircle className="w-3 h-3" />
                               <span>En mora</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300">
+                              <AlertCircle className="w-3 h-3" />
+                              <span>Pendiente</span>
                             </span>
                           )}
                         </td>
