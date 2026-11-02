@@ -65,7 +65,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        // Intento de auto-creación para cuentas demo (sólo si no existe)
+        // Intento de auto-creación para cuentas demo (sólo si es un usuario que verdaderamente NO existe)
         if (error.message.includes("Invalid login credentials") && (emailToUse.includes("admin") || emailToUse.includes("vecino"))) {
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: emailToUse,
@@ -77,7 +77,15 @@ export default function LoginPage() {
             }
           });
 
-          if (!signUpError && signUpData.user) {
+          // En Supabase, si el usuario ya existe, signUp devuelve user con identities vacías y session nula
+          const esUsuarioNuevoReal =
+            !signUpError &&
+            signUpData.user &&
+            signUpData.session &&
+            Array.isArray(signUpData.user.identities) &&
+            signUpData.user.identities.length > 0;
+
+          if (esUsuarioNuevoReal) {
             setSuccessMsg("Cuenta creada exitosamente. Iniciando sesión...");
             setTimeout(() => {
               window.location.href = emailToUse.includes("admin") ? "/admin/dashboard" : "/vecino/dashboard";
@@ -344,7 +352,7 @@ export default function LoginPage() {
               {/* Demo Admin */}
               <button
                 type="button"
-                onClick={() => handleFillDemo("paula.admin@calle425.com", "admin123", "Administración General")}
+                onClick={() => handleFillDemo("paula.admin@calle425.com", "Admin-123", "Administración General")}
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
@@ -371,7 +379,7 @@ export default function LoginPage() {
               {/* Demo Vecino */}
               <button
                 type="button"
-                onClick={() => handleFillDemo("laura.martinez@calle425.com", "vecino123", "UF 03 - 1° B")}
+                onClick={() => handleFillDemo("laura.martinez@calle425.com", "Vecino-123", "UF 03 - 1° B")}
                 className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3">
