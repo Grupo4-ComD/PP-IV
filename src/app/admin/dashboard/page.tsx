@@ -25,7 +25,8 @@ import {
   UserPlus,
   Users,
   ArrowRightLeft,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 
 interface Unidad {
@@ -63,6 +64,34 @@ export default function AdminDashboardPage() {
 
   const [limpiezasPendientes, setLimpiezasPendientes] = useState<any[]>([]);
   const [montoMulta, setMontoMulta] = useState<number>(24000);
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+
+  const handleEliminarMovimiento = async (m: any) => {
+    const esCobro = m.tipo === "PAGO";
+    const tipoTexto = esCobro ? "este COBRO" : "este GASTO/AJUSTE";
+    const confirmacion = window.confirm(
+      `¿Deseas eliminar ${tipoTexto}?\n\n• Concepto: ${m.detalle}\n• Monto: $${Math.abs(m.monto).toLocaleString("es-AR")}\n• Fecha: ${m.fecha_movimiento || m.periodo}\n\nEsta acción recalculará automáticamente el saldo real en caja y el estado de la expensa correspondiente.`
+    );
+    if (!confirmacion) return;
+
+    setEliminandoId(m.id);
+    try {
+      const res = await fetch(`/api/admin/movimientos?id=${m.id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        await loadDashboard();
+      } else {
+        const data = await res.json();
+        alert(data.error || "No se pudo eliminar el movimiento.");
+      }
+    } catch (err) {
+      console.error("Error al eliminar movimiento:", err);
+      alert("Error de conexión al eliminar el movimiento.");
+    } finally {
+      setEliminandoId(null);
+    }
+  };
 
   const loadDashboard = async () => {
     try {
@@ -406,6 +435,7 @@ export default function AdminDashboardPage() {
                     <th className="px-4 py-3">Detalle</th>
                     <th className="px-4 py-3 text-right">Monto</th>
                     <th className="px-4 py-3 text-center">Tipo</th>
+                    <th className="px-4 py-3 text-center">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -432,11 +462,25 @@ export default function AdminDashboardPage() {
                           {m.tipo}
                         </span>
                       </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <button
+                          onClick={() => handleEliminarMovimiento(m)}
+                          disabled={eliminandoId === m.id}
+                          title="Eliminar movimiento mal cargado"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition disabled:opacity-40 cursor-pointer"
+                        >
+                          {eliminandoId === m.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {movimientos.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-6 text-slate-400">No hay movimientos recientes.</td>
+                      <td colSpan={6} className="text-center py-6 text-slate-400">No hay movimientos recientes.</td>
                     </tr>
                   )}
                 </tbody>

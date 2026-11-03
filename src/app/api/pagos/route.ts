@@ -356,3 +356,55 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID de pago requerido' }, { status: 400 });
+    }
+
+    const pago = await prisma.pagoVecino.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!pago) {
+      return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 });
+    }
+
+    await prisma.pagoVecino.delete({
+      where: { id: BigInt(id) },
+    });
+
+    const otrosPagos = await prisma.pagoVecino.count({
+      where: {
+        unidadId: pago.unidadId,
+        periodoMes: pago.periodoMes,
+        periodoAnio: pago.periodoAnio,
+        estado: EstadoPago.aprobado,
+      },
+    });
+
+    if (otrosPagos === 0) {
+      await prisma.expensa.updateMany({
+        where: {
+          unidadId: pago.unidadId,
+          periodoMes: pago.periodoMes,
+          periodoAnio: pago.periodoAnio,
+          estado: EstadoExpensa.pagado,
+        },
+        data: {
+          estado: EstadoExpensa.pendiente,
+          fechaPago: null,
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, message: 'Pago eliminado y estado recalculado.' });
+  } catch (error) {
+    console.error('Error al eliminar pago:', error);
+    return NextResponse.json({ error: 'Error al eliminar pago' }, { status: 500 });
+  }
+}
