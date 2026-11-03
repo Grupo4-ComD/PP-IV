@@ -401,6 +401,7 @@ export default function AdminDashboardPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-200 dark:border-slate-800">
                   <tr>
+                    <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Período</th>
                     <th className="px-4 py-3">Detalle</th>
                     <th className="px-4 py-3 text-right">Monto</th>
@@ -410,7 +411,10 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {movimientos.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/70 transition">
-                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">{m.periodo}</td>
+                      <td className="px-4 py-3.5 font-mono font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                        {m.fecha_movimiento || m.periodo}
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-500 whitespace-nowrap">{m.periodo}</td>
                       <td className="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">{m.detalle}</td>
                       <td className={`px-4 py-3.5 text-right font-mono font-bold ${
                         m.tipo === "GASTO" || m.tipo === "EGRESO" ? "text-rose-600" : 
@@ -432,7 +436,7 @@ export default function AdminDashboardPage() {
                   ))}
                   {movimientos.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center py-6 text-slate-400">No hay movimientos recientes.</td>
+                      <td colSpan={5} className="text-center py-6 text-slate-400">No hay movimientos recientes.</td>
                     </tr>
                   )}
                 </tbody>

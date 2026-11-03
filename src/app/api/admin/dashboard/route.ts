@@ -101,15 +101,23 @@ export async function GET() {
 
     // --- CÁLCULO DE SALDO DE CAJA Y MOVIMIENTOS ---
     const gastosData = await prisma.gasto.findMany({
-      orderBy: { fechaGasto: 'desc' },
-      take: 20
+      orderBy: [
+        { fechaGasto: 'desc' },
+        { createdAt: 'desc' },
+        { id: 'desc' }
+      ],
+      take: 50
     });
     
     const pagosData = await prisma.pagoVecino.findMany({
       where: { estado: 'aprobado' },
       include: { unidad: true },
-      orderBy: { fechaPago: 'desc' },
-      take: 20
+      orderBy: [
+        { fechaPago: 'desc' },
+        { createdAt: 'desc' },
+        { id: 'desc' }
+      ],
+      take: 50
     });
 
     const movimientos = [
@@ -126,24 +134,57 @@ export async function GET() {
           tipo = 'INGRESO';
         }
 
+        const dateRaw = g.fechaGasto || g.createdAt || new Date();
+        const dateIso = new Date(dateRaw).toISOString().split('T')[0];
+        const [anioStr, mesStr, diaStr] = dateIso.split('-');
+        const fechaFormateada = `${diaStr}/${mesStr}/${anioStr}`;
+        const createdTimestamp = g.createdAt ? new Date(g.createdAt).getTime() : new Date(dateRaw).getTime();
+        const dateTimestamp = new Date(`${anioStr}-${mesStr}-${diaStr}T00:00:00Z`).getTime();
+
         return {
           id: `g-${g.id}`,
-          periodo: `${(new Date(g.fechaGasto).getMonth() + 1).toString().padStart(2, '0')}/${new Date(g.fechaGasto).getFullYear()}`,
+          periodo: g.periodoMes && g.periodoAnio ? `${String(g.periodoMes).padStart(2, '0')}/${g.periodoAnio}` : `${mesStr}/${anioStr}`,
           detalle: conceptoLimpio,
           monto: Math.abs(Number(g.monto)),
           tipo,
-          fecha: g.fechaGasto.getTime()
+          fecha: dateTimestamp,
+          createdAtTime: createdTimestamp,
+          idNum: Number(g.id),
+          fecha_movimiento: fechaFormateada
         };
       }),
-      ...pagosData.map(p => ({
-        id: `p-${p.id}`,
-        periodo: `${p.periodoMes.toString().padStart(2, '0')}/${p.periodoAnio}`,
-        detalle: `Cobro (U. ${p.unidad.pisoDepto})`,
-        monto: Number(p.monto),
-        tipo: 'PAGO' as const,
-        fecha: p.fechaPago.getTime()
-      }))
-    ].sort((a, b) => b.fecha - a.fecha).slice(0, 15);
+      ...pagosData.map(p => {
+        const dateRaw = p.fechaPago || p.createdAt || new Date();
+        const dateIso = new Date(dateRaw).toISOString().split('T')[0];
+        const [anioStr, mesStr, diaStr] = dateIso.split('-');
+        const fechaFormateada = `${diaStr}/${mesStr}/${anioStr}`;
+        const createdTimestamp = p.createdAt ? new Date(p.createdAt).getTime() : new Date(dateRaw).getTime();
+        const dateTimestamp = new Date(`${anioStr}-${mesStr}-${diaStr}T00:00:00Z`).getTime();
+
+        return {
+          id: `p-${p.id}`,
+          periodo: `${p.periodoMes.toString().padStart(2, '0')}/${p.periodoAnio}`,
+          detalle: `Cobro (U. ${p.unidad.pisoDepto})`,
+          monto: Number(p.monto),
+          tipo: 'PAGO' as const,
+          fecha: dateTimestamp,
+          createdAtTime: createdTimestamp,
+          idNum: Number(p.id),
+          fecha_movimiento: fechaFormateada
+        };
+      })
+    ].sort((a, b) => {
+      // 1. Fecha de movimiento más reciente primero (ej. 03/11 antes de 02/11)
+      if (b.fecha !== a.fecha) {
+        return b.fecha - a.fecha;
+      }
+      // 2. Si son del mismo día, el registrado más recientemente (createdAt)
+      if (b.createdAtTime !== a.createdAtTime) {
+        return b.createdAtTime - a.createdAtTime;
+      }
+      // 3. Desempate por ID descendente
+      return b.idNum - a.idNum;
+    }).slice(0, 25);
 
     const totalPagos = await prisma.pagoVecino.aggregate({ where: { estado: 'aprobado' }, _sum: { monto: true } });
     const todosLosGastos = await prisma.gasto.findMany();
