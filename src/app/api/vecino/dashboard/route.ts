@@ -40,17 +40,24 @@ export async function GET(request: Request) {
     }
 
     const unidad = usuario.unidad;
-    
+
     // Si unidad sigue siendo null (caso extremo), retornamos error
     if (!unidad) {
       return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
     }
 
     // Obtener la deuda total sumando expensas impagas reales
-    const expensasPendientes = await prisma.expensa.findMany({
-      where: { unidadId: unidad.id, estado: { not: 'pagado' } }
+    const resultadoSaldo = await prisma.expensa.aggregate({
+      where: {
+        unidadId: unidad.id,
+        estado: { not: 'pagado' }
+      },
+      _sum: {
+        totalPagar: true
+      }
     });
-    const saldoPendiente = expensasPendientes.reduce((sum, e) => sum + Number(e.totalPagar), 0);
+
+    const saldoPendiente = Number(resultadoSaldo._sum.totalPagar ?? 0);
 
     // Traer la última expensa emitida para mostrar el "Mes Actual"
     const ultimaExpensa = await prisma.expensa.findFirst({
