@@ -213,8 +213,19 @@ export default function LimpiezaPage() {
     }
   };
 
-  // Turno activo de la semana
-  const turnoActivo = turnos.find((t) => t.estado === "en_curso") || turnos[0] || null;
+  // Año en curso dinámico
+  const anioActual = new Date().getFullYear();
+  const hoyStr = new Date().toISOString().split("T")[0];
+
+  // Turno activo de la semana (o el más cercano futuro si no hay en curso)
+  const turnoActivo =
+    turnos.find((t) => t.estado === "en_curso") ||
+    turnos.find((t) => t.fecha_inicio && t.fecha_fin && hoyStr >= t.fecha_inicio && hoyStr <= t.fecha_fin) ||
+    turnos.find((t) => t.fecha_fin && t.fecha_fin >= hoyStr) ||
+    turnos[0] ||
+    null;
+  const esTurnoEnCurso = turnoActivo?.estado === "en_curso";
+  const miTurnoFuturo = turnos.find((t) => t.numero_uf === miNumeroUf && (t.estado === "programado" || t.estado === "proximo"));
 
   // Filtrado de turnos según la vista
   const turnosFiltrados = turnos.filter((t) => {
@@ -224,7 +235,7 @@ export default function LimpiezaPage() {
     return true;
   });
 
-  // Solo mostrar una ventana razonable para la vista "actual" (por ejemplo el en curso y los 8 siguientes)
+  // Solo mostrar una ventana razonable para la vista "actual" (por ejemplo el ciclo actual de 9 UFs)
   const turnosAMostrar = vista === "actual" ? turnosFiltrados.slice(0, 9) : turnosFiltrados;
 
   return (
@@ -277,7 +288,7 @@ export default function LimpiezaPage() {
                 <span>Régimen de 9 Unidades Funcionales</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Cronograma de Limpieza Rotativo <span className="text-indigo-600 dark:text-indigo-400">Ciclo 2026</span>
+                Cronograma de Limpieza Rotativo <span className="text-indigo-600 dark:text-indigo-400">Ciclo {anioActual}</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
                 Organización equitativa y comunitaria para la higiene de pasillos, escaleras y palieres. El reglamento establece una multa de ${montoMulta.toLocaleString("es-AR")} ante ausencias, transferida a la UF suplente.
@@ -305,7 +316,7 @@ export default function LimpiezaPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                    Semana {turnoActivo.semana_numero} (En Curso)
+                    Semana {turnoActivo.semana_numero} {esTurnoEnCurso ? "(En Curso)" : "(Próximo Turno)"}
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
@@ -324,7 +335,7 @@ export default function LimpiezaPage() {
             <div className="flex items-center gap-4 bg-white dark:bg-slate-950 px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm self-start lg:self-auto">
               <div className="text-right">
                 <span className="text-[11px] text-slate-400 block">
-                  Turno Activo Actual
+                  {esTurnoEnCurso ? "Turno Activo Actual" : "Próximo Turno"}
                 </span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {turnoActivo.rango_fechas}
@@ -342,9 +353,9 @@ export default function LimpiezaPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Secuencia de Guardias Rotativas 2026</span>
+                  <span>Secuencia de Guardias Rotativas {anioActual}</span>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50">
-                    9 Semanas
+                    Rotación Continua (9 UF)
                   </span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -439,6 +450,7 @@ export default function LimpiezaPage() {
                 const esActual = t.estado === "en_curso";
                 const esMultado = t.estado === "multado";
                 const esCumplido = t.estado === "cumplido";
+                const esProximo = t.estado === "proximo";
 
                 return (
                   <div
@@ -448,6 +460,8 @@ export default function LimpiezaPage() {
                         ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-900/50 shadow-sm"
                         : esActual
                         ? "bg-white dark:bg-slate-900 border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20 shadow-md"
+                        : esCumplido
+                        ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs"
                         : esMiTurno
                         ? "bg-white dark:bg-slate-900 border-amber-400 dark:border-amber-500/60 ring-2 ring-amber-400/20 shadow-sm"
                         : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs"
@@ -466,16 +480,20 @@ export default function LimpiezaPage() {
                           </span>
                         ) : esActual ? (
                           <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold">
-                            En Curso
-                          </span>
-                        ) : esMiTurno ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
-                            ¡Tu Turno!
+                            {esMiTurno ? "¡Tu Turno (En Curso)!" : "En Curso"}
                           </span>
                         ) : esCumplido ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold border border-emerald-200">
                             <Check className="w-3 h-3" />
                             <span>Cumplido</span>
+                          </span>
+                        ) : esMiTurno ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
+                            ¡Tu Turno!
+                          </span>
+                        ) : esProximo ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[11px] font-semibold border border-amber-200">
+                            Próximo
                           </span>
                         ) : (
                           <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[11px] font-medium">
@@ -492,6 +510,8 @@ export default function LimpiezaPage() {
                               ? "bg-rose-100 text-rose-700"
                               : esActual
                               ? "bg-indigo-600 text-white"
+                              : esCumplido
+                              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
                               : esMiTurno
                               ? "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -726,13 +746,15 @@ export default function LimpiezaPage() {
                   Permutar Turno de Limpieza
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Seleccione con qué unidad funcional desea intercambiar su semana asignada (Semana 38 • 15-21 Sep).
+                  {miTurnoFuturo
+                    ? `Seleccione con qué unidad funcional desea intercambiar su turno (Semana ${miTurnoFuturo.semana_numero} • ${miTurnoFuturo.rango_fechas}).`
+                    : "Seleccione con qué unidad funcional desea intercambiar su semana asignada."}
                 </p>
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto mb-5 pr-1">
                 {turnos
-                  .filter((t) => t.numero_uf !== 3)
+                  .filter((t) => t.numero_uf !== miNumeroUf && (t.estado === "programado" || t.estado === "proximo"))
                   .map((t) => (
                     <button
                       key={t.id}

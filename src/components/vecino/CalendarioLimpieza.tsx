@@ -55,14 +55,15 @@ export default function CalendarioLimpieza({
   onPedirPermuta,
   onReportarIncumplimiento,
 }: CalendarioLimpiezaProps) {
-  // Inicializar en el mes con más turnos o el mes actual (Octubre 2026 por defecto)
+  // Inicializar en el mes del turno activo o el mes actual
   const [currentDate, setCurrentDate] = useState(() => {
     // Si hay un turno activo 'en_curso', centrar en ese mes
     const activo = turnos.find((t) => t.estado === "en_curso" && t.fecha_inicio);
     if (activo && activo.fecha_inicio) {
       return new Date(activo.fecha_inicio + "T00:00:00");
     }
-    return new Date(2026, 9, 1); // Octubre 2026
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
   const [selectedTurno, setSelectedTurno] = useState<TurnoLimpieza | null>(null);
@@ -174,13 +175,8 @@ export default function CalendarioLimpieza({
   };
 
   const goToday = () => {
-    // Si estamos en 2026, ir a Octubre 2026 o fecha actual
     const now = new Date();
-    if (now.getFullYear() === 2026) {
-      setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    } else {
-      setCurrentDate(new Date(2026, 9, 1)); // Octubre 2026
-    }
+    setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
   };
 
   // Color Helper según el estado del turno
@@ -244,7 +240,7 @@ export default function CalendarioLimpieza({
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white capitalize flex items-center gap-2">
               <span>{MESES[month]} {year}</span>
-              {year === 2026 && month === 9 && (
+              {year === new Date().getFullYear() && month === new Date().getMonth() && (
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                   Mes en curso
                 </span>

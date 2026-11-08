@@ -28,6 +28,63 @@ export async function GET(request: Request) {
     }
 
     const hoy = new Date();
+    const unidades = await prisma.unidad.findMany({ orderBy: { numeroUf: 'asc' } });
+
+    // Auto-generación continua: asegurar que el cronograma cubra todo el año en curso y el próximo ciclo
+    if (unidades.length > 0) {
+      const turnosExistentes = await prisma.limpiezaRotativa.findMany({
+        orderBy: { semanaInicio: 'asc' }
+      });
+
+      const currentYear = hoy.getFullYear();
+      const fechaLimite = new Date(currentYear + 1, 0, 31); // Cubrir hasta fines de enero del año próximo
+
+      if (turnosExistentes.length === 0 || new Date(turnosExistentes[turnosExistentes.length - 1].semanaFin) < fechaLimite) {
+        let proximoInicio: Date;
+        let ufIndex = 0;
+
+        if (turnosExistentes.length > 0) {
+          const ultimo = turnosExistentes[turnosExistentes.length - 1];
+          proximoInicio = new Date(ultimo.semanaFin);
+          proximoInicio.setDate(proximoInicio.getDate() + 1); // Lunes siguiente
+          proximoInicio.setHours(0, 0, 0, 0);
+
+          const idxUltimaUf = unidades.findIndex(u => u.id === ultimo.unidadIdAsignada);
+          ufIndex = (idxUltimaUf + 1) % unidades.length;
+        } else {
+          // Si no hay turnos, arranca en el primer lunes del año actual
+          proximoInicio = new Date(`${currentYear}-01-01T00:00:00Z`);
+          while (proximoInicio.getDay() !== 1) {
+            proximoInicio.setDate(proximoInicio.getDate() + 1);
+          }
+        }
+
+        const nuevosTurnos = [];
+        let cursor = new Date(proximoInicio);
+
+        while (cursor < fechaLimite) {
+          const fin = new Date(cursor);
+          fin.setDate(fin.getDate() + 6);
+          fin.setHours(23, 59, 59, 999);
+
+          const uAsignada = unidades[ufIndex % unidades.length];
+          nuevosTurnos.push({
+            unidadIdAsignada: uAsignada.id,
+            semanaInicio: new Date(cursor),
+            semanaFin: new Date(fin),
+            estado: 'programado'
+          });
+
+          ufIndex++;
+          cursor.setDate(cursor.getDate() + 7);
+        }
+
+        if (nuevosTurnos.length > 0) {
+          await prisma.limpiezaRotativa.createMany({ data: nuevosTurnos });
+        }
+      }
+    }
+
     const allTurnos = await prisma.limpiezaRotativa.findMany({
       include: { unidadAsignada: true, unidadSustituta: true, unidadPermuta: true },
       orderBy: { semanaInicio: 'asc' }
@@ -39,11 +96,24 @@ export async function GET(request: Request) {
     const turnosResult = allTurnos.map(t => {
       const tInicio = new Date(t.semanaInicio);
       const tFin = new Date(t.semanaFin);
+      tInicio.setHours(0, 0, 0, 0);
+      tFin.setHours(23, 59, 59, 999);
       
-      let estadoCalculado = 'programado';
-      if (tInicio <= hoy && tFin >= hoy) estadoCalculado = 'en_curso';
-      else if (tFin < hoy) estadoCalculado = t.estado;
-      else if (tInicio > hoy && tInicio.getTime() - hoy.getTime() < 7*24*3600*1000) estadoCalculado = 'proximo';
+      let estadoCalculado = t.estado;
+      if (tInicio <= hoy && tFin >= hoy) {
+        // Semana actual en curso
+        estadoCalculado = (t.estado === 'programado' || t.estado === 'proximo' || t.estado === 'cumplido') ? 'en_curso' : t.estado;
+      } else if (tInicio > hoy) {
+        if (tInicio.getTime() - hoy.getTime() <= 7 * 24 * 3600 * 1000) {
+          // Próxima semana inmediata
+          estadoCalculado = t.estado === 'programado' ? 'proximo' : t.estado;
+        } else {
+          estadoCalculado = 'programado';
+        }
+      } else if (tFin < hoy) {
+        // Semanas pasadas: si no hubo reporte o fue creada con el bug de seed por defecto, respetar su estado real
+        estadoCalculado = t.estado;
+      }
 
       const startStr = tInicio.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
       const endStr = tFin.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });

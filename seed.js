@@ -96,19 +96,20 @@ async function main() {
   // Ordenar las unidades por número
   const unidadesOrdenadas = [...unidades].sort((a, b) => a.numeroUf - b.numeroUf);
   
-  for (let i = 0; i < unidadesOrdenadas.length; i++) {
-    const u = unidadesOrdenadas[i];
+  for (let i = 0; i < 52; i++) {
+    const u = unidadesOrdenadas[i % unidadesOrdenadas.length];
     const fin = new Date(fechaInicio);
     fin.setDate(fin.getDate() + 6); // Domingo
+    fin.setHours(23, 59, 59, 999);
     
-    let estado = 'cumplido'; // default
+    let estado = 'programado';
     let observaciones = null;
     
     // Simular que las primeras 3 semanas ya pasaron y tienen estados diferentes
     if (i === 0) { estado = 'cumplido'; observaciones = 'Espacios limpios correctamente.'; }
     else if (i === 1) { estado = 'multado'; observaciones = 'No sacó la basura en toda la semana ni limpió ascensores.'; }
     else if (i === 2) { estado = 'cumplido'; }
-    // A partir del índice 3 (semana 4) será "pendiente" (turno actual o futuro)
+    else { estado = 'programado'; }
     
     limpiezasData.push({
       unidadIdAsignada: u.id,
