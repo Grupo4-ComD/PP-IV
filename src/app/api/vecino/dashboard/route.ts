@@ -32,14 +32,14 @@ export async function GET(request: Request) {
       include: { unidad: true }
     });
 
-    let unidad = usuario?.unidad;
-
-    if (!unidad) {
-      // Fallback a UF 3 para demostraciones si no coincide el email
-      const fallbackUsuario = await prisma.usuario.findFirst({ where: { unidadId: 3 }, include: { unidad: true } });
-      if (!fallbackUsuario || !fallbackUsuario.unidad) return NextResponse.json({ error: 'Unidad no encontrada' }, { status: 404 });
-      unidad = fallbackUsuario.unidad;
+    if (!usuario || !usuario.unidad) {
+      return NextResponse.json(
+        { error: 'No se encontró una unidad asociada al usuario' },
+        { status: 404 }
+      );
     }
+
+    const unidad = usuario.unidad;
     
     // Si unidad sigue siendo null (caso extremo), retornamos error
     if (!unidad) {
