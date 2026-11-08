@@ -220,11 +220,13 @@ export default function CalendarioLimpieza({
       default:
         return {
           bg: esMiTurno
-            ? "bg-indigo-600 text-white"
+            ? "bg-slate-100 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300"
             : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
-          border: "border-slate-200 dark:border-slate-700",
-          dot: "bg-slate-400",
-          label: "Programado",
+          border: esMiTurno
+            ? "border-indigo-400 dark:border-indigo-600"
+            : "border-slate-200 dark:border-slate-700",
+          dot: esMiTurno ? "bg-indigo-500" : "bg-slate-400",
+          label: esMiTurno ? "Tu Turno (Programado)" : "Programado",
         };
     }
   };
@@ -242,7 +244,7 @@ export default function CalendarioLimpieza({
               <span>{MESES[month]} {year}</span>
               {year === new Date().getFullYear() && month === new Date().getMonth() && (
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                  Mes en curso
+                  Mes actual
                 </span>
               )}
             </h3>
@@ -309,6 +311,10 @@ export default function CalendarioLimpieza({
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
           <span>Próximo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+          <span>Programado</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
