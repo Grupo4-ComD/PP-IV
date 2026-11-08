@@ -8,13 +8,11 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import {
   Building2,
-  Home,
   ShieldCheck,
   Lock,
   Mail,
   Eye,
   EyeOff,
-  Zap,
   KeyRound,
   ArrowRight,
   CheckCircle2,
@@ -42,13 +40,13 @@ export default function LoginPage() {
   const [forgotMsg, setForgotMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Acción de inicio de sesión
-  const handleLogin = async (e?: React.FormEvent, customEmail?: string, customPass?: string) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const emailToUse = (customEmail || identifier).trim().toLowerCase();
-    const passToUse = customPass || password;
+    const emailToUse = identifier.trim().toLowerCase();
+    const passToUse = password;
 
     if (!emailToUse || !passToUse) {
       setErrorMsg("Por favor ingrese su correo electrónico y contraseña.");
@@ -121,14 +119,6 @@ export default function LoginPage() {
       setErrorMsg("Ocurrió un error inesperado al conectar con el servidor.");
       setLoading(false);
     }
-  };
-
-  // Carga rápida e inicio de sesión directo con credenciales de demostración
-  const handleFillDemo = (demoEmail: string, demoPass: string, roleName: string) => {
-    setIdentifier(demoEmail);
-    setPassword(demoPass);
-    setErrorMsg(null);
-    handleLogin(undefined, demoEmail, demoPass);
   };
 
   // Recuperación de clave
@@ -335,75 +325,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Sección de Accesos Rápidos de Demostración (Live Demo) */}
-          <section className="rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>Accesos Rápidos de Demostración</span>
-              </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                Live Demo
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              {/* Demo Admin */}
-              <button
-                type="button"
-                onClick={() => handleFillDemo("paula.admin@calle425.com", "Admin-123", "Administración General")}
-                className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                    <Building2 className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        Entrar como Administradora
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-semibold">
-                        Paula (Admin)
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      Liquidación de expensas, mora y proveedores ITIL
-                    </span>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
-              </button>
-
-              {/* Demo Vecino */}
-              <button
-                type="button"
-                onClick={() => handleFillDemo("laura.martinez@calle425.com", "Vecino-123", "UF 03 - 1° B")}
-                className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                    <Home className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        Entrar como Vecino
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
-                        UF 03 • 1° B
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      Mis expensas, guardias de limpieza y votaciones
-                    </span>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
-              </button>
-            </div>
-          </section>
 
           {/* Footer con Logo del Equipo de Desarrollo */}
           <footer className="flex flex-col items-center text-center gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
