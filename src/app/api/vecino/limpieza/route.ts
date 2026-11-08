@@ -60,7 +60,7 @@ export async function GET(request: Request) {
         }
 
         const nuevosTurnos: Prisma.LimpiezaRotativaCreateManyInput[] = [];
-        let cursor = new Date(proximoInicio);
+        const cursor = new Date(proximoInicio);
 
         while (cursor < fechaLimite) {
           const fin = new Date(cursor);
