@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, EstadoLimpieza, Prisma } from '@prisma/client';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
           }
         }
 
-        const nuevosTurnos = [];
+        const nuevosTurnos: Prisma.LimpiezaRotativaCreateManyInput[] = [];
         let cursor = new Date(proximoInicio);
 
         while (cursor < fechaLimite) {
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
             unidadIdAsignada: uAsignada.id,
             semanaInicio: new Date(cursor),
             semanaFin: new Date(fin),
-            estado: 'programado'
+            estado: EstadoLimpieza.programado
           });
 
           ufIndex++;
@@ -99,14 +99,14 @@ export async function GET(request: Request) {
       tInicio.setHours(0, 0, 0, 0);
       tFin.setHours(23, 59, 59, 999);
       
-      let estadoCalculado = t.estado;
+      let estadoCalculado: "cumplido" | "en_curso" | "proximo" | "programado" | "multado" | "incumplido" | "en_verificacion" = t.estado;
       if (tInicio <= hoy && tFin >= hoy) {
         // Semana actual en curso
-        estadoCalculado = (t.estado === 'programado' || t.estado === 'proximo' || t.estado === 'cumplido') ? 'en_curso' : t.estado;
+        estadoCalculado = (t.estado === 'programado' || t.estado === 'cumplido') ? 'en_curso' : t.estado;
       } else if (tInicio > hoy) {
         if (tInicio.getTime() - hoy.getTime() <= 7 * 24 * 3600 * 1000) {
           // Próxima semana inmediata
-          estadoCalculado = t.estado === 'programado' ? 'proximo' : t.estado;
+          estadoCalculado = 'proximo';
         } else {
           estadoCalculado = 'programado';
         }
